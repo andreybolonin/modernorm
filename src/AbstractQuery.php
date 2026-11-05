@@ -175,11 +175,13 @@ abstract class AbstractQuery
     {
         $key = Parameter::normalizeName($key);
 
-        $filteredParameters = $this->parameters->filter(
-            static fn (Parameter $parameter): bool => $parameter->getName() === $key,
-        );
+        foreach ($this->parameters->toArray() as $parameter) {
+            if ($parameter->getName() === $key) {
+                return $parameter;
+            }
+        }
 
-        return ! $filteredParameters->isEmpty() ? $filteredParameters->first() : null;
+        return null;
     }
 
     /**
@@ -311,6 +313,10 @@ abstract class AbstractQuery
     private function processArrayParameterValue(array $value): array
     {
         foreach ($value as $key => $paramValue) {
+            if (is_scalar($paramValue) || $paramValue === null) {
+                continue;
+            }
+
             $paramValue  = $this->processParameterValue($paramValue);
             $value[$key] = is_array($paramValue) ? reset($paramValue) : $paramValue;
         }

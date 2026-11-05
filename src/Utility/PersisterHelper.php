@@ -231,7 +231,9 @@ class PersisterHelper
             $newValue = [];
 
             foreach ($value as $itemValue) {
-                $newValue = array_merge($newValue, self::convertToParameterValue($itemValue, $em));
+                foreach (self::convertToParameterValue($itemValue, $em) as $convertedValue) {
+                    $newValue[] = $convertedValue;
+                }
             }
 
             return [$newValue];

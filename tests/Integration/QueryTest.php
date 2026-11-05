@@ -99,6 +99,17 @@ final class QueryTest extends TestCase
         $this->em->getConnection()->close();
     }
 
+    public function testLargeCriteriaAndSqlArrayParametersReturnTheSameEntities(): void
+    {
+        $ids = array_merge(range(500000, 501000), [$this->ids['beta'], $this->ids['alpha'], $this->ids['alpha']]);
+        $entities = $this->em->getRepository(QueryProject::class)->findBy(['id' => [...$ids, null]], ['id' => 'ASC']);
+        self::assertSame([$this->ids['alpha'], $this->ids['beta']], array_column($entities, 'id'));
+        $query = $this->em->createQueryBuilder()->fromEntity(QueryProject::class, 'p');
+        $entities = $query->where('p.id IN (:ids)')->orderBy('p.id')
+            ->setParameter('ids', $ids, ArrayParameterType::INTEGER)->getQuery()->getResult();
+        self::assertSame([$this->ids['alpha'], $this->ids['beta']], array_column($entities, 'id'));
+    }
+
     private function graph(): \ModernORM\QueryBuilder
     {
         return $this->em->createQueryBuilder()->fromEntity(QueryProject::class, 'p')

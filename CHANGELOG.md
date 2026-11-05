@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Prepare compact scalar hydration column plans once per result, preserving mapped type conversion, raw scalar values, streaming cleanup and Statistics. Adapted from Doctrine ORM PR #12699.
+- Reduce parameter-processing allocations: append persister values/types, avoid recursive array merges and unchanged scalar-array writes, and stop parameter lookup at the first match without a temporary collection. Adapted from Doctrine ORM PRs #12691, #12693, #12701 and #12702; SQL and conversion semantics are preserved.
 - Remove mapping-object ArrayAccess and its converting setters; use typed properties and mapping factories.
 - Remove duplicate `ClassMetadata::$columnNames` and `FieldMapping::$default`; resolve column names from field mappings and declare defaults through `options['default']`.
 - Preserve explicit version-field defaults and reject unsupported version types. Metadata uses a new cache salt for the simplified format.
