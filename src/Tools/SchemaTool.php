@@ -607,10 +607,6 @@ class SchemaTool
             $options['scale'] = $mapping->scale;
         }
 
-        if (isset($mapping->default)) {
-            $options['default'] = $mapping->default;
-        }
-
         if (isset($mapping->columnDefinition)) {
             $options['columnDefinition'] = $mapping->columnDefinition;
         }
@@ -983,7 +979,7 @@ class SchemaTool
             )),
         };
 
-        // Use parameter FK name (from JoinTable) if provided, otherwise use extracted from JoinColumns
+        // Use parameter FK name (from JoinTable) if provided, otherwise use the name extracted from join columns
         $finalForeignKeyName = $foreignKeyName ?? $extractedForeignKeyName;
 
         $compositeName = $this->getAssetName($theJoinTable) . '.' . implode('', $localColumns);

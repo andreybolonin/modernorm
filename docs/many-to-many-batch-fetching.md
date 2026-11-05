@@ -30,7 +30,7 @@ After loading groups, accessing one roles collection loads memberships for queue
 - Owning and inverse sides have their own settings and queues.
 - OrderBy and string/integer indexBy preserve their ordinary collection roles; unindexed collections use list keys.
 - MappedSuperclass declarations support the argument through ModernORM Mapping attributes.
-- Attribute values survive serialized metadata. Current metadata cache salt: `__MODERNORM_ENTITY_CACHE_WRITE_POLICY_V9__`.
+- Attribute values survive serialized metadata. Current metadata cache salt: `__MODERNORM_TYPED_MAPPING_V10__`.
 
 Configure defaults before loading entities. Changing mapping still requires an application cache namespace update. Each side of the join table must reference a single scalar entity key for batching; multi-column join definitions retain the ordinary loader.
 

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace ModernORM\Tools\Console\Command\SchemaTool;
 
-use Doctrine\Deprecations\Deprecation;
 use ModernORM\Tools\SchemaTool;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -29,7 +28,6 @@ class UpdateCommand extends AbstractCommand
         $this->setName($this->name)
              ->setDescription('Executes (or dumps) the SQL needed to update the database schema to match the current mapping metadata')
              ->addOption('em', null, InputOption::VALUE_REQUIRED, 'Name of the entity manager to operate on')
-             ->addOption('complete', null, InputOption::VALUE_NONE, 'This option is a no-op, is deprecated and will be removed in 4.0')
              ->addOption('dump-sql', null, InputOption::VALUE_NONE, 'Dumps the generated SQL statements to the screen (does not execute them).')
              ->addOption('force', 'f', InputOption::VALUE_NONE, 'Causes the generated SQL statements to be physically executed against your database.')
              ->setHelp(<<<'EOT'
@@ -50,10 +48,9 @@ If both options are specified, the queries are output and then executed:
 
 <info>%command.name% --dump-sql --force</info>
 
-Finally, be aware that this task will drop all database assets (e.g. tables,
-etc) that are *not* described by the current metadata. In other words, without
-this option, this task leaves untouched any "extra" tables that exist in the
-database, but which aren't described by any metadata.
+Schema synchronization can drop database assets that are not described by
+the current metadata. Use a schema assets filter to exclude tables and sequences
+that the ORM should not manage.
 
 <comment>Hint:</comment> If you have a database with tables that should not be managed
 by the ORM, you can use a DBAL functionality to filter the tables and sequences down
@@ -75,15 +72,6 @@ EOT);
     protected function executeSchemaCommand(InputInterface $input, OutputInterface $output, SchemaTool $schemaTool, array $metadatas, SymfonyStyle $ui): int
     {
         $notificationUi = $ui->getErrorStyle();
-
-        if ($input->getOption('complete') === true) {
-            Deprecation::trigger(
-                'doctrine/orm',
-                'https://github.com/doctrine/orm/pull/11354',
-                'The --complete option is a no-op, is deprecated and will be removed in Doctrine ORM 4.0.',
-            );
-            $notificationUi->warning('The --complete option is a no-op, is deprecated and will be removed in Doctrine ORM 4.0.');
-        }
 
         $sqls = $schemaTool->getUpdateSchemaSql($metadatas);
 

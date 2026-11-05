@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Remove mapping-object ArrayAccess and its converting setters; use typed properties and mapping factories.
+- Remove duplicate `ClassMetadata::$columnNames` and `FieldMapping::$default`; resolve column names from field mappings and declare defaults through `options['default']`.
+- Preserve explicit version-field defaults and reject unsupported version types. Metadata uses a new cache salt for the simplified format.
+
+- **Breaking:** remove the unused legacy reflection API and five compatibility classes, metadata table-name/lifecycle shortcuts, `UnrecognizedField::byName()`, `SequenceGenerator` Serializable methods and the no-op schema update `--complete` option.
+- Preserve runtime property accessors, normal lifecycle dispatch and native sequence-generator serialization. Use property accessors, `setPrimaryTable()`, `byFullyQualifiedName()` and native serialization; omit `--complete`.
+
 ## 0.1.0-beta.3 — 2026-11-05
 
 - Extend connection Statistics with bulk, hydration and UnitOfWork phase snapshots and immutable completion details for Profiler/metrics adapters.

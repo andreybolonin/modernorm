@@ -25,7 +25,6 @@ use InvalidArgumentException;
 use LogicException;
 use ReflectionClass;
 use ReflectionNamedType;
-use ReflectionProperty;
 use SortDirection;
 use Stringable;
 
@@ -351,17 +350,6 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     public array $fieldNames = [];
 
     /**
-     * READ-ONLY: A map of field names to column names. Keys are field names and values column names.
-     * Used to look up column names from field names.
-     * This is the reverse lookup map of $_fieldNames.
-     *
-     * @deprecated 3.0 Remove this.
-     *
-     * @var mixed[]
-     */
-    public array $columnNames = [];
-
-    /**
      * READ-ONLY: The discriminator value of this class.
      *
      * <b>This does only apply to the JOINED and SINGLE_TABLE inheritance mapping strategies
@@ -529,15 +517,6 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
      */
     protected NamingStrategy $namingStrategy;
 
-    /**
-     * The ReflectionProperty instances of the mapped class.
-     *
-     * @deprecated Use $propertyAccessors instead.
-     *
-     * @var LegacyReflectionFields|array<string, ReflectionProperty>
-     */
-    public LegacyReflectionFields|array $reflFields = [];
-
     /** @var array<string, PropertyAccessor> */
     public array $propertyAccessors = [];
 
@@ -561,20 +540,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     }
 
     /**
-     * Gets the ReflectionProperties of the mapped class.
-     *
-     * @deprecated Use getPropertyAccessors() instead.
-     *
-     * @return LegacyReflectionFields|ReflectionProperty[] An array of ReflectionProperty instances.
-     * @phpstan-return LegacyReflectionFields|array<string, ReflectionProperty>
-     */
-    public function getReflectionProperties(): array|LegacyReflectionFields
-    {
-        return $this->reflFields;
-    }
-
-    /**
-     * Gets the ReflectionProperties of the mapped class.
+     * Gets the property accessors of the mapped class.
      *
      * @return array<string, PropertyAccessor> An array of PropertyAccessor instances by name.
      */
@@ -583,33 +549,9 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
         return $this->propertyAccessors;
     }
 
-    /**
-     * Gets a ReflectionProperty for a specific field of the mapped class.
-     *
-     * @deprecated Use getPropertyAccessor() instead.
-     */
-    public function getReflectionProperty(string $name): ReflectionProperty|null
-    {
-        return $this->reflFields[$name];
-    }
-
     public function getPropertyAccessor(string $name): PropertyAccessor|null
     {
         return $this->propertyAccessors[$name] ?? null;
-    }
-
-    /**
-     * @deprecated Use getPropertyAccessor() instead.
-     *
-     * @throws BadMethodCallException If the class has a composite identifier.
-     */
-    public function getSingleIdReflectionProperty(): ReflectionProperty|null
-    {
-        if ($this->isIdentifierComposite) {
-            throw new BadMethodCallException('Class ' . $this->name . ' has a composite identifier.');
-        }
-
-        return $this->reflFields[$this->identifier[0]];
     }
 
     /** @throws BadMethodCallException If the class has a composite identifier. */
@@ -707,7 +649,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
      *
      * Parts that are also NOT serialized because they can not be properly unserialized:
      *      - reflClass (ReflectionClass)
-     *      - reflFields (ReflectionProperty array)
+     *      - propertyAccessors (runtime property accessors)
      *
      * @return string[] The names of all the fields that should be serialized.
      */
@@ -716,7 +658,6 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
         // This metadata is always serialized/cached.
         $serialized = [
             'associationMappings',
-            'columnNames', //TODO: 3.0 Remove this. Can use fieldMappings[$fieldName]['columnName']
             'fieldMappings',
             'fieldNames',
             'embeddedClasses',
@@ -817,8 +758,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     public function wakeupReflection(ReflectionService $reflService): void
     {
         // Restore ReflectionClass and properties
-        $this->reflClass = $reflService->getClass($this->name);
-        $this->reflFields   = new LegacyReflectionFields($this, $reflService);
+        $this->reflClass    = $reflService->getClass($this->name);
         $this->instantiator = $this->instantiator ?: new Instantiator();
 
         $parentAccessors = [];
@@ -1040,7 +980,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
      */
     public function getColumnName(string $fieldName): string
     {
-        return $this->columnNames[$fieldName] ?? $fieldName;
+        return $this->fieldMappings[$fieldName]->columnName ?? $fieldName;
     }
 
     /**
@@ -1187,7 +1127,6 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
             $mapping->quoted     = true;
         }
 
-        $this->columnNames[$mapping->fieldName] = $mapping->columnName;
 
         if (isset($this->fieldNames[$mapping->columnName]) || ($this->discriminatorColumn && $this->discriminatorColumn->name === $mapping->columnName)) {
             throw MappingException::duplicateColumnName($this->name, $mapping->columnName);
@@ -1810,7 +1749,6 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
 
         unset($this->fieldMappings[$fieldName]);
         unset($this->fieldNames[$mapping->columnName]);
-        unset($this->columnNames[$mapping->fieldName]);
 
         $overrideMapping = $this->validateAndCompleteFieldMapping($overrideMapping);
 
@@ -1844,16 +1782,6 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     public function isInheritedEmbeddedClass(string $fieldName): bool
     {
         return isset($this->embeddedClasses[$fieldName]->inherited);
-    }
-
-    /**
-     * Sets the name of the primary table the class is mapped to.
-     *
-     * @deprecated Use {@link setPrimaryTable}.
-     */
-    public function setTableName(string $tableName): void
-    {
-        $this->table['name'] = $tableName;
     }
 
     /**
@@ -1906,16 +1834,6 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     }
 
     /**
-     * Checks whether the given type identifies an inheritance type.
-     */
-    private function isInheritanceType(int $type): bool
-    {
-        return $type === self::INHERITANCE_TYPE_NONE ||
-                $type === self::INHERITANCE_TYPE_SINGLE_TABLE ||
-                $type === self::INHERITANCE_TYPE_JOINED;
-    }
-
-    /**
      * Adds a mapped field to the class.
      *
      * @phpstan-param array<string, mixed> $mapping The field mapping.
@@ -1960,7 +1878,6 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     public function addInheritedFieldMapping(FieldMapping $fieldMapping): void
     {
         $this->fieldMappings[$fieldMapping->fieldName] = $fieldMapping;
-        $this->columnNames[$fieldMapping->fieldName] = $fieldMapping->columnName;
         $this->fieldNames[$fieldMapping->columnName] = $fieldMapping->fieldName;
 
         if (isset($fieldMapping->generated)) {
@@ -2063,21 +1980,6 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
         }
 
         $this->customRepositoryClassName = $this->fullyQualifiedClassName($repositoryClassName);
-    }
-
-    /**
-     * Dispatches the lifecycle event of the given entity to the registered
-     * lifecycle callbacks and lifecycle listeners.
-     *
-     * @deprecated Deprecated since version 2.4 in favor of \ModernORM\Event\ListenersInvoker
-     *
-     * @param string $lifecycleEvent The lifecycle event.
-     */
-    public function invokeLifecycleCallbacks(string $lifecycleEvent, object $entity): void
-    {
-        foreach ($this->lifecycleCallbacks[$lifecycleEvent] as $callback) {
-            $entity->$callback();
-        }
     }
 
     /**
@@ -2400,14 +2302,14 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
         $this->versionField             = $mapping['fieldName'];
         $this->requiresFetchAfterChange = true;
 
-        if (! isset($mapping['default'])) {
-            if (in_array($mapping['type'], ['integer', 'bigint', 'smallint'], true)) {
-                $mapping['options']['default'] = 1;
-            } elseif ($mapping['type'] === 'datetime') {
-                $mapping['options']['default'] = class_exists(CurrentTimestamp::class) ? new CurrentTimestamp() : 'CURRENT_TIMESTAMP';
-            } else {
-                throw MappingException::unsupportedOptimisticLockingType($this->name, $mapping['fieldName'], $mapping['type']);
-            }
+        $default = match ($mapping['type']) {
+            'integer', 'bigint', 'smallint' => 1,
+            'datetime' => class_exists(CurrentTimestamp::class) ? new CurrentTimestamp() : 'CURRENT_TIMESTAMP',
+            default => throw MappingException::unsupportedOptimisticLockingType($this->name, $mapping['fieldName'], $mapping['type']),
+        };
+
+        if (! array_key_exists('default', $mapping['options'] ?? [])) {
+            $mapping['options']['default'] = $default;
         }
     }
 

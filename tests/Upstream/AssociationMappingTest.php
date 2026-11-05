@@ -6,7 +6,6 @@ namespace ModernORM\Tests\Upstream;
 
 use ModernORM\Mapping\AssociationMapping;
 use ModernORM\Mapping\ClassMetadata;
-use OutOfRangeException;
 use PHPUnit\Framework\TestCase;
 
 use function assert;
@@ -47,45 +46,6 @@ final class AssociationMappingTest extends TestCase
         self::assertSame('foo', $resurrectedMapping->originalField);
         self::assertTrue($resurrectedMapping->orphanRemoval);
         self::assertTrue($resurrectedMapping->unique);
-    }
-
-    public function testItThrowsWhenAccessingUnknownProperty(): void
-    {
-        $mapping = new MyAssociationMapping(
-            fieldName: 'foo',
-            sourceEntity: self::class,
-            targetEntity: self::class,
-        );
-
-        $this->expectException(OutOfRangeException::class);
-
-        $mapping['foo'];
-    }
-
-    public function testItThrowsWhenSettingUnknownProperty(): void
-    {
-        $mapping = new MyAssociationMapping(
-            fieldName: 'foo',
-            sourceEntity: self::class,
-            targetEntity: self::class,
-        );
-
-        $this->expectException(OutOfRangeException::class);
-
-        $mapping['foo'] = 'bar';
-    }
-
-    public function testItThrowsWhenUnsettingUnknownProperty(): void
-    {
-        $mapping = new MyAssociationMapping(
-            fieldName: 'foo',
-            sourceEntity: self::class,
-            targetEntity: self::class,
-        );
-
-        $this->expectException(OutOfRangeException::class);
-
-        unset($mapping['foo']);
     }
 }
 

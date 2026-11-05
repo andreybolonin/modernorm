@@ -192,22 +192,6 @@ abstract class ToOneOwningSideMapping extends OwningSideMapping implements ToOne
         return $mapping;
     }
 
-    public function offsetSet(mixed $offset, mixed $value): void
-    {
-        if ($offset === 'joinColumns') {
-            $joinColumns = [];
-            foreach ($value as $column) {
-                $joinColumns[] = JoinColumnMapping::fromMappingArray($column);
-            }
-
-            $this->joinColumns = $joinColumns;
-
-            return;
-        }
-
-        parent::offsetSet($offset, $value);
-    }
-
     /** @return array<string, mixed> */
     public function toArray(): array
     {

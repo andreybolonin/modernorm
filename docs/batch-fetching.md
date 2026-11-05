@@ -32,7 +32,7 @@ foreach ($orders as $order) {
 
 The default is 1. Accepted sizes are 1–65535, bounded by PostgreSQL bind parameters for a scalar PK. Size 32 is a starting point, not a universal optimum. This setting is separate from `setEagerFetchBatchSize()`.
 
-Sizes survive serialized metadata and MappedSuperclass mappings. Invalid listener/cache values are validated too. The current metadata salt is `__MODERNORM_ENTITY_CACHE_WRITE_POLICY_V9__`; applications still version their cache namespaces when changing mappings.
+Sizes survive serialized metadata and MappedSuperclass mappings. Invalid listener/cache values are validated too. The current metadata salt is `__MODERNORM_TYPED_MAPPING_V10__`; applications still version their cache namespaces when changing mappings.
 
 ## Queue and loading
 

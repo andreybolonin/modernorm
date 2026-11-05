@@ -64,7 +64,7 @@ A MappedSuperclass shares fields, associations and callbacks but has no table an
 
 ## Cache formats and migration
 
-Current internal salts are `__MODERNORM_ENTITY_CACHE_WRITE_POLICY_V9__` for metadata and `sql_entity_v3_` for entity projection plans. They reject old internal formats; they are not an automatic mapping fingerprint. Applications must version metadata/query cache namespaces and create new EntityManagers when their own mappings change.
+Current internal salts are `__MODERNORM_TYPED_MAPPING_V10__` for metadata and `sql_entity_v3_` for entity projection plans. They reject old internal formats; they are not an automatic mapping fingerprint. Applications must version metadata/query cache namespaces and create new EntityManagers when their own mappings change.
 
 Move XML/programmatic sources to attributes. Removing inheritance attributes alone does not migrate an inheritance schema: choose concrete models/composition and explicitly migrate their tables/data. A discriminator column may remain as an ordinary business field, but no automatic PHP subclass dispatch occurs. Separate entities are not a polymorphic Identity Map substitute.
 

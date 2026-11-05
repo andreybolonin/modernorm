@@ -4,17 +4,15 @@ declare(strict_types=1);
 
 namespace ModernORM\Mapping;
 
-use ArrayAccess;
 use BackedEnum;
+use ModernORM\Exception\MappingException;
 
+use function array_key_exists;
 use function in_array;
 use function property_exists;
 
-/** @template-implements ArrayAccess<string, mixed> */
-final class FieldMapping implements ArrayAccess
+final class FieldMapping
 {
-    use ArrayAccessImplementation;
-
     /** The database length of the column. Optional. Default value taken from the type. */
     public int|null $length = null;
     /**
@@ -73,9 +71,6 @@ final class FieldMapping implements ArrayAccess
     public array|null $options        = null;
     public bool|null $version         = null;
 
-    /** @deprecated Use options with 'default' key instead */
-    public string|int|null $default = null;
-
     /**
      * @param string $type       The type name of the mapped field. Can be one of
      *                           Doctrine's mapping types or a custom mapping type.
@@ -116,11 +111,14 @@ final class FieldMapping implements ArrayAccess
      *     declaredField?: string|null,
      *     options?: array<string, mixed>|null,
      *     version?: bool|null,
-     *     default?: string|int|null,
      * } $mappingArray
      */
     public static function fromMappingArray(array $mappingArray): self
     {
+        if (array_key_exists('default', $mappingArray)) {
+            throw new MappingException('Field defaults must be declared as options["default"].');
+        }
+
         $mapping = new self(
             $mappingArray['type'],
             $mappingArray['fieldName'],
@@ -165,7 +163,6 @@ final class FieldMapping implements ArrayAccess
                 'declared',
                 'declaredField',
                 'options',
-                'default',
             ] as $key
         ) {
             if ($this->$key !== null) {

@@ -41,7 +41,7 @@ use const PHP_VERSION_ID;
  */
 class ClassMetadataFactory extends AbstractClassMetadataFactory
 {
-    protected string $cacheSalt = '__MODERNORM_ENTITY_CACHE_WRITE_POLICY_V9__';
+    protected string $cacheSalt = '__MODERNORM_TYPED_MAPPING_V10__';
 
     public function getMetadataFor(string $className): ClassMetadata
     {

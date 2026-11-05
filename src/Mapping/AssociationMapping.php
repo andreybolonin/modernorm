@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace ModernORM\Mapping;
 
 use ModernORM\Exception\MappingException;
-use ArrayAccess;
 use Exception;
 use OutOfRangeException;
 
@@ -13,10 +12,8 @@ use function assert;
 use function count;
 use function in_array;
 use function property_exists;
-use function sprintf;
 
-/** @template-implements ArrayAccess<string, mixed> */
-abstract class AssociationMapping implements ArrayAccess
+abstract class AssociationMapping
 {
     /**
      * The names of persistence operations to cascade on the association.
@@ -244,61 +241,6 @@ abstract class AssociationMapping implements ArrayAccess
             $this instanceof ManyToManyAssociationMapping => ClassMetadata::MANY_TO_MANY,
             default => throw new Exception('Cannot determine type for ' . static::class),
         };
-    }
-
-    /** @param string $offset */
-    public function offsetExists(mixed $offset): bool
-    {
-        return isset($this->$offset) || in_array($offset, ['isOwningSide', 'type'], true);
-    }
-
-    final public function offsetGet(mixed $offset): mixed
-    {
-        return match ($offset) {
-            'isOwningSide' => $this->isOwningSide(),
-            'type' => $this->type(),
-            'isCascadeRemove' => $this->isCascadeRemove(),
-            'isCascadePersist' => $this->isCascadePersist(),
-            'isCascadeRefresh' => $this->isCascadeRefresh(),
-            'isCascadeDetach' => $this->isCascadeDetach(),
-            default => property_exists($this, $offset) ? $this->$offset : throw new OutOfRangeException(sprintf(
-                'Unknown property "%s" on class %s',
-                $offset,
-                static::class,
-            )),
-        };
-    }
-
-    public function offsetSet(mixed $offset, mixed $value): void
-    {
-        assert($offset !== null);
-        if (! property_exists($this, $offset)) {
-            throw new OutOfRangeException(sprintf(
-                'Unknown property "%s" on class %s',
-                $offset,
-                static::class,
-            ));
-        }
-
-        if ($offset === 'joinTable') {
-            $value = JoinTableMapping::fromMappingArray($value);
-        }
-
-        $this->$offset = $value;
-    }
-
-    /** @param string $offset */
-    public function offsetUnset(mixed $offset): void
-    {
-        if (! property_exists($this, $offset)) {
-            throw new OutOfRangeException(sprintf(
-                'Unknown property "%s" on class %s',
-                $offset,
-                static::class,
-            ));
-        }
-
-        $this->$offset = null;
     }
 
     final public function isCascadeRemove(): bool

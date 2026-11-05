@@ -33,7 +33,7 @@ class Currency
 }
 ```
 
-TTL defaults to 3600 seconds and must be nonnegative. Zero delegates expiration to the pool's default: use a pool with zero default lifetime for nonexpiring entries and persistent generation metadata. Backend eviction/expiration can still remove data. The attribute applies only to concrete entities, not properties, associations, mapped superclasses or embeddables. TTL survives serialized metadata; legacy strategy/region metadata is rejected. Metadata cache salt is `__MODERNORM_ENTITY_CACHE_WRITE_POLICY_V9__`; application namespace versioning remains required.
+TTL defaults to 3600 seconds and must be nonnegative. Zero delegates expiration to the pool's default: use a pool with zero default lifetime for nonexpiring entries and persistent generation metadata. Backend eviction/expiration can still remove data. The attribute applies only to concrete entities, not properties, associations, mapped superclasses or embeddables. TTL survives serialized metadata; legacy strategy/region metadata is rejected. Metadata cache salt is `__MODERNORM_TYPED_MAPPING_V10__`; application namespace versioning remains required.
 
 ## Write policy
 

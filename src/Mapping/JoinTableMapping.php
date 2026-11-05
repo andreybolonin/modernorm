@@ -4,16 +4,10 @@ declare(strict_types=1);
 
 namespace ModernORM\Mapping;
 
-use ArrayAccess;
-
 use function array_map;
-use function in_array;
 
-/** @template-implements ArrayAccess<string, mixed> */
-final class JoinTableMapping implements ArrayAccess
+final class JoinTableMapping
 {
-    use ArrayAccessImplementation;
-
     public bool|null $quoted                  = null;
     public string|null $foreignKeyName        = null;
     public string|null $inverseForeignKeyName = null;
@@ -77,20 +71,6 @@ final class JoinTableMapping implements ArrayAccess
         }
 
         return $mapping;
-    }
-
-    public function offsetSet(mixed $offset, mixed $value): void
-    {
-        if (in_array($offset, ['joinColumns', 'inverseJoinColumns'], true)) {
-            $joinColumns = [];
-            foreach ($value as $column) {
-                $joinColumns[] = JoinColumnMapping::fromMappingArray($column);
-            }
-
-            $value = $joinColumns;
-        }
-
-        $this->$offset = $value;
     }
 
     /** @return mixed[] */

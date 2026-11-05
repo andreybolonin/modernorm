@@ -37,7 +37,7 @@ Owning ManyToMany links can be added, removed, or replaced without updating the 
 
 ## Loading and change tracking
 
-Identity Map, native lazy references, lazy ManyToOne batching, and refresh preserve the class-level read-only policy. `UnitOfWork::isReadOnly()` reports it for mapped objects. The marker survives serialized metadata caches; the metadata cache salt is `__MODERNORM_ENTITY_CACHE_WRITE_POLICY_V9__`.
+Identity Map, native lazy references, lazy ManyToOne batching, and refresh preserve the class-level read-only policy. `UnitOfWork::isReadOnly()` reports it for mapped objects. The marker survives serialized metadata caches; the metadata cache salt is `__MODERNORM_TYPED_MAPPING_V10__`.
 
 Managed read-only entities skip scalar dirty checking. Entities with associations still process the association graph so cascades and collections remain functional. Current hydration/snapshot state is retained for existing ORM contracts; this implementation does not promise Hibernate-style snapshot memory savings. Latency and memory gains need separate benchmarks.
 

@@ -42,7 +42,7 @@ Instead of issuing one collection SELECT per owner, ModernORM queries compatible
 - Sizes must be between 1 and 65535. A batch size counts **owner collections**, not child rows.
 - EAGER loading keeps its existing strategy. For EXTRA_LAZY, count/contains/containsKey/get/first/slice retain their existing partial-query paths; batching runs when the collection is fully initialized.
 
-The attribute uses ModernORM Mapping, including inherited MappedSuperclass associations. Doctrine Mapping aliases are not provided. Serialized metadata retains batchSize. Current metadata cache salt: `__MODERNORM_ENTITY_CACHE_WRITE_POLICY_V9__`; applications must still version their namespaces after mapping changes.
+The attribute uses ModernORM Mapping, including inherited MappedSuperclass associations. Doctrine Mapping aliases are not provided. Serialized metadata retains batchSize. Current metadata cache salt: `__MODERNORM_TYPED_MAPPING_V10__`; applications must still version their namespaces after mapping changes.
 
 ## Queue and hydration
 

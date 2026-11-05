@@ -247,7 +247,7 @@ class AttributeDriver implements MappingDriver
             $mapping              = [];
             $mapping['fieldName'] = $property->name;
 
-            // Check for JoinColumn/JoinColumns attributes
+            // Read repeatable JoinColumn attributes
             $joinColumns = [];
 
             $joinColumnAttributes = $this->reader->getPropertyAttributeCollection($property, Mapping\JoinColumn::class);
@@ -443,7 +443,7 @@ class AttributeDriver implements MappingDriver
                 $override  = [];
                 $fieldName = $associationOverride->name;
 
-                // Check for JoinColumn/JoinColumns attributes
+                // Read repeatable JoinColumn attributes
                 if ($associationOverride->joinColumns) {
                     $joinColumns = [];
 
