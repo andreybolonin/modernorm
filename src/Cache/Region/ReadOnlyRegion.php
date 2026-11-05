@@ -51,7 +51,9 @@ final class ReadOnlyRegion
     private function token(string $key): string
     {
         $item = $this->pool->getItem(hash('sha256', $key));
-        return $item->isHit() && is_string($item->get()) ? $item->get() : $this->rotate($key);
+        $token = $item->get();
+        return $item->isHit() && is_string($token) && preg_match('/^[a-f0-9]{32}$/D', $token) === 1
+            ? $token : $this->rotate($key);
     }
     private function rotate(string $key): string
     {

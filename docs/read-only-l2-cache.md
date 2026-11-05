@@ -14,7 +14,7 @@ $statistics = new StatisticsCacheLogger();
 $config->setSecondLevelCache($pool, namespace: 'my_app_l2_v1', logger: $statistics);
 ```
 
-Configure before constructing EntityManager. The namespace isolates applications/deployments even when they share a PSR-6 pool. Change it after incompatible mapping/type changes. The core depends on PSR-6, not Symfony Cache; Redis can be supplied through a PSR-6 adapter but is not yet certified by this suite.
+Configure before constructing EntityManager. The namespace isolates applications/deployments even when they share a PSR-6 pool. Change it after incompatible mapping/type changes. The core depends on PSR-6, not Symfony Cache. Standalone RedisAdapter now has focused process verification; see the [Redis audit and backend limits](l2-redis-verification.md). Redis failover and network partitions remain uncertified.
 
 For explicit configuration objects, use `new ModernORM\Cache\CacheConfiguration($pool, namespace: 'my_app_l2_v1', logger: $statistics)`, pass it to `setSecondLevelCacheConfiguration()`, then call `setSecondLevelCacheEnabled()`. Enabling L2 without a pool configuration is an error. No cache factory or public region configuration is required.
 
@@ -101,9 +101,9 @@ The [Bulk API](bulk-api.md) invalidates entire declared entity classes before DM
 
 ## Generations, concurrency and external writers
 
-Internal regions remain implementation details. Each entry key includes a class generation and a per-entry generation. A reader captures its fill ticket before SELECT. Key/class invalidation changes the generation, so a delayed fill on the previous generation becomes unreachable. Post-commit invalidation also removes values filled by another connection before commit.
+Internal regions remain implementation details. Each entry key includes a class generation and a per-entry generation. Missing or malformed generation metadata is replaced with a fresh random token; the token must have the canonical 32-character hexadecimal format. A reader captures its fill ticket before SELECT. Key/class invalidation changes the generation, so a delayed fill on the previous generation becomes unreachable. Post-commit invalidation also removes values filled by another connection before commit.
 
-There is no Redis key scanning, `clear(prefix)` or clearing of shared PSR-6 storage. Old payloads expire by their TTL; generation metadata may remain. Nonexpiring payloads and repeated generation changes require an application namespace retention/maintenance policy.
+There is no Redis key scanning, `clear(prefix)` or clearing of shared PSR-6 storage. Old payloads expire by their TTL; generation metadata may remain. Concurrent first initialization can leave orphan generation metadata, and class invalidation can leave metadata for superseded classes/generations. Redis pressure/TTL checks and the finite concurrent workload are documented in the [verification report](l2-redis-verification.md). Nonexpiring payloads and repeated generation changes require an application namespace retention/maintenance policy.
 
 This is not atomic PostgreSQL/cache consistency. Already-started reads may finish with an old value; the post-commit invalidation window and backend/distributed failure modes remain limitations. PSR-6 offers no general CAS or database transaction protocol.
 
@@ -141,4 +141,4 @@ Old Cache attributes fail explicitly with a migration error; they do not silentl
 
 `L2BatchFetchingTest` additionally covers cold/warm/mixed cached batches, SQL parameters containing only misses, invalid entries, transaction bypass, missing rows, raw typed values/PostLoad, dirty/partial peers, cached ManyToMany fallback, pending changes, shared-reference opt-out, manager/lifecycle isolation, retry after SQL/backend failures, and eviction between SELECT and publication on a separate writer connection. Lifecycle cleanup with L2 enabled is also covered by all three batch suites.
 
-Redis/distributed partitions, arbitrary custom types/quote strategies, graph caches, cached ManyToMany batching and production overhead remain uncertified. The optional Console command has not been integration-tested with Symfony Console in this dependency set.
+Standalone Redis now has separate-process checks for invalidation, metadata loss, cold initialization races, rollback, stale writers and explicit post-commit recovery. See the [verification evidence and remaining gates](l2-redis-verification.md). Controlled standalone Redis socket loss, unresponsiveness with finite read timeouts, empty restart, old RDB restoration and writer death after physical commit have recovery checks. Explicit fresh contexts and namespace rotation/eviction are tested; automatic distributed failover, general network partitions, transparent reconnect, arbitrary custom types/quote strategies, graph caches, cached ManyToMany batching and production overhead remain uncertified. The optional Console command has not been integration-tested with Symfony Console in this dependency set.

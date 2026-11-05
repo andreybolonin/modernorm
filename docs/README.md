@@ -17,6 +17,7 @@ For installation, examples, benchmark results and the Doctrine comparison, start
 | PostgreSQL bulk writes and context policies | [Bulk API](bulk-api.md) |
 | Entity L2 configuration, writes and recovery | [L2 cache contract](read-only-l2-cache.md) |
 | L2 supported/excluded scenarios | [L2 scenario matrix](l2-scope-matrix.md) |
+| Generation audit and Redis process checks | [Redis verification](l2-redis-verification.md) |
 | SQL/flush/batch measurement | [Statistics API](statistics.md) |
 | Batch aggregates and observer events | [Batch statistics](batch-statistics.md) |
 

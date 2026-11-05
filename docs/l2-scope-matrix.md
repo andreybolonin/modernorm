@@ -40,13 +40,17 @@ This matrix includes READ_ONLY and UPDATE/invalidate behavior. **Implemented** m
 | Invalidation | evict(Entity, id)/evictAll(Entity) | Implemented without clearing unrelated classes or the shared pool |
 | Invalidation | External SQL/import/another system | Not observed automatically; invalidate after commit and coordinate L1 |
 | Invalidation | TTL/namespace changes | Implemented; TTL does not replace invalidation |
-| Invalidation | Old-generation cleanup | Application retention/maintenance policy; payload TTL expires entries naturally |
+| Invalidation | Old-generation cleanup | Payload TTL verified in Redis; persistent metadata, cold-start orphan generations and repeated class invalidation still need application retention/maintenance |
+| Invalidation | Memory-pressure eviction | Actual volatile-lru payload loss and allkeys-lru metadata loss produce safe misses in disposable Redis checks |
 | Errors | Backend unavailable/save returns false | Propagate the error; no automatic fail-open fallback |
 | Errors | Cache failure before UPDATE | No UPDATE; owned flush rolls back |
 | Errors | Confirmed commit, eviction failure | databaseCommitted=true, closed EM, remaining keys/classes still attempted; recover cache without replaying SQL |
 | Errors | Unknown COMMIT outcome | databaseCommitted=null, connection/EM closed, best-effort affected-key eviction. Injected before/after-driver failures and deferred constraints are covered, not real network partitions |
 | Errors | COMMIT and recovery invalidation both fail | Preserve original commit error and separate cacheFailure; inspect database/cache without automatic retry |
-| Errors | Redis partition/failover/generation-metadata loss | Not certified; requires backend-specific checks |
+| Errors | Generation-metadata loss with retained payloads | Unit and Redis process checks: fresh random tokens prevent old payload resurrection |
+| Errors | Standalone Redis loss/unresponsiveness/restart | Actual SIGKILL/SIGSTOP and restart checks; bounded client timeouts, explicit failure and fresh-context recovery |
+| Errors | Old RDB restoration or writer death after COMMIT | Reproduced stale payload visibility; recovery by coordinated namespace rotation or eviction, without replaying SQL |
+| Errors | Redis partition/failover | General partitions and automatic failover remain uncertified |
 | Collections | OneToMany/ManyToMany L2 | Excluded; cached ManyToMany retains ordinary collection SQL |
 | Queries | L2 result cache/timestamps | Excluded/removed; metadata and projection-plan PSR-6 caches remain separate |
 | Strategies | READ_WRITE/NONSTRICT_READ_WRITE locks | Removed; INVALIDATE does not restore these strategies |
@@ -55,10 +59,11 @@ This matrix includes READ_ONLY and UPDATE/invalidate behavior. **Implemented** m
 | Isolation | Multi-tenancy | No built-in tenant-aware EM/L1/L2 contract; a namespace alone is insufficient |
 | Isolation | Replicas/multi-region/async invalidation | Outside the contract; lagging reads and invalidation events need explicit semantics |
 | Lifecycle | clear/detach/close | Remove/clear queue members; do not automatically evict L2 |
-| Lifecycle | PHP-FPM/long-lived workers | Applications define EM/reset boundaries and cache maintenance; core stores no entity event history |
+| Lifecycle | PHP-FPM/long-lived workers | Applications define reset boundaries; a 60-second one-writer/four-reader fixed-ID run checks freshness, sampled heap and key retention; not indefinite memory certification |
 | Metrics | Global entity hit/miss/put/eviction | StatisticsCacheLogger totals/per-class and reset |
 | Metrics | Batch progress/fallback/completion events | Connection-scoped Statistics; export adapters are separate |
 | Backends | ArrayAdapter/FilesystemAdapter | Read/update invalidation covered, including independent filesystem adapters reading updated raw rows followed by warm hits |
-| Backends | Redis/load/failover certification | Separate work; unit/integration success does not establish these guarantees |
+| Backends | Standalone RedisAdapter | Focused process checks, actual TTL/eviction and a 60-second concurrent fixed-ID run passed locally; [evidence and limits](l2-redis-verification.md) |
+| Backends | Redis load/failover certification | Load, automatic failover and general partitions remain separate; controlled standalone transport/recovery checks are covered |
 
 The bounded entity-cache implementation does not require graphs, collection/query caches or external cached-write transactions to be useful. Release claims remain limited by the tested backend matrix and infrastructure evidence in the [beta contract](beta-release.md).

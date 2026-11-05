@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 $source = dirname(__DIR__, 2);
+$releaseVersion = getenv('MODERNORM_RELEASE_VERSION') ?: '0.1.0-beta.2';
 $directory = getenv('MODERNORM_RELEASE_DIR') ?: sys_get_temp_dir().'/modernorm-release-'.bin2hex(random_bytes(6));
 if (file_exists($directory)) { throw new RuntimeException('Release output directory must not exist: '.$directory); }
 mkdir($directory, 0777, true);
@@ -27,7 +28,7 @@ $execute = static function (array $command, ?string $cwd = null, array $environm
 $run = static function (array $arguments, string $cwd, array $environment = []) use ($composer, $execute): void {
     $execute(array_merge([PHP_BINARY, $composer], $arguments), $cwd, $environment);
 };
-$run(['archive', '--format=zip', '--dir='.$directory.'/dist', '--file=modernorm-beta-candidate', '--no-interaction'], $source, ['COMPOSER_ROOT_VERSION' => '0.1.0-beta.1']);
+$run(['archive', '--format=zip', '--dir='.$directory.'/dist', '--file=modernorm-beta-candidate', '--no-interaction'], $source, ['COMPOSER_ROOT_VERSION' => $releaseVersion]);
 $archive = $directory.'/dist/modernorm-beta-candidate.zip';
 $zip = new ZipArchive();
 if ($zip->open($archive) !== true) { throw new RuntimeException('Cannot open release archive.'); }
@@ -57,9 +58,9 @@ $zip->close();
 $manifest = json_decode(file_get_contents($source.'/composer.json'), true, 512, JSON_THROW_ON_ERROR);
 if ($archivedManifest !== $manifest) { throw new RuntimeException('Packaged composer.json differs from the current manifest.'); }
 $package = array_intersect_key($manifest, array_flip(['name', 'description', 'type', 'license', 'require', 'autoload', 'suggest', 'conflict']));
-$package['version'] = '0.1.0-beta.1';
+$package['version'] = $releaseVersion;
 $package['dist'] = ['type' => 'zip', 'url' => 'file://'.$archive, 'shasum' => sha1_file($archive)];
-$consumer = ['name' => 'modernorm/release-consumer', 'require' => [$manifest['name'] => '0.1.0-beta.1'], 'repositories' => [['type' => 'package', 'package' => $package]]];
+$consumer = ['name' => 'modernorm/release-consumer', 'require' => [$manifest['name'] => $releaseVersion], 'repositories' => [['type' => 'package', 'package' => $package]]];
 file_put_contents($directory.'/consumer/composer.json', json_encode($consumer, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)."\n");
 $run(['install', '--no-dev', '--no-interaction', '--prefer-dist', '--no-progress'], $directory.'/consumer');
 $smoke = static function (bool $cache) use ($source, $directory, $execute): void {

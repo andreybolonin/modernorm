@@ -9,7 +9,7 @@ Release line: **0.1 beta**, beginning with **0.1.0-beta.1**. [Local verification
 - SQL-first query/hydration API and explicit SQL pagination; lazy batching for ManyToOne/OneToMany/ManyToMany.
 - Bulk BYPASS/CLEAR and connection-scoped Statistics. No bulk SYNC/COPY, DQL, inheritance mappings, composite entity IDs, Criteria SQL matching or ORM Filters.
 - Entity L2 for flat entities, with READ_ONLY and INVALIDATE write policies, ORM-owned cached writes, and explicit failure outcomes. No collection/query-result L2 or caller-owned cached-write transactions.
-- ArrayAdapter and FilesystemAdapter are the initial tested L2 adapters. Redis/APCu/distributed failover, loss of generation metadata, cross-host invalidation and performance certification are outside beta backend guarantees. An adapter implementing PSR-6 does not alone establish those guarantees.
+- ArrayAdapter and FilesystemAdapter are the initial tested L2 adapters. Standalone RedisAdapter now has [focused process verification](l2-redis-verification.md), including loss of generation metadata with retained payloads. Controlled standalone Redis transport loss, unresponsiveness and RDB restart have explicit recovery checks. Automatic failover, general partitions, APCu, cross-host invalidation and performance certification remain outside beta backend guarantees. An adapter implementing PSR-6 does not alone establish those guarantees.
 
 ## API and compatibility
 

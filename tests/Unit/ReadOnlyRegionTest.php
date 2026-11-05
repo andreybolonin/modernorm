@@ -16,6 +16,58 @@ require_once dirname(__DIR__) . '/Support/CacheFixtures.php';
 
 final class ReadOnlyRegionTest extends TestCase
 {
+    #[\PHPUnit\Framework\Attributes\DataProvider('lostGenerationKinds')]
+    public function testLostOrInvalidGenerationCannotResurrectRetainedPayload(string $kind): void
+    {
+        $pool = new RecordingCachePool(new ArrayAdapter(storeSerialized: true));
+        $region = new ReadOnlyRegion('loss', $pool);
+        $key = new EntityCacheKey('Country', ['id' => 1]);
+        $oldTicket = $region->ticket($key);
+        $generationKeys = $pool->writes;
+        $region->putAt($oldTicket, new EntityCacheEntry('Country', ['id' => 1, 'name' => 'old']));
+        foreach ($kind === 'all' ? $generationKeys : [$generationKeys[$kind === 'region' ? 0 : 1]] as $physicalKey) {
+            $pool->deleteItem($physicalKey);
+        }
+        self::assertNull((new ReadOnlyRegion('loss', $pool))->get($key));
+        // A SELECT that began before metadata loss can still publish its old ticket.
+        $region->putAt($oldTicket, new EntityCacheEntry('Country', ['id' => 1, 'name' => 'late']));
+        self::assertNull($region->get($key));
+        self::assertTrue($pool->hasItem($oldTicket));
+        $region->put($key, new EntityCacheEntry('Country', ['id' => 1, 'name' => 'fresh']));
+        self::assertSame('fresh', $region->get($key)->data['name']);
+    }
+    public static function lostGenerationKinds(): iterable
+    {
+        yield 'region metadata lost' => ['region'];
+        yield 'entry metadata lost' => ['entry'];
+        yield 'all metadata lost, payload retained' => ['all'];
+    }
+
+    #[\PHPUnit\Framework\Attributes\DataProvider('malformedGenerations')]
+    public function testMalformedGenerationIsReplacedWithoutReusingPayload(mixed $malformed): void
+    {
+        $pool = new RecordingCachePool(new ArrayAdapter(storeSerialized: true));
+        $region = new ReadOnlyRegion('malformed', $pool);
+        $key = new EntityCacheKey('Country', ['id' => 1]);
+        $ticket = $region->ticket($key);
+        $entryKey = $pool->writes[1];
+        $region->putAt($ticket, new EntityCacheEntry('Country', ['id' => 1]));
+        $pool->save($pool->getItem($entryKey)->set($malformed));
+        self::assertNull($region->get($key));
+        self::assertNotSame($ticket, $region->ticket($key));
+        $region->put($key, new EntityCacheEntry('Country', ['id' => 1, 'name' => 'old']));
+        $region->evict($key);
+        $pool->save($pool->getItem($entryKey)->set($malformed));
+        self::assertNull($region->get($key));
+    }
+    public static function malformedGenerations(): iterable
+    {
+        yield 'array' => [['invalid']];
+        yield 'empty string' => [''];
+        yield 'non-token string' => ['invalid'];
+        yield 'wrong length' => [str_repeat('a', 31)];
+    }
+
     public function testSingleEvictionMakesInFlightPublicationUnreachable(): void
     {
         $pool = new RecordingCachePool(new ArrayAdapter(storeSerialized: true));

@@ -1,0 +1,2701 @@
+{
+    "php": "8.4.27",
+    "os": "Darwin",
+    "redis": "8.10.3",
+    "symfony_cache": "v7.4.22",
+    "ext_redis": "6.2.0",
+    "duration_seconds": 60.001144583,
+    "committed_updates": 44256,
+    "warmup_updates": 20,
+    "reader_processes": 4,
+    "payload_ttl_seconds": 1,
+    "remaining_keys_after_quiescence": 6,
+    "samples": [
+        {
+            "elapsed_seconds": 0,
+            "cycles": 0,
+            "redis_keys": 31,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1131360,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5533296,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5673208,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5533296,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5673208,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5533296,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5673208,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5533296,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5673208,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 1.001556791,
+            "cycles": 813,
+            "redis_keys": 846,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1514176,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5651032,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5673208,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5651032,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5673208,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5651224,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5673208,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5651032,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5673208,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 2.002829291,
+            "cycles": 1517,
+            "redis_keys": 828,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1483824,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5622808,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5622808,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5623000,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5622808,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 3.004031125,
+            "cycles": 2278,
+            "redis_keys": 926,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1512880,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5648056,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5648056,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5648248,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5648344,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 4.004373583,
+            "cycles": 3059,
+            "redis_keys": 988,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1522000,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5627224,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5627320,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5627416,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5627704,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 5.005409458,
+            "cycles": 3680,
+            "redis_keys": 737,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1446832,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5638840,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5638936,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5639128,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5639320,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 6.006371708,
+            "cycles": 4358,
+            "redis_keys": 779,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1474496,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5656120,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5656216,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5656408,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5656984,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 7.007625208,
+            "cycles": 5068,
+            "redis_keys": 763,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1490496,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5628664,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5628760,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5629048,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5629528,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 8.007837833,
+            "cycles": 5812,
+            "redis_keys": 800,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1505920,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5652184,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5652280,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5652472,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5653144,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 9.0086255,
+            "cycles": 6516,
+            "redis_keys": 874,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1486416,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5623960,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5624056,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5624344,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5625400,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 10.009166291,
+            "cycles": 7286,
+            "redis_keys": 964,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1518032,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5650072,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5650168,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5650648,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5651704,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 11.010287291,
+            "cycles": 8048,
+            "redis_keys": 887,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1514688,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5627512,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5627704,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5627992,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5629240,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 12.010634791,
+            "cycles": 8790,
+            "redis_keys": 1025,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1508032,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5650840,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5650936,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5651224,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5653432,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 13.011088583,
+            "cycles": 9465,
+            "redis_keys": 791,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1473296,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5619928,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5619928,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5620216,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5622520,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 14.011605833,
+            "cycles": 10197,
+            "redis_keys": 871,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1500160,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5642392,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5642392,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5642776,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5645368,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 15.013029708,
+            "cycles": 11005,
+            "redis_keys": 1001,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1532832,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5624152,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5624152,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5624632,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5627128,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 16.013859916,
+            "cycles": 11468,
+            "redis_keys": 586,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1375504,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5620600,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5620696,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5621272,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5623576,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 17.014813583,
+            "cycles": 12040,
+            "redis_keys": 673,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1425408,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5627896,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5628088,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5628472,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5630680,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 18.01626275,
+            "cycles": 12650,
+            "redis_keys": 708,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1443632,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5638456,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5638648,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5639224,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5641528,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 19.016669291,
+            "cycles": 13365,
+            "redis_keys": 745,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1490272,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5659288,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5659480,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5660056,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5662456,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 20.017055916,
+            "cycles": 14127,
+            "redis_keys": 871,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1511808,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5636632,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5636824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5637496,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5639992,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 21.017699625,
+            "cycles": 14919,
+            "redis_keys": 902,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1527824,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5664664,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5664856,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5665624,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5620408,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 22.018939416,
+            "cycles": 15718,
+            "redis_keys": 843,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1530048,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5645560,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5645752,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5646616,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5649208,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 23.0191545,
+            "cycles": 16485,
+            "redis_keys": 891,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1516896,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5623384,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5623576,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5624632,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5627224,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 24.019688375,
+            "cycles": 17276,
+            "redis_keys": 902,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1527536,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5651704,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5651704,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5652760,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5655544,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 25.020351333,
+            "cycles": 18031,
+            "redis_keys": 800,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1508112,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5628472,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5628376,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5629432,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5632216,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 26.021240125,
+            "cycles": 18591,
+            "redis_keys": 600,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1419216,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5634232,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5634232,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5635288,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5637976,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 27.021777125,
+            "cycles": 19367,
+            "redis_keys": 906,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1519408,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5660920,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5661016,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5661976,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5664952,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 28.022310833,
+            "cycles": 20131,
+            "redis_keys": 805,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1515200,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5638456,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5638552,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5639608,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5642776,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 29.022602791,
+            "cycles": 20939,
+            "redis_keys": 850,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1533712,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5620216,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5620312,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5621368,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5624728,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 30.023207833,
+            "cycles": 21734,
+            "redis_keys": 836,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1529824,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5648536,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5648728,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5649784,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5653432,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 31.023611708,
+            "cycles": 22523,
+            "redis_keys": 1059,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1524864,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5628472,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5628664,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5629720,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5633560,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 32.024151291,
+            "cycles": 23217,
+            "redis_keys": 850,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1481888,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5647288,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5647480,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5648632,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5652568,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 33.025185208,
+            "cycles": 23951,
+            "redis_keys": 836,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1500864,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5621944,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5622232,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5623480,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5627512,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 34.025373833,
+            "cycles": 24708,
+            "redis_keys": 949,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1510640,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5646712,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5646904,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5648248,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5652184,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 35.02590125,
+            "cycles": 25492,
+            "redis_keys": 899,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1522992,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5626168,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5626360,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5627704,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5632024,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 36.02641225,
+            "cycles": 26254,
+            "redis_keys": 871,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1513808,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5651512,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5651704,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5653048,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5657752,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 37.027709208,
+            "cycles": 27025,
+            "redis_keys": 963,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1518192,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5629720,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5629912,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5631544,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5636056,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 38.028933791,
+            "cycles": 27803,
+            "redis_keys": 957,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1522576,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5656408,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5656600,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5658328,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5663128,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 39.029128041,
+            "cycles": 28582,
+            "redis_keys": 905,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1522528,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5635384,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5635576,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5637400,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5642488,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 40.030186,
+            "cycles": 29396,
+            "redis_keys": 1086,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1537680,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5665720,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5666008,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5599352,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5625016,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 41.030911958,
+            "cycles": 30219,
+            "redis_keys": 1016,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1543216,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5648920,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5649208,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5651128,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5656504,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 42.032318041,
+            "cycles": 31010,
+            "redis_keys": 900,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1528896,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5629048,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5629336,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5631352,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5637016,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 43.033117708,
+            "cycles": 31789,
+            "redis_keys": 889,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1520880,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5655832,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5656120,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5658232,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5663800,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 44.034173833,
+            "cycles": 32536,
+            "redis_keys": 792,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1507024,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5631736,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5632024,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5634328,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5639704,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 45.034714208,
+            "cycles": 33351,
+            "redis_keys": 1062,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1536880,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5662168,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5662456,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5664856,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5622424,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 46.035889958,
+            "cycles": 34127,
+            "redis_keys": 883,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1519776,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5640856,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5641144,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5643736,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5649112,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 47.036913291,
+            "cycles": 34849,
+            "redis_keys": 901,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1495056,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5662264,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5662456,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5665048,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5622808,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 48.037289208,
+            "cycles": 35591,
+            "redis_keys": 778,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1504080,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5637688,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5637976,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5640568,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5646136,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 49.0382585,
+            "cycles": 36368,
+            "redis_keys": 973,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1521440,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5664472,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5664952,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5598872,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5625208,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 50.038424458,
+            "cycles": 37142,
+            "redis_keys": 898,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1519264,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5643064,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5643448,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5645944,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5651800,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 51.039011875,
+            "cycles": 37922,
+            "redis_keys": 887,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1522496,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5622136,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5622520,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5625112,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5631256,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 52.039441291,
+            "cycles": 38688,
+            "redis_keys": 960,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1516832,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5647672,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5648056,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5650648,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5657272,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 53.040418875,
+            "cycles": 39357,
+            "redis_keys": 770,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1469184,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5664088,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5664472,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5598584,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5625784,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 54.040852583,
+            "cycles": 40122,
+            "redis_keys": 844,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1513488,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5641720,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5642104,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5644696,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5651416,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 55.0408755,
+            "cycles": 40890,
+            "redis_keys": 848,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1516864,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5599160,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5620120,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5622904,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5629528,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 56.0415575,
+            "cycles": 41696,
+            "redis_keys": 976,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1535104,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5649112,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5649496,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5652472,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5659096,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 57.041836916,
+            "cycles": 42460,
+            "redis_keys": 940,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1515824,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5626648,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5627032,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5630104,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5637016,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 58.047819458,
+            "cycles": 42952,
+            "redis_keys": 525,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1388672,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5626072,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5626552,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5629816,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5636536,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 59.048086791,
+            "cycles": 43542,
+            "redis_keys": 607,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1433008,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5634712,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5635192,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5638552,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5645464,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        },
+        {
+            "elapsed_seconds": 60.001144583,
+            "cycles": 44256,
+            "redis_keys": 815,
+            "persistent_generation_keys": 6,
+            "redis_used_memory_bytes": 1496480,
+            "workers": [
+                {
+                    "heap_bytes": 5601824,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5670112,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5655544,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5655928,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5659288,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                },
+                {
+                    "heap_bytes": 5666200,
+                    "allocated_bytes": 6291456,
+                    "peak_heap_bytes": 5685736,
+                    "managed_entities": 1,
+                    "sql": 0
+                }
+            ]
+        }
+    ],
+    "baseline_generation_keys": 6,
+    "note": "One writer and four independent readers. In-flight reads may return the preceding committed version; reads started after writer acknowledgement must return the new version. PHP retained heap after GC is sampled, not RSS. Initial generation races may leave orphan metadata; persistent key count must stay at its post-warm-up baseline, and all payload keys must expire after quiescence. Fixed single-ID workload; not a bound for growing entity\/ID\/class cardinality or repeated class eviction."
+}

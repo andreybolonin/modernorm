@@ -1,0 +1,615 @@
+{
+    "php": "8.4.27",
+    "os": "Darwin",
+    "postgresql": "17.11 (Homebrew)",
+    "redis": "8.10.3",
+    "dbal": "4.5.0",
+    "symfony_cache": "v7.4.22",
+    "rows": 100,
+    "rounds": 5,
+    "batch_size": 32,
+    "mixed_warm_rows": 50,
+    "measurements": [
+        {
+            "operation": "by_id",
+            "mode": "disabled",
+            "median_ms": 13.682333,
+            "min_ms": 12.438083,
+            "max_ms": 14.889417,
+            "median_peak_heap_delta_bytes": 128512,
+            "samples": [
+                {
+                    "wall_ms": 14.889417,
+                    "sql_statements": 100,
+                    "hits": 0,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 128512,
+                    "retained_heap_delta_bytes": 122520
+                },
+                {
+                    "wall_ms": 12.438083,
+                    "sql_statements": 100,
+                    "hits": 0,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 128512,
+                    "retained_heap_delta_bytes": 122520
+                },
+                {
+                    "wall_ms": 12.8495,
+                    "sql_statements": 100,
+                    "hits": 0,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 128512,
+                    "retained_heap_delta_bytes": 122520
+                },
+                {
+                    "wall_ms": 14.262666,
+                    "sql_statements": 100,
+                    "hits": 0,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 128512,
+                    "retained_heap_delta_bytes": 122520
+                },
+                {
+                    "wall_ms": 13.682333,
+                    "sql_statements": 100,
+                    "hits": 0,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 128512,
+                    "retained_heap_delta_bytes": 122520
+                }
+            ]
+        },
+        {
+            "operation": "by_id",
+            "mode": "cold",
+            "median_ms": 33.736375,
+            "min_ms": 33.089959,
+            "max_ms": 44.079916,
+            "median_peak_heap_delta_bytes": 164312,
+            "samples": [
+                {
+                    "wall_ms": 44.079916,
+                    "sql_statements": 100,
+                    "hits": 0,
+                    "misses": 100,
+                    "puts": 100,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 184792,
+                    "retained_heap_delta_bytes": 168672
+                },
+                {
+                    "wall_ms": 34.552125,
+                    "sql_statements": 100,
+                    "hits": 0,
+                    "misses": 100,
+                    "puts": 100,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 164312,
+                    "retained_heap_delta_bytes": 148192
+                },
+                {
+                    "wall_ms": 33.697333,
+                    "sql_statements": 100,
+                    "hits": 0,
+                    "misses": 100,
+                    "puts": 100,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 164312,
+                    "retained_heap_delta_bytes": 148192
+                },
+                {
+                    "wall_ms": 33.089959,
+                    "sql_statements": 100,
+                    "hits": 0,
+                    "misses": 100,
+                    "puts": 100,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 165152,
+                    "retained_heap_delta_bytes": 79712
+                },
+                {
+                    "wall_ms": 33.736375,
+                    "sql_statements": 100,
+                    "hits": 0,
+                    "misses": 100,
+                    "puts": 100,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 164064,
+                    "retained_heap_delta_bytes": 79808
+                }
+            ]
+        },
+        {
+            "operation": "by_id",
+            "mode": "warm",
+            "median_ms": 10.743375,
+            "min_ms": 10.174416,
+            "max_ms": 12.70475,
+            "median_peak_heap_delta_bytes": 138792,
+            "samples": [
+                {
+                    "wall_ms": 12.70475,
+                    "sql_statements": 0,
+                    "hits": 100,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 138792,
+                    "retained_heap_delta_bytes": 124248
+                },
+                {
+                    "wall_ms": 10.743375,
+                    "sql_statements": 0,
+                    "hits": 100,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 138792,
+                    "retained_heap_delta_bytes": 124248
+                },
+                {
+                    "wall_ms": 10.322584,
+                    "sql_statements": 0,
+                    "hits": 100,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 138792,
+                    "retained_heap_delta_bytes": 124248
+                },
+                {
+                    "wall_ms": 10.174416,
+                    "sql_statements": 0,
+                    "hits": 100,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 138792,
+                    "retained_heap_delta_bytes": 124248
+                },
+                {
+                    "wall_ms": 10.800959,
+                    "sql_statements": 0,
+                    "hits": 100,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 138792,
+                    "retained_heap_delta_bytes": 124248
+                }
+            ]
+        },
+        {
+            "operation": "by_id",
+            "mode": "mixed",
+            "median_ms": 25.007583,
+            "min_ms": 24.073625,
+            "max_ms": 25.446583,
+            "median_peak_heap_delta_bytes": 153960,
+            "samples": [
+                {
+                    "wall_ms": 25.090833,
+                    "sql_statements": 50,
+                    "hits": 50,
+                    "misses": 50,
+                    "puts": 50,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 174536,
+                    "retained_heap_delta_bytes": 158416
+                },
+                {
+                    "wall_ms": 24.220958,
+                    "sql_statements": 50,
+                    "hits": 50,
+                    "misses": 50,
+                    "puts": 50,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 153584,
+                    "retained_heap_delta_bytes": 137464
+                },
+                {
+                    "wall_ms": 25.446583,
+                    "sql_statements": 50,
+                    "hits": 50,
+                    "misses": 50,
+                    "puts": 50,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 153960,
+                    "retained_heap_delta_bytes": 137840
+                },
+                {
+                    "wall_ms": 24.073625,
+                    "sql_statements": 50,
+                    "hits": 50,
+                    "misses": 50,
+                    "puts": 50,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 153960,
+                    "retained_heap_delta_bytes": 137840
+                },
+                {
+                    "wall_ms": 25.007583,
+                    "sql_statements": 50,
+                    "hits": 50,
+                    "misses": 50,
+                    "puts": 50,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 153960,
+                    "retained_heap_delta_bytes": 137840
+                }
+            ]
+        },
+        {
+            "operation": "many_to_one",
+            "mode": "disabled",
+            "median_ms": 3.468292,
+            "min_ms": 2.927291,
+            "max_ms": 4.935458,
+            "median_peak_heap_delta_bytes": 439192,
+            "samples": [
+                {
+                    "wall_ms": 2.932375,
+                    "sql_statements": 5,
+                    "hits": 0,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 439192,
+                    "retained_heap_delta_bytes": 239672
+                },
+                {
+                    "wall_ms": 4.935458,
+                    "sql_statements": 5,
+                    "hits": 0,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 439192,
+                    "retained_heap_delta_bytes": 239672
+                },
+                {
+                    "wall_ms": 2.927291,
+                    "sql_statements": 5,
+                    "hits": 0,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 439192,
+                    "retained_heap_delta_bytes": 239672
+                },
+                {
+                    "wall_ms": 3.468292,
+                    "sql_statements": 5,
+                    "hits": 0,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 439192,
+                    "retained_heap_delta_bytes": 239672
+                },
+                {
+                    "wall_ms": 3.787666,
+                    "sql_statements": 5,
+                    "hits": 0,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 438152,
+                    "retained_heap_delta_bytes": 239672
+                }
+            ]
+        },
+        {
+            "operation": "many_to_one",
+            "mode": "cold",
+            "median_ms": 25.670667,
+            "min_ms": 24.753542,
+            "max_ms": 26.856208,
+            "median_peak_heap_delta_bytes": 514096,
+            "samples": [
+                {
+                    "wall_ms": 26.856208,
+                    "sql_statements": 5,
+                    "hits": 0,
+                    "misses": 100,
+                    "puts": 100,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 514096,
+                    "retained_heap_delta_bytes": 264680
+                },
+                {
+                    "wall_ms": 25.670667,
+                    "sql_statements": 5,
+                    "hits": 0,
+                    "misses": 100,
+                    "puts": 100,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 514096,
+                    "retained_heap_delta_bytes": 264680
+                },
+                {
+                    "wall_ms": 24.856,
+                    "sql_statements": 5,
+                    "hits": 0,
+                    "misses": 100,
+                    "puts": 100,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 514096,
+                    "retained_heap_delta_bytes": 196296
+                },
+                {
+                    "wall_ms": 24.753542,
+                    "sql_statements": 5,
+                    "hits": 0,
+                    "misses": 100,
+                    "puts": 100,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 514096,
+                    "retained_heap_delta_bytes": 216776
+                },
+                {
+                    "wall_ms": 25.840417,
+                    "sql_statements": 5,
+                    "hits": 0,
+                    "misses": 100,
+                    "puts": 100,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 514096,
+                    "retained_heap_delta_bytes": 216776
+                }
+            ]
+        },
+        {
+            "operation": "many_to_one",
+            "mode": "warm",
+            "median_ms": 11.124958,
+            "min_ms": 9.541167,
+            "max_ms": 11.623083,
+            "median_peak_heap_delta_bytes": 475552,
+            "samples": [
+                {
+                    "wall_ms": 11.623083,
+                    "sql_statements": 1,
+                    "hits": 100,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 475552,
+                    "retained_heap_delta_bytes": 240736
+                },
+                {
+                    "wall_ms": 10.713833,
+                    "sql_statements": 1,
+                    "hits": 100,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 475552,
+                    "retained_heap_delta_bytes": 240736
+                },
+                {
+                    "wall_ms": 9.541167,
+                    "sql_statements": 1,
+                    "hits": 100,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 476248,
+                    "retained_heap_delta_bytes": 241432
+                },
+                {
+                    "wall_ms": 11.20575,
+                    "sql_statements": 1,
+                    "hits": 100,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 475552,
+                    "retained_heap_delta_bytes": 240736
+                },
+                {
+                    "wall_ms": 11.124958,
+                    "sql_statements": 1,
+                    "hits": 100,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 475552,
+                    "retained_heap_delta_bytes": 240736
+                }
+            ]
+        },
+        {
+            "operation": "many_to_one",
+            "mode": "mixed",
+            "median_ms": 19.450833,
+            "min_ms": 18.38225,
+            "max_ms": 21.226042,
+            "median_peak_heap_delta_bytes": 475176,
+            "samples": [
+                {
+                    "wall_ms": 19.177458,
+                    "sql_statements": 4,
+                    "hits": 50,
+                    "misses": 50,
+                    "puts": 50,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 475176,
+                    "retained_heap_delta_bytes": 254328
+                },
+                {
+                    "wall_ms": 21.226042,
+                    "sql_statements": 4,
+                    "hits": 50,
+                    "misses": 50,
+                    "puts": 50,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 475176,
+                    "retained_heap_delta_bytes": 254328
+                },
+                {
+                    "wall_ms": 19.466416,
+                    "sql_statements": 4,
+                    "hits": 50,
+                    "misses": 50,
+                    "puts": 50,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 475176,
+                    "retained_heap_delta_bytes": 254328
+                },
+                {
+                    "wall_ms": 19.450833,
+                    "sql_statements": 4,
+                    "hits": 50,
+                    "misses": 50,
+                    "puts": 50,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 475176,
+                    "retained_heap_delta_bytes": 185848
+                },
+                {
+                    "wall_ms": 18.38225,
+                    "sql_statements": 4,
+                    "hits": 50,
+                    "misses": 50,
+                    "puts": 50,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 475176,
+                    "retained_heap_delta_bytes": 185848
+                }
+            ]
+        },
+        {
+            "operation": "update",
+            "mode": "disabled",
+            "median_ms": 16.037416,
+            "min_ms": 15.918375,
+            "max_ms": 16.829958,
+            "median_peak_heap_delta_bytes": 106416,
+            "samples": [
+                {
+                    "wall_ms": 15.918375,
+                    "sql_statements": 100,
+                    "hits": 0,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 106416,
+                    "retained_heap_delta_bytes": -6176
+                },
+                {
+                    "wall_ms": 15.929292,
+                    "sql_statements": 100,
+                    "hits": 0,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 106416,
+                    "retained_heap_delta_bytes": -6176
+                },
+                {
+                    "wall_ms": 16.037416,
+                    "sql_statements": 100,
+                    "hits": 0,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 106416,
+                    "retained_heap_delta_bytes": -6176
+                },
+                {
+                    "wall_ms": 16.829958,
+                    "sql_statements": 100,
+                    "hits": 0,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 106416,
+                    "retained_heap_delta_bytes": -6176
+                },
+                {
+                    "wall_ms": 16.134041,
+                    "sql_statements": 100,
+                    "hits": 0,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 0,
+                    "peak_heap_delta_bytes": 106416,
+                    "retained_heap_delta_bytes": -6176
+                }
+            ]
+        },
+        {
+            "operation": "update",
+            "mode": "invalidate",
+            "median_ms": 31.729167,
+            "min_ms": 30.625334,
+            "max_ms": 34.011625,
+            "median_peak_heap_delta_bytes": 183424,
+            "samples": [
+                {
+                    "wall_ms": 31.729167,
+                    "sql_statements": 100,
+                    "hits": 0,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 200,
+                    "peak_heap_delta_bytes": 183424,
+                    "retained_heap_delta_bytes": -4352
+                },
+                {
+                    "wall_ms": 30.971792,
+                    "sql_statements": 100,
+                    "hits": 0,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 200,
+                    "peak_heap_delta_bytes": 183424,
+                    "retained_heap_delta_bytes": -4352
+                },
+                {
+                    "wall_ms": 32.336458,
+                    "sql_statements": 100,
+                    "hits": 0,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 200,
+                    "peak_heap_delta_bytes": 183424,
+                    "retained_heap_delta_bytes": -4352
+                },
+                {
+                    "wall_ms": 34.011625,
+                    "sql_statements": 100,
+                    "hits": 0,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 200,
+                    "peak_heap_delta_bytes": 182352,
+                    "retained_heap_delta_bytes": -5424
+                },
+                {
+                    "wall_ms": 30.625334,
+                    "sql_statements": 100,
+                    "hits": 0,
+                    "misses": 0,
+                    "puts": 0,
+                    "evictions": 200,
+                    "peak_heap_delta_bytes": 183424,
+                    "retained_heap_delta_bytes": -4352
+                }
+            ]
+        }
+    ],
+    "method": "One warm-up per case; measured case order rotates. Fresh EntityManager per sample, metadata initialized before timing, Statistics\/cache counters enabled. Reads include hydration, exclude setup\/cache priming. L2 mixed warms the first half of sequential IDs. UPDATE starts with all targets loaded, and all L2 entries primed when enabled; timing includes dirty checking, SQL, owned commit and synchronous pre\/post invalidation. No refill in UPDATE timing. One shared local PostgreSQL connection and Redis client. Namespace reset and DB reset outside timing. PHP heap deltas, not RSS. No Doctrine comparison or latency thresholds."
+}

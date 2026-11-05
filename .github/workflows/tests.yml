@@ -22,13 +22,23 @@ jobs:
         php: ['8.4', '8.5']
         dependencies: ['locked', 'latest', 'lowest']
     env:
-      COMPOSER_ROOT_VERSION: 0.1.0-beta.1
+      COMPOSER_ROOT_VERSION: 0.1.0-beta.2
       PGHOST: 127.0.0.1
       PGPORT: 5432
       PGDATABASE: modernorm_test
       PGUSER: postgres
       PGPASSWORD: postgres
+      MODERNORM_TEST_REDIS_DSN: redis://127.0.0.1:6379
+      MODERNORM_TEST_REDIS_SERVER: redis-server
     services:
+      redis:
+        image: redis:7.4
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
       postgres:
         image: postgres:17
         env:
@@ -48,11 +58,17 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: pdo_pgsql, ctype, dom, mbstring, xml, xmlwriter, zip
+          extensions: pdo_pgsql, redis, pcntl, ctype, dom, mbstring, xml, xmlwriter, zip
           tools: composer:v2
           coverage: none
       - name: Validate checked-in manifest and lock
         run: composer validate --strict
+      - name: Install disposable Redis server for recovery checks
+        run: |
+          sudo systemctl mask redis-server.service
+          sudo apt-get update -qq
+          sudo apt-get install -y redis-server
+          redis-server --version
       - name: Install locked dependencies
         if: matrix.dependencies == 'locked'
         run: composer install --no-interaction --prefer-dist --no-progress
@@ -63,7 +79,10 @@ jobs:
         if: matrix.dependencies == 'lowest'
         run: composer update --prefer-lowest --prefer-stable --no-interaction --prefer-dist --no-progress
       - run: composer check-platform-reqs
-      - run: composer test -- --fail-on-skipped
+      - name: Run test suites
+        env:
+          MODERNORM_L2_SOAK_REPORT: ${{ runner.temp }}/l2-soak.json
+        run: composer test -- --fail-on-skipped
       - name: Clean consumer from release ZIP
         if: matrix.dependencies == 'locked'
         env:
@@ -74,6 +93,8 @@ jobs:
         run: |
           php benchmarks/statistics.php > "$RUNNER_TEMP/statistics-benchmark.json"
           php benchmarks/batching.php > "$RUNNER_TEMP/batching-benchmark.json"
+          php benchmarks/l2.php > "$RUNNER_TEMP/l2-benchmark.json"
+          MODERNORM_BENCH_SIZES=1000 php -d memory_limit=1G benchmarks/bulk.php > "$RUNNER_TEMP/bulk-benchmark.json"
       - run: composer install --no-dev --no-interaction --prefer-dist --no-progress
       - run: php tests/Smoke/runtime.php
       - run: php examples/migration/run.php --test-schema
@@ -86,5 +107,6 @@ jobs:
             ${{ runner.temp }}/modernorm-release/dist/*.zip
             ${{ runner.temp }}/modernorm-release/report.json
             ${{ runner.temp }}/*-benchmark.json
+            ${{ runner.temp }}/l2-soak.json
           if-no-files-found: ignore
           retention-days: 7
