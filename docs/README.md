@@ -1,6 +1,6 @@
 # Documentation
 
-For installation, examples, benchmark results and the Doctrine comparison, start with the [project README](../README.md).
+Start with the [project README](../README.md) for key features, installation and the Doctrine comparison. Full [recorded benchmark results](../benchmarks/results/README.md) and [methodology](../benchmarks/README.md) are maintained separately.
 
 ## Design and supported behavior
 

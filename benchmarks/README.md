@@ -1,5 +1,7 @@
 # Benchmarks
 
+[Recorded results](results/README.md): batch query reduction, statistics overhead, bulk writes and entity L2 measurements.
+
 Run against a dedicated disposable PostgreSQL database, using PHP 8.4+ and installed Composer dependencies. Connection settings use `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD` and `PGDATABASE`; the default database is `modernorm_test`. Scripts create randomly named schemas and remove them in `finally`. An interrupted/killed process may require manual cleanup of its benchmark schema.
 
 ```sh
@@ -39,7 +41,7 @@ The output includes every sample, median/min/max time, median rows/second, manag
 
 ## Recorded bulk run — 2026-11-05
 
-[Raw JSON](results/bulk-2026-11-05.json) contains all 81 measured samples (27 cases × 3 rounds), with PHP 8.4.27, DBAL 4.5.0, PostgreSQL 17.11 (Homebrew), macOS arm64, a local connection and a 1 GiB PHP memory limit. Default sizes, chunk size and context size were used. The root README contains the median timing table; use the JSON for round ranges, throughput and heap deltas.
+[Raw JSON](results/bulk-2026-11-05.json) contains all 81 measured samples (27 cases × 3 rounds), with PHP 8.4.27, DBAL 4.5.0, PostgreSQL 17.11 (Homebrew), macOS arm64, a local connection and a 1 GiB PHP memory limit. Default sizes, chunk size and context size were used. The [recorded results](results/README.md#bulk-writes) contain the median timing table; use the JSON for round ranges, throughput and heap deltas.
 
 ## Entity L2
 

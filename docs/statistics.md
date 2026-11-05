@@ -87,7 +87,7 @@ $statistics->enable();  // Resume without resetting totals.
 $statistics->reset();   // Clear totals; preserve the enabled flag.
 ```
 
-Disabled collection allocates no measurement/event objects and reads no operation clocks. Installed wrappers still delegate to the driver; this is not a zero-overhead guarantee. Without middleware those wrappers are absent. [Local measurements](../README.md#local-benchmark-results) are diagnostic observations, not production overhead guarantees.
+Disabled collection allocates no measurement/event objects and reads no operation clocks. Installed wrappers still delegate to the driver; this is not a zero-overhead guarantee. Without middleware those wrappers are absent. [Local measurements](../benchmarks/results/README.md#statistics-overhead) are diagnostic observations, not production overhead guarantees.
 
 Only operations starting and finishing within the same enabled generation are included. Reset/disable discard in-flight measurements, including a flush reset from a listener; their completion cannot pollute the new interval. Operation kinds are measured independently.
 
