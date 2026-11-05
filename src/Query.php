@@ -28,7 +28,10 @@ class Query extends NativeQuery
         return $this;
     }
 
-    public function getFirstResult(): int { return $this->firstResult; }
+    public function getFirstResult(): int
+    {
+        return $this->firstResult;
+    }
 
     public function setMaxResults(?int $limit): static
     {
@@ -39,7 +42,10 @@ class Query extends NativeQuery
         return $this;
     }
 
-    public function getMaxResults(): ?int { return $this->maxResults; }
+    public function getMaxResults(): ?int
+    {
+        return $this->maxResults;
+    }
 
     public function getSQL(): string
     {
@@ -53,7 +59,9 @@ class Query extends NativeQuery
             }
         }
         return $this->em->getConnection()->getDatabasePlatform()->modifyLimitQuery(
-            parent::getSQL(), $this->maxResults, $this->firstResult,
+            parent::getSQL(),
+            $this->maxResults,
+            $this->firstResult,
         );
     }
 }

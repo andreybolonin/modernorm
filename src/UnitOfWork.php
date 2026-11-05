@@ -678,7 +678,7 @@ class UnitOfWork implements PropertyChangedListener
                 continue;
             }
 
-            if (( ! $class->isIdentifier($name) || ! $class->isIdGeneratorIdentity()) && ($name !== $class->versionField)) {
+            if ((! $class->isIdentifier($name) || ! $class->isIdGeneratorIdentity()) && ($name !== $class->versionField)) {
                 $actualData[$name] = $value;
             }
         }
@@ -1125,7 +1125,7 @@ class UnitOfWork implements PropertyChangedListener
 
         foreach ($class->propertyAccessors as $name => $refProp) {
             if (
-                ( ! $class->isIdentifier($name) || ! $class->isIdGeneratorIdentity())
+                (! $class->isIdentifier($name) || ! $class->isIdGeneratorIdentity())
                 && ($name !== $class->versionField)
                 && ! $class->isCollectionValuedAssociation($name)
             ) {
@@ -2225,6 +2225,7 @@ class UnitOfWork implements PropertyChangedListener
                     $relatedEntities = $relatedEntities->unwrap();
                     // break; is commented intentionally!
 
+                    // no break
                 case $relatedEntities instanceof Collection:
                 case is_array($relatedEntities):
                     foreach ($relatedEntities as $relatedEntity) {
@@ -2266,6 +2267,7 @@ class UnitOfWork implements PropertyChangedListener
                     $relatedEntities = $relatedEntities->unwrap();
                     // break; is commented intentionally!
 
+                    // no break
                 case $relatedEntities instanceof Collection:
                 case is_array($relatedEntities):
                     foreach ($relatedEntities as $relatedEntity) {
@@ -2312,6 +2314,7 @@ class UnitOfWork implements PropertyChangedListener
                     $relatedEntities = $relatedEntities->unwrap();
                     // break; is commented intentionally!
 
+                    // no break
                 case $relatedEntities instanceof Collection:
                 case is_array($relatedEntities):
                     if ($assoc->isToMany() <= 0) {
@@ -2789,7 +2792,7 @@ class UnitOfWork implements PropertyChangedListener
                                     $this->registerManagedProxy($newValue, $associatedId);
                                     break;
 
-                                // Deferred eager load only works for single identifier classes
+                                    // Deferred eager load only works for single identifier classes
                                 case isset($hints[self::HINT_DEFEREAGERLOAD]) &&
                                     $hints[self::HINT_DEFEREAGERLOAD] &&
                                     ! $targetClass->isIdentifierComposite:
@@ -2811,7 +2814,10 @@ class UnitOfWork implements PropertyChangedListener
                         && $hints['fetchMode'][$class->name][$field] !== ClassMetadata::FETCH_EAGER
                         && $newValue !== null) {
                         $this->em->getProxyFactory()->getBatchQueue()->add(
-                            $newValue, $targetClass, $this->normalizeIdentifier($targetClass, $associatedId), $assoc->batchSize,
+                            $newValue,
+                            $targetClass,
+                            $this->normalizeIdentifier($targetClass, $associatedId),
+                            $assoc->batchSize,
                         );
                     }
 
@@ -3387,10 +3393,15 @@ class UnitOfWork implements PropertyChangedListener
     {
         $failure = null;
         $this->performCallbackOnCachedPersister(static function (CachedPersister $persister) use (&$failure): void {
-            try { $persister->afterTransactionComplete(); }
-            catch (\Throwable $error) { $failure ??= $error; }
+            try {
+                $persister->afterTransactionComplete();
+            } catch (\Throwable $error) {
+                $failure ??= $error;
+            }
         });
-        if ($failure !== null) { throw $failure; }
+        if ($failure !== null) {
+            throw $failure;
+        }
     }
 
     /**
@@ -3408,8 +3419,12 @@ class UnitOfWork implements PropertyChangedListener
         $affected = false;
         $cacheFailure = null;
         $this->performCallbackOnCachedPersister(static function (CachedPersister $persister) use (&$affected, &$cacheFailure): void {
-            try { $affected = $persister->invalidatePendingWrites() || $affected; }
-            catch (\Throwable $error) { $affected = true; $cacheFailure ??= $error; }
+            try {
+                $affected = $persister->invalidatePendingWrites() || $affected;
+            } catch (\Throwable $error) {
+                $affected = true;
+                $cacheFailure ??= $error;
+            }
         });
         $this->afterTransactionRolledBack();
         if ($affected) {

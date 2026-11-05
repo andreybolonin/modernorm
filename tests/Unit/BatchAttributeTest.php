@@ -15,7 +15,10 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
 #[ORM\Entity]
-class BatchAttributeTarget { #[ORM\Id, ORM\Column] public int $id; }
+class BatchAttributeTarget
+{
+    #[ORM\Id, ORM\Column] public int $id;
+}
 
 #[ORM\MappedSuperclass]
 abstract class BatchAttributeBase
@@ -54,7 +57,10 @@ final class BatchAttributeTest extends TestCase
         }
     }
 
-    public static function invalidSizes(): array { return [[0], [-1], [65536]]; }
+    public static function invalidSizes(): array
+    {
+        return [[0], [-1], [65536]];
+    }
 
     #[DataProvider('invalidSizes')]
     public function testInvalidProgrammaticMappingIsRejected(int $size): void

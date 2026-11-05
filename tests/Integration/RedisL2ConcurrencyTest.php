@@ -13,27 +13,32 @@ final class RedisL2ConcurrencyTest extends \ModernORM\Tests\Support\RedisL2Proce
 {
     public function testPrecommitReaderFillIsInvalidatedAfterWriterCommit(): void
     {
-        $reader = $this->worker(); $writer = $this->worker();
+        $reader = $this->worker();
+        $writer = $this->worker();
         self::assertSame(1, $this->request($reader, ['op' => 'find'])['sql']);
         self::assertSame(0, $this->request($reader, ['op' => 'find'])['sql']);
         $this->send($writer, ['op' => 'update', 'name' => 'committed', 'pause' => true]);
         self::assertSame(['event' => 'paused'], $this->receive($writer));
         $old = $this->request($reader, ['op' => 'find']);
-        self::assertSame('original', $old['name']); self::assertSame(1, $old['sql']);
+        self::assertSame('original', $old['name']);
+        self::assertSame(1, $old['sql']);
         $this->send($writer, ['continue' => true]);
         self::assertSame(2, $this->receive($writer)['version']);
         $fresh = $this->request($reader, ['op' => 'find']);
-        self::assertSame('committed', $fresh['name']); self::assertSame(1, $fresh['sql']);
+        self::assertSame('committed', $fresh['name']);
+        self::assertSame(1, $fresh['sql']);
         self::assertSame(0, $this->request($reader, ['op' => 'find'])['sql']);
     }
 
     public function testRollbackDeleteReinsertAndBulkInvalidateAcrossProcesses(): void
     {
-        $reader = $this->worker(); $writer = $this->worker();
+        $reader = $this->worker();
+        $writer = $this->worker();
         $this->request($reader, ['op' => 'find']);
         self::assertSame('private', $this->request($writer, ['op' => 'rollback'])['name']);
         $unchanged = $this->request($reader, ['op' => 'find']);
-        self::assertSame('original', $unchanged['name']); self::assertSame(0, $unchanged['sql']);
+        self::assertSame('original', $unchanged['name']);
+        self::assertSame(0, $unchanged['sql']);
         $this->request($writer, ['op' => 'delete']);
         self::assertNull($this->request($reader, ['op' => 'find'])['name']);
         $this->request($writer, ['op' => 'insert', 'name' => 'reinserted']);
@@ -47,19 +52,24 @@ final class RedisL2ConcurrencyTest extends \ModernORM\Tests\Support\RedisL2Proce
 
     public function testTwoWritersPreserveOptimisticVersionChecks(): void
     {
-        $first = $this->worker(); $second = $this->worker();
-        $this->request($first, ['op' => 'find']); $this->request($second, ['op' => 'find']);
+        $first = $this->worker();
+        $second = $this->worker();
+        $this->request($first, ['op' => 'find']);
+        $this->request($second, ['op' => 'find']);
         $this->request($first, ['op' => 'update', 'name' => 'winner']);
         $this->send($second, ['op' => 'update', 'name' => 'stale']);
         $error = $this->receive($second);
-        self::assertSame(OptimisticLockException::class, $error['error']); self::assertFalse($error['open']);
+        self::assertSame(OptimisticLockException::class, $error['error']);
+        self::assertFalse($error['open']);
         $fresh = $this->request($first, ['op' => 'find']);
-        self::assertSame('winner', $fresh['name']); self::assertSame(2, $fresh['version']);
+        self::assertSame('winner', $fresh['name']);
+        self::assertSame(2, $fresh['version']);
     }
 
     public function testPostCommitCacheFailureRequiresExplicitRecoveryWithoutReplayingSql(): void
     {
-        $reader = $this->worker(); $writer = $this->worker();
+        $reader = $this->worker();
+        $writer = $this->worker();
         $this->request($reader, ['op' => 'find']);
         $this->send($writer, ['op' => 'update', 'name' => 'committed', 'pause' => true, 'fail_after_commit' => true]);
         self::assertSame(['event' => 'paused'], $this->receive($writer));
@@ -67,18 +77,21 @@ final class RedisL2ConcurrencyTest extends \ModernORM\Tests\Support\RedisL2Proce
         $this->send($writer, ['continue' => true]);
         $error = $this->receive($writer);
         self::assertSame(CacheSynchronizationException::class, $error['error']);
-        self::assertTrue($error['committed']); self::assertFalse($error['open']);
+        self::assertTrue($error['committed']);
+        self::assertFalse($error['open']);
         self::assertSame('committed', $this->db->fetchOne('SELECT name FROM '.$this->schema.'.record WHERE id = 1'));
         // The retained precommit fill demonstrates why reopening Redis alone is not recovery.
         self::assertSame('original', $this->request($reader, ['op' => 'find'])['name']);
         $this->request($reader, ['op' => 'evict']);
         $fresh = $this->request($reader, ['op' => 'find']);
-        self::assertSame('committed', $fresh['name']); self::assertSame(2, $fresh['version']);
+        self::assertSame('committed', $fresh['name']);
+        self::assertSame(2, $fresh['version']);
     }
 
     public function testCacheFailureBeforeWriteLeavesDatabaseUnchanged(): void
     {
-        $reader = $this->worker(); $writer = $this->worker();
+        $reader = $this->worker();
+        $writer = $this->worker();
         $this->request($reader, ['op' => 'find']);
         $this->send($writer, ['op' => 'update', 'name' => 'rejected', 'fail_before_write' => true]);
         $error = $this->receive($writer);
@@ -90,7 +103,8 @@ final class RedisL2ConcurrencyTest extends \ModernORM\Tests\Support\RedisL2Proce
 
     public function testRepeatedUpdatesRemainFreshForLongLivedReader(): void
     {
-        $reader = $this->worker(); $writer = $this->worker();
+        $reader = $this->worker();
+        $writer = $this->worker();
         $cycles = getenv('MODERNORM_L2_STRESS_CYCLES') ?: '25';
         if (!ctype_digit($cycles) || (int) $cycles < 1 || (int) $cycles > 10000) {
             self::fail('MODERNORM_L2_STRESS_CYCLES must be between 1 and 10000.');
@@ -108,7 +122,8 @@ final class RedisL2ConcurrencyTest extends \ModernORM\Tests\Support\RedisL2Proce
     #[\PHPUnit\Framework\Attributes\DataProvider('metadataKinds')]
     public function testLostMetadataAndLatePublicationDoNotResurrectPayloads(int $index): void
     {
-        $first = $this->worker(); $second = $this->worker();
+        $first = $this->worker();
+        $second = $this->worker();
         $ticket = $this->request($first, ['op' => 'ticket']);
         $keys = $ticket['metadata_keys'];
         self::assertCount(2, $keys);
@@ -130,7 +145,8 @@ final class RedisL2ConcurrencyTest extends \ModernORM\Tests\Support\RedisL2Proce
 
     public function testConcurrentColdGenerationInitializationOnlyCausesSafeMisses(): void
     {
-        $first = $this->worker(); $second = $this->worker();
+        $first = $this->worker();
+        $second = $this->worker();
         $this->send($first, ['op' => 'ticket', 'pause' => true]);
         self::assertSame(['event' => 'paused'], $this->receive($first));
         $old = $this->request($second, ['op' => 'ticket']);

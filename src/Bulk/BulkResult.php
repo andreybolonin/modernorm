@@ -12,5 +12,6 @@ final readonly class BulkResult
         public array $returnedRows,
         /** False means the caller's transaction is still pending. */
         public bool $databaseCommitted,
-    ) {}
+    ) {
+    }
 }

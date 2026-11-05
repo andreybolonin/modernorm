@@ -141,7 +141,9 @@ final class AssociationsTest extends TestCase
             'dbname' => getenv('PGDATABASE') ?: 'modernorm_test',
         ], $config);
         $this->em = new EntityManager($connection, ORMSetup::createAttributeMetadataConfig(
-            [__DIR__], true, cache: new ArrayAdapter(),
+            [__DIR__],
+            true,
+            cache: new ArrayAdapter(),
         ));
         $metadata = array_map($this->em->getClassMetadata(...), [Team::class, Member::class, Tag::class, Profile::class]);
         $schema = new SchemaTool($this->em);

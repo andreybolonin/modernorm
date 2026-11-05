@@ -53,7 +53,8 @@ final class CollectionBatchItem
         #[ORM\Column] public int $rank,
         #[ORM\Column] public string $name = 'original',
         #[ORM\ManyToOne(targetEntity: CollectionBatchOwner::class, inversedBy: 'reviews')] public ?CollectionBatchOwner $reviewer = null,
-    ) {}
+    ) {
+    }
 }
 
 #[ORM\Entity, ORM\Table(name: 'modernorm_test_collection_batch_text_owners')]
@@ -77,7 +78,9 @@ final class CollectionBatchRecorder extends AbstractLogger
     public array $sql = [];
     public function log($level, string|Stringable $message, array $context = []): void
     {
-        if (isset($context['sql'])) { $this->sql[] = $context['sql']; }
+        if (isset($context['sql'])) {
+            $this->sql[] = $context['sql'];
+        }
     }
 }
 
@@ -129,7 +132,11 @@ final class CollectionBatchFetchingTest extends TestCase
         return $this->em->getRepository(CollectionBatchOwner::class)->findBy([], ['id' => 'ASC']);
     }
 
-    private function reset(): void { $this->statistics->reset(); $this->recorder->sql = []; }
+    private function reset(): void
+    {
+        $this->statistics->reset();
+        $this->recorder->sql = [];
+    }
 
     public function testSevenCollectionsIncludingEmptyOwnersUseThreeSelects(): void
     {
@@ -141,7 +148,9 @@ final class CollectionBatchFetchingTest extends TestCase
         self::assertTrue($owners[2]->items->isInitialized());
         self::assertSame(1, $this->statistics->snapshot()->sqlCount);
         self::assertStringContainsString(' IN (', $this->recorder->sql[0]);
-        foreach ($owners as $owner) { $owner->items->toArray(); }
+        foreach ($owners as $owner) {
+            $owner->items->toArray();
+        }
         self::assertSame(3, $this->statistics->snapshot()->sqlCount);
         self::assertSame(['d'], $owners[3]->items->getKeys());
         self::assertTrue($owners[4]->items->isEmpty());
@@ -156,7 +165,9 @@ final class CollectionBatchFetchingTest extends TestCase
         self::assertTrue($owners[0]->items->isInitialized());
         self::assertTrue($owners[1]->items->isInitialized());
         self::assertFalse($owners[2]->items->isInitialized());
-        foreach ($owners as $owner) { self::assertFalse($owner->reviews->isInitialized()); }
+        foreach ($owners as $owner) {
+            self::assertFalse($owner->reviews->isInitialized());
+        }
         self::assertSame(['d'], $owners[0]->reviews->getKeys());
         self::assertSame(['a'], $owners[1]->reviews->getKeys());
         self::assertSame(2, $this->statistics->snapshot()->sqlCount);
@@ -231,7 +242,9 @@ final class CollectionBatchFetchingTest extends TestCase
         self::assertCount(2, $owners[0]->extraItems);
         self::assertTrue($owners[0]->extraItems->containsKey('a'));
         self::assertCount(1, $owners[0]->extraItems->slice(0, 1));
-        foreach ($owners as $owner) { self::assertFalse($owner->extraItems->isInitialized()); }
+        foreach ($owners as $owner) {
+            self::assertFalse($owner->extraItems->isInitialized());
+        }
         $this->reset();
         self::assertSame(['a', 'b'], $owners[0]->extraItems->getKeys());
         self::assertTrue($owners[1]->extraItems->isInitialized());
@@ -252,12 +265,17 @@ final class CollectionBatchFetchingTest extends TestCase
         self::assertSame(2, $this->statistics->snapshot()->sqlCount);
     }
 
-    public static function lifecycleActions(): array { return [['clear', false], ['close', false], ['detach', false], ['clear', true], ['close', true], ['detach', true]]; }
+    public static function lifecycleActions(): array
+    {
+        return [['clear', false], ['close', false], ['detach', false], ['clear', true], ['close', true], ['detach', true]];
+    }
 
     #[DataProvider('lifecycleActions')]
     public function testLifecycleExcludesOwnersFromBatch(string $action, bool $l2): void
     {
-        if ($l2) { $this->enableL2(); }
+        if ($l2) {
+            $this->enableL2();
+        }
         $owners = $this->owners();
         if ($action === 'detach') {
             $this->em->detach($owners[0]);
@@ -309,7 +327,9 @@ final class CollectionBatchFetchingTest extends TestCase
     public function testStringOwnerIdentifiersAndUnindexedCollectionsKeepTheirOrder(): void
     {
         $owners = [];
-        foreach (['01', '1', 'a b'] as $code) { $owners[] = $this->em->find(CollectionBatchTextOwner::class, $code); }
+        foreach (['01', '1', 'a b'] as $code) {
+            $owners[] = $this->em->find(CollectionBatchTextOwner::class, $code);
+        }
         $this->reset();
         self::assertSame([102, 101], array_map(static fn ($item) => $item->id, $owners[0]->items->toArray()));
         self::assertSame([0, 1], $owners[0]->items->getKeys());
@@ -370,7 +390,9 @@ final class CollectionBatchFetchingTest extends TestCase
         self::assertSame($owners[0], $owners[0]->items->first()->owner);
         self::assertSame(1, $this->statistics->snapshot()->sqlCount);
         self::assertStringContainsString(' IN (', $this->recorder->sql[0]);
-        foreach ($owners as $owner) { $owner->items->toArray(); }
+        foreach ($owners as $owner) {
+            $owner->items->toArray();
+        }
         self::assertSame(3, $this->statistics->snapshot()->sqlCount);
     }
 
@@ -399,7 +421,7 @@ final class CollectionBatchFetchingTest extends TestCase
     public function testPostLoadCanInitializeASelectedCollectionWithoutOverwritingIt(): void
     {
         $owners = $this->owners();
-        $this->em->getEventManager()->addEventListener([\ModernORM\Events::postLoad], new class {
+        $this->em->getEventManager()->addEventListener([\ModernORM\Events::postLoad], new class () {
             private bool $done = false;
             public function postLoad(\ModernORM\Event\PostLoadEventArgs $event): void
             {

@@ -19,8 +19,15 @@ final readonly class BatchSnapshot
         public int $cachePuts = 0,
         public array $fallbackCounts = [],
         public array $byKind = [],
-    ) {}
+    ) {
+    }
 
-    public function timeMilliseconds(): float { return $this->timeNanoseconds / 1_000_000; }
-    public function fallbackCount(): int { return array_sum($this->fallbackCounts); }
+    public function timeMilliseconds(): float
+    {
+        return $this->timeNanoseconds / 1_000_000;
+    }
+    public function fallbackCount(): int
+    {
+        return array_sum($this->fallbackCounts);
+    }
 }

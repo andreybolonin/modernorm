@@ -1,0 +1,559 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Call to method ModernORM\\Mapping\\AssociationMapping\:\:isIndexed\(\) will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
+			count: 1
+			path: src/Batch/ManyToManyBatchLoader.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: src/Bulk/BulkExecutor.php
+
+		-
+			message: '#^Return type \(ModernORM\\Mapping\\ClassMetadataFactory\) of method ModernORM\\Decorator\\EntityManagerDecorator\:\:getMetadataFactory\(\) should be compatible with return type \(Doctrine\\Persistence\\Mapping\\ClassMetadataFactory\<Doctrine\\Persistence\\Mapping\\ClassMetadata\<object\>\>\) of method Doctrine\\Persistence\\ObjectManager\:\:getMetadataFactory\(\)$#'
+			identifier: method.childReturnType
+			count: 1
+			path: src/Decorator/EntityManagerDecorator.php
+
+		-
+			message: '#^Return type \(ModernORM\\Mapping\\ClassMetadataFactory\) of method ModernORM\\Decorator\\EntityManagerDecorator\:\:getMetadataFactory\(\) should be compatible with return type \(Doctrine\\Persistence\\Mapping\\ClassMetadataFactory\<Doctrine\\Persistence\\Mapping\\ClassMetadata\<object\>\>\) of method Doctrine\\Persistence\\ObjectManagerDecorator\<ModernORM\\EntityManagerInterface\>\:\:getMetadataFactory\(\)$#'
+			identifier: method.childReturnType
+			count: 1
+			path: src/Decorator/EntityManagerDecorator.php
+
+		-
+			message: '#^Return type \(ModernORM\\Mapping\\ClassMetadataFactory\) of method ModernORM\\EntityManager\:\:getMetadataFactory\(\) should be compatible with return type \(Doctrine\\Persistence\\Mapping\\ClassMetadataFactory\<Doctrine\\Persistence\\Mapping\\ClassMetadata\<object\>\>\) of method Doctrine\\Persistence\\ObjectManager\:\:getMetadataFactory\(\)$#'
+			identifier: method.childReturnType
+			count: 1
+			path: src/EntityManager.php
+
+		-
+			message: '#^Return type \(ModernORM\\Mapping\\ClassMetadataFactory\) of method ModernORM\\EntityManagerInterface\:\:getMetadataFactory\(\) should be compatible with return type \(Doctrine\\Persistence\\Mapping\\ClassMetadataFactory\<Doctrine\\Persistence\\Mapping\\ClassMetadata\<object\>\>\) of method Doctrine\\Persistence\\ObjectManager\:\:getMetadataFactory\(\)$#'
+			identifier: method.childReturnType
+			count: 1
+			path: src/EntityManagerInterface.php
+
+		-
+			message: '#^Call to method ReflectionEnum\<BackedEnum\>\:\:isBacked\(\) will always evaluate to false\.$#'
+			identifier: method.impossibleType
+			count: 1
+			path: src/Internal/Hydration/AbstractHydrator.php
+
+		-
+			message: '#^Parameter &\$id by\-ref type of method ModernORM\\Internal\\Hydration\\AbstractHydrator\:\:gatherRowData\(\) expects array\<string, string\>, array\<string\> given\.$#'
+			identifier: parameterByRef.type
+			count: 1
+			path: src/Internal/Hydration/AbstractHydrator.php
+
+		-
+			message: '#^Parameter &\$nonemptyComponents by\-ref type of method ModernORM\\Internal\\Hydration\\AbstractHydrator\:\:gatherRowData\(\) expects array\<string, bool\>, array\<bool\> given\.$#'
+			identifier: parameterByRef.type
+			count: 1
+			path: src/Internal/Hydration/AbstractHydrator.php
+
+		-
+			message: '#^Parameter &\$result by\-ref type of method ModernORM\\Internal\\Hydration\\ArrayHydrator\:\:hydrateRowData\(\) expects array\<mixed\>, array\<mixed\>\|null given\.$#'
+			identifier: parameterByRef.type
+			count: 1
+			path: src/Internal/Hydration/ArrayHydrator.php
+
+		-
+			message: '#^If condition is always true\.$#'
+			identifier: if.alwaysTrue
+			count: 1
+			path: src/Mapping/ClassMetadata.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between ModernORM\\Mapping\\FieldMapping and false will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 2
+			path: src/Mapping/ClassMetadata.php
+
+		-
+			message: '#^Template type T is declared as covariant, but occurs in invariant position in property ModernORM\\Mapping\\ClassMetadata\:\:\$name\.$#'
+			identifier: generics.variance
+			count: 1
+			path: src/Mapping/ClassMetadata.php
+
+		-
+			message: '#^Template type T is declared as covariant, but occurs in invariant position in property ModernORM\\Mapping\\ClassMetadata\:\:\$reflClass\.$#'
+			identifier: generics.variance
+			count: 1
+			path: src/Mapping/ClassMetadata.php
+
+		-
+			message: '#^Comparison operation "\<" between int\<80400, 80699\> and 80400 is always false\.$#'
+			identifier: smaller.alwaysFalse
+			count: 1
+			path: src/Mapping/ClassMetadataFactory.php
+
+		-
+			message: '#^Method ModernORM\\Mapping\\ClassMetadataFactory\:\:peekIfIsMappedSuperclass\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: src/Mapping/ClassMetadataFactory.php
+
+		-
+			message: '#^Parameter \#1 \$generatorType of method ModernORM\\Mapping\\ClassMetadata\<object\>\:\:setIdGeneratorType\(\) expects 1\|2\|4\|5\|7, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Mapping/ClassMetadataFactory.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: src/Mapping/Driver/AttributeDriver.php
+
+		-
+			message: '#^ModernORM\\Mapping\\Driver\\RepeatableAttributeCollection\<\*NEVER\*\> does not accept ModernORM\\Mapping\\MappingAttribute\.$#'
+			identifier: offsetAssign.valueType
+			count: 1
+			path: src/Mapping/Driver/AttributeReader.php
+
+		-
+			message: '#^PHPDoc tag @return contains unresolvable type\.$#'
+			identifier: return.unresolvableType
+			count: 4
+			path: src/Mapping/Driver/AttributeReader.php
+
+		-
+			message: '#^Template type T of method ModernORM\\Mapping\\Driver\\AttributeReader\:\:convertToAttributeInstances\(\) is not referenced in a parameter\.$#'
+			identifier: method.templateTypeNotInParameter
+			count: 1
+			path: src/Mapping/Driver/AttributeReader.php
+
+		-
+			message: '#^Template type T of method ModernORM\\Mapping\\Driver\\AttributeReader\:\:getClassAttributes\(\) is not referenced in a parameter\.$#'
+			identifier: method.templateTypeNotInParameter
+			count: 1
+			path: src/Mapping/Driver/AttributeReader.php
+
+		-
+			message: '#^Template type T of method ModernORM\\Mapping\\Driver\\AttributeReader\:\:getMethodAttributes\(\) is not referenced in a parameter\.$#'
+			identifier: method.templateTypeNotInParameter
+			count: 1
+			path: src/Mapping/Driver/AttributeReader.php
+
+		-
+			message: '#^Template type T of method ModernORM\\Mapping\\Driver\\AttributeReader\:\:getPropertyAttributes\(\) is not referenced in a parameter\.$#'
+			identifier: method.templateTypeNotInParameter
+			count: 1
+			path: src/Mapping/Driver/AttributeReader.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between array and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: src/Mapping/ManyToManyOwningSideMapping.php
+
+		-
+			message: '#^Comparison operation "\>\=" between int\<80400, 80699\> and 80400 is always true\.$#'
+			identifier: greaterOrEqual.alwaysTrue
+			count: 1
+			path: src/Mapping/PropertyAccessors/PropertyAccessorFactory.php
+
+		-
+			message: '#^Comparison operation "\<" between int\<80400, 80699\> and 80400 is always false\.$#'
+			identifier: smaller.alwaysFalse
+			count: 1
+			path: src/Mapping/PropertyAccessors/RawValuePropertyAccessor.php
+
+		-
+			message: '#^Comparison operation "\>\=" between int\<80400, 80699\> and 80400 is always true\.$#'
+			identifier: greaterOrEqual.alwaysTrue
+			count: 1
+			path: src/Mapping/PropertyAccessors/ReadonlyAccessor.php
+
+		-
+			message: '#^Comparison operation "\>\=" between int\<80400, 80699\> and 80400 is always true\.$#'
+			identifier: greaterOrEqual.alwaysTrue
+			count: 2
+			path: src/Mapping/PropertyAccessors/TypedNoDefaultPropertyAccessor.php
+
+		-
+			message: '#^Asserted type string for \$this\-\>indexBy\(\) with type string does not narrow down the type\.$#'
+			identifier: assert.alreadyNarrowedType
+			count: 1
+			path: src/Mapping/ToManyAssociationMapping.php
+
+		-
+			message: '#^Method ModernORM\\Mapping\\ToOneOwningSideMapping\:\:fromMappingArray\(\) should return static\(ModernORM\\Mapping\\ToOneOwningSideMapping\) but returns ModernORM\\Mapping\\ManyToOneAssociationMapping\|ModernORM\\Mapping\\OneToOneOwningSideMapping\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Mapping/ToOneOwningSideMapping.php
+
+		-
+			message: '#^Method ModernORM\\Mapping\\ToOneOwningSideMapping\:\:fromMappingArrayAndName\(\) should return static\(ModernORM\\Mapping\\ToOneOwningSideMapping\) but returns ModernORM\\Mapping\\ManyToOneAssociationMapping\|ModernORM\\Mapping\\OneToOneOwningSideMapping\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Mapping/ToOneOwningSideMapping.php
+
+		-
+			message: '#^Call to method ModernORM\\Mapping\\AssociationMapping\:\:isToMany\(\) will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
+			count: 1
+			path: src/PersistentCollection.php
+
+		-
+			message: '#^Call to function assert\(\) with true will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Persisters/Collection/ManyToManyPersister.php
+
+		-
+			message: '#^Call to method ModernORM\\Mapping\\AssociationMapping\:\:isIndexed\(\) will always evaluate to true\.$#'
+			identifier: method.alreadyNarrowedType
+			count: 2
+			path: src/Persisters/Collection/ManyToManyPersister.php
+
+		-
+			message: '#^Instanceof between ModernORM\\Mapping\\InverseSideMapping&ModernORM\\Mapping\\ManyToManyAssociationMapping and ModernORM\\Mapping\\InverseSideMapping will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: src/Persisters/Collection/ManyToManyPersister.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$useAlias$#'
+			identifier: parameter.notFound
+			count: 1
+			path: src/Persisters/Collection/ManyToManyPersister.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<mixed, mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Persisters/Entity/BasicEntityPersister.php
+
+		-
+			message: '#^Call to method ModernORM\\Mapping\\AssociationMapping\:\:isIndexed\(\) will always evaluate to false\.$#'
+			identifier: method.impossibleType
+			count: 1
+			path: src/Persisters/Entity/BasicEntityPersister.php
+
+		-
+			message: '#^Call to method ModernORM\\Mapping\\AssociationMapping\:\:isToMany\(\) will always evaluate to false\.$#'
+			identifier: method.impossibleType
+			count: 1
+			path: src/Persisters/Entity/BasicEntityPersister.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between mixed and null will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: src/Persisters/Entity/BasicEntityPersister.php
+
+		-
+			message: '#^Anonymous function has an unused use \$classMetadata\.$#'
+			identifier: closure.unusedUse
+			count: 1
+			path: src/Proxy/ProxyFactory.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>relationMap" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/Query.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns ''ascii_string'' so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns ''bigint'' so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns ''binary'' so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns ''blob'' so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns ''date'' so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns ''date_immutable'' so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns ''datetime_utc'' so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns ''datetime_utc…'' so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns ''datetimetz'' so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns ''datetimetz_immutable'' so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns ''decimal'' so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns ''enum'' so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns ''float'' so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns ''guid'' so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns ''json'' so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns ''json_object'' so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns ''jsonb'' so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns ''jsonb_object'' so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns ''number'' so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns ''simple_array'' so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns ''smallfloat'' so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns ''smallint'' so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns ''text'' so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns ''time'' so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns ''time_immutable'' so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns Doctrine\\DBAL\\ArrayParameterType\:\:ASCII so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns Doctrine\\DBAL\\ArrayParameterType\:\:BINARY so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns Doctrine\\DBAL\\ParameterType\:\:ASCII so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns Doctrine\\DBAL\\ParameterType\:\:BINARY so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns Doctrine\\DBAL\\ParameterType\:\:BOOLEAN so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns Doctrine\\DBAL\\ParameterType\:\:INTEGER so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns Doctrine\\DBAL\\ParameterType\:\:LARGE_OBJECT so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns Doctrine\\DBAL\\ParameterType\:\:NULL so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^Method ModernORM\\Query\\ParameterTypeInferer\:\:inferType\(\) never returns int so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Query/ParameterTypeInferer.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$alias$#'
+			identifier: parameter.notFound
+			count: 1
+			path: src/Query/ResultSetMapping.php
+
+		-
+			message: '#^PHPDoc tag @param references unknown parameter\: \$discrColumn$#'
+			identifier: parameter.notFound
+			count: 1
+			path: src/Query/ResultSetMapping.php
+
+		-
+			message: '#^PHPDoc tag @return with type \$this\(ModernORM\\Query\\ResultSetMapping\) is incompatible with native type void\.$#'
+			identifier: return.phpDocType
+			count: 1
+			path: src/Query/ResultSetMapping.php
+
+		-
+			message: '#^Parameter \#2 \$command of static method ModernORM\\Tools\\Console\\ConsoleRunner\:\:addCommandToApplication\(\) expects Symfony\\Component\\Console\\Command\\Command, Doctrine\\DBAL\\Tools\\Console\\Command\\ReservedWordsCommand given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Tools/Console/ConsoleRunner.php
+
+		-
+			message: '#^Call to function is_numeric\(\) with int\<0, max\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Tools/SchemaTool.php
+
+		-
+			message: '#^Call to function method_exists\(\) with ''Doctrine\\\\DBAL\\\\Schema\\\\Index'' and ''getIndexedColumns'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Tools/SchemaTool.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between callable\(\)\: mixed and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: src/Tools/SchemaTool.php
+
+		-
+			message: '#^Access to an undefined property ModernORM\\Mapping\\AssociationMapping\:\:\$joinColumns\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/UnitOfWork.php
+
+		-
+			message: '#^Comparison operation "\>\=" between int\<80400, 80699\> and 80400 is always true\.$#'
+			identifier: greaterOrEqual.alwaysTrue
+			count: 2
+			path: src/UnitOfWork.php
+
+		-
+			message: '#^Parameter \#1 \$object of method ReflectionClass\<covariant object\>\:\:initializeLazyObject\(\) expects never, object given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/UnitOfWork.php
+
+		-
+			message: '#^Parameter &\$visited by\-ref type of method ModernORM\\UnitOfWork\:\:cascadeDetach\(\) expects array\<int, object\>, array\<mixed\> given\.$#'
+			identifier: parameterByRef.type
+			count: 2
+			path: src/UnitOfWork.php
+
+		-
+			message: '#^Result of method Doctrine\\DBAL\\Connection\:\:commit\(\) \(void\) is used\.$#'
+			identifier: method.void
+			count: 1
+			path: src/UnitOfWork.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between void and false will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: src/UnitOfWork.php
+
+		-
+			message: '#^Variable \$e on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: src/UnitOfWork.php
+
+		-
+			message: '#^Match expression does not handle remaining values\: Doctrine\\DBAL\\ParameterType\:\:BOOLEAN\|Doctrine\\DBAL\\ParameterType\:\:LARGE_OBJECT\|Doctrine\\DBAL\\ParameterType\:\:NULL$#'
+			identifier: match.unhandled
+			count: 1
+			path: src/Utility/PersisterHelper.php
+
+		-
+			message: '#^Method ModernORM\\Utility\\PersisterHelper\:\:getArrayBindingType\(\) never returns int so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: src/Utility/PersisterHelper.php

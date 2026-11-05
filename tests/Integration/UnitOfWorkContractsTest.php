@@ -30,7 +30,9 @@ final class ContractNode
     #[ORM\ManyToOne(targetEntity: self::class)]
     public ?self $ordinary = null;
 
-    public function __construct(#[ORM\Column] public string $name = 'original') {}
+    public function __construct(#[ORM\Column] public string $name = 'original')
+    {
+    }
 }
 
 #[ORM\Entity, ORM\Table(name: 'modernorm_test_explicit_nodes')]
@@ -43,7 +45,9 @@ final class ExplicitNode
     #[ORM\ManyToOne(targetEntity: self::class, cascade: ['persist'])]
     public ?self $child = null;
 
-    public function __construct(#[ORM\Column] public string $name = 'original') {}
+    public function __construct(#[ORM\Column] public string $name = 'original')
+    {
+    }
 }
 
 #[ORM\Entity, ORM\Table(name: 'modernorm_test_required_nodes')]
@@ -64,7 +68,10 @@ final class AssignedNode
     #[ORM\JoinColumn(nullable: false)]
     public self $peer;
 
-    public function __construct(#[ORM\Id, ORM\Column] public int $id) { $this->peer = $this; }
+    public function __construct(#[ORM\Id, ORM\Column] public int $id)
+    {
+        $this->peer = $this;
+    }
 }
 
 #[ORM\Entity, ORM\Table(name: 'modernorm_test_cycle_heads')]

@@ -28,7 +28,10 @@ final class RedisL2Record
     #[ORM\Id, ORM\Column(type: 'integer')] public int $id;
     #[ORM\Column] public string $name;
     #[ORM\Version, ORM\Column(type: 'integer')] public int $version = 1;
-    #[ORM\PostUpdate] public function afterUpdate(): void { (self::$afterUpdate ?? static fn () => null)(); }
+    #[ORM\PostUpdate] public function afterUpdate(): void
+    {
+        (self::$afterUpdate ?? static fn () => null)();
+    }
 }
 
 final class RedisL2Pool extends RedisAdapter
@@ -40,10 +43,17 @@ final class RedisL2Pool extends RedisAdapter
     public function save(CacheItemInterface $item): bool
     {
         if ($this->beforeSave !== null) {
-            $callback = $this->beforeSave; $this->beforeSave = null; $callback();
+            $callback = $this->beforeSave;
+            $this->beforeSave = null;
+            $callback();
         }
-        if ($this->failNextSave) { $this->failNextSave = false; return false; }
-        if ($this->recordWrites) { $this->writes[] = $item->getKey(); }
+        if ($this->failNextSave) {
+            $this->failNextSave = false;
+            return false;
+        }
+        if ($this->recordWrites) {
+            $this->writes[] = $item->getKey();
+        }
         return parent::save($item);
     }
 }
@@ -55,15 +65,23 @@ final class RedisL2CommitPause
 
 final class RedisL2CommitMiddleware implements \Doctrine\DBAL\Driver\Middleware
 {
-    public function __construct(private readonly RedisL2CommitPause $pause) {}
+    public function __construct(private readonly RedisL2CommitPause $pause)
+    {
+    }
     public function wrap(\Doctrine\DBAL\Driver $driver): \Doctrine\DBAL\Driver
     {
         return new class ($driver, $this->pause) extends \Doctrine\DBAL\Driver\Middleware\AbstractDriverMiddleware {
-            public function __construct(\Doctrine\DBAL\Driver $driver, private readonly RedisL2CommitPause $pause) { parent::__construct($driver); }
+            public function __construct(\Doctrine\DBAL\Driver $driver, private readonly RedisL2CommitPause $pause)
+            {
+                parent::__construct($driver);
+            }
             public function connect(array $params): \Doctrine\DBAL\Driver\Connection
             {
                 return new class (parent::connect($params), $this->pause) extends \Doctrine\DBAL\Driver\Middleware\AbstractConnectionMiddleware {
-                    public function __construct(\Doctrine\DBAL\Driver\Connection $connection, private readonly RedisL2CommitPause $pause) { parent::__construct($connection); }
+                    public function __construct(\Doctrine\DBAL\Driver\Connection $connection, private readonly RedisL2CommitPause $pause)
+                    {
+                        parent::__construct($connection);
+                    }
                     public function commit(): void
                     {
                         parent::commit();
@@ -79,8 +97,12 @@ function redisL2Connection(?Statistics $statistics = null, ?RedisL2CommitPause $
 {
     $config = new DbalConfiguration();
     $middlewares = [];
-    if ($statistics !== null) { $middlewares[] = new Middleware($statistics); }
-    if ($pause !== null) { $middlewares[] = new RedisL2CommitMiddleware($pause); }
+    if ($statistics !== null) {
+        $middlewares[] = new Middleware($statistics);
+    }
+    if ($pause !== null) {
+        $middlewares[] = new RedisL2CommitMiddleware($pause);
+    }
     $config->setMiddlewares($middlewares);
     return DriverManager::getConnection([
         'driver' => 'pdo_pgsql', 'host' => getenv('PGHOST') ?: '127.0.0.1', 'port' => getenv('PGPORT') ?: 5432,
@@ -98,8 +120,11 @@ function workerReply(array $response): void
 function workerBarrier(): void
 {
     workerReply(['event' => 'paused']);
-    $read = [STDIN]; $write = $except = [];
-    if (stream_select($read, $write, $except, 15) !== 1) { throw new \RuntimeException('Worker continuation timed out.'); }
+    $read = [STDIN];
+    $write = $except = [];
+    if (stream_select($read, $write, $except, 15) !== 1) {
+        throw new \RuntimeException('Worker continuation timed out.');
+    }
     $line = fgets(STDIN);
     if ($line === false || json_decode($line, true, flags: JSON_THROW_ON_ERROR) !== ['continue' => true]) {
         throw new \RuntimeException('Expected worker continuation.');
@@ -131,7 +156,9 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
                 $result = [];
                 switch ($request['op']) {
                     case 'find':
-                        if ($request['clear'] ?? true) { $em->clear(); }
+                        if ($request['clear'] ?? true) {
+                            $em->clear();
+                        }
                         $record = $em->find(RedisL2Record::class, 1);
                         $result = ['name' => $record?->name, 'version' => $record?->version];
                         break;
@@ -139,26 +166,43 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
                         $record = $em->find(RedisL2Record::class, 1);
                         $record->name = $request['name'];
                         RedisL2Record::$afterUpdate = static function () use ($request, $pool): void {
-                            if ($request['pause'] ?? false) { workerBarrier(); }
-                            if ($request['fail_after_commit'] ?? false) { $pool->failNextSave = true; }
+                            if ($request['pause'] ?? false) {
+                                workerBarrier();
+                            }
+                            if ($request['fail_after_commit'] ?? false) {
+                                $pool->failNextSave = true;
+                            }
                         };
-                        if ($request['fail_before_write'] ?? false) { $pool->failNextSave = true; }
-                        if ($request['pause_after_commit'] ?? false) { $commitPause->afterCommit = workerBarrier(...); }
+                        if ($request['fail_before_write'] ?? false) {
+                            $pool->failNextSave = true;
+                        }
+                        if ($request['pause_after_commit'] ?? false) {
+                            $commitPause->afterCommit = workerBarrier(...);
+                        }
                         $em->flush();
                         $result = ['version' => $record->version];
                         break;
                     case 'delete':
-                        $em->remove($em->find(RedisL2Record::class, 1)); $em->flush(); break;
+                        $em->remove($em->find(RedisL2Record::class, 1));
+                        $em->flush();
+                        break;
                     case 'insert':
-                        $record = new RedisL2Record(); $record->id = 1; $record->name = $request['name'];
-                        $em->persist($record); $em->flush(); break;
+                        $record = new RedisL2Record();
+                        $record->id = 1;
+                        $record->name = $request['name'];
+                        $em->persist($record);
+                        $em->flush();
+                        break;
                     case 'rollback':
                         $db->beginTransaction();
                         try {
                             $db->executeStatement('UPDATE '.$db->quoteIdentifier($schema).'.record SET name = ?', ['private']);
                             $em->clear();
                             $result = ['name' => $em->find(RedisL2Record::class, 1)?->name];
-                        } finally { $db->rollBack(); $em->clear(); }
+                        } finally {
+                            $db->rollBack();
+                            $em->clear();
+                        }
                         break;
                     case 'bulk_update':
                         $result = ['affected' => $em->bulk()->update(RedisL2Record::class, ['name' => $request['name']], 'id = 1', \ModernORM\Bulk\BulkPolicy::CLEAR)->affectedRows];
@@ -166,17 +210,25 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
                     case 'bulk_delete':
                         $result = ['affected' => $em->bulk()->delete(RedisL2Record::class, 'id = 1', \ModernORM\Bulk\BulkPolicy::CLEAR)->affectedRows];
                         break;
-                    case 'evict': $em->getCache()->evict(RedisL2Record::class, 1); break;
+                    case 'evict': $em->getCache()->evict(RedisL2Record::class, 1);
+                        break;
                     case 'ticket':
                         $pool->writes = [];
                         $pool->recordWrites = true;
-                        if ($request['pause'] ?? false) { $pool->beforeSave = workerBarrier(...); }
-                        $result = ['ticket' => $region->ticket($key), 'metadata_keys' => $pool->writes]; break;
+                        if ($request['pause'] ?? false) {
+                            $pool->beforeSave = workerBarrier(...);
+                        }
+                        $result = ['ticket' => $region->ticket($key), 'metadata_keys' => $pool->writes];
+                        break;
                     case 'publish':
-                        $region->putAt($request['ticket'], new EntityCacheEntry(RedisL2Record::class, ['name' => $request['name']])); break;
-                    case 'read_region': $result = ['name' => $region->get($key)?->data['name']]; break;
-                    case 'evict_region': $region->evict($key); break;
-                    case 'lose_metadata': $pool->deleteItems($request['keys']); break;
+                        $region->putAt($request['ticket'], new EntityCacheEntry(RedisL2Record::class, ['name' => $request['name']]));
+                        break;
+                    case 'read_region': $result = ['name' => $region->get($key)?->data['name']];
+                        break;
+                    case 'evict_region': $region->evict($key);
+                        break;
+                    case 'lose_metadata': $pool->deleteItems($request['keys']);
+                        break;
                     case 'metrics':
                         gc_collect_cycles();
                         $result = ['heap_bytes' => memory_get_usage(), 'allocated_bytes' => memory_get_usage(true),
@@ -188,10 +240,17 @@ if (realpath($_SERVER['SCRIPT_FILENAME'] ?? '') === __FILE__) {
                 workerReply($result + ['sql' => $statistics->snapshot()->sqlCount]);
             } catch (\Throwable $error) {
                 workerReply(['error' => $error::class, 'committed' => $error->databaseCommitted ?? null, 'open' => $em->isOpen()]);
-            } finally { RedisL2Record::$afterUpdate = null; $commitPause->afterCommit = null; $pool->recordWrites = false; }
+            } finally {
+                RedisL2Record::$afterUpdate = null;
+                $commitPause->afterCommit = null;
+                $pool->recordWrites = false;
+            }
         }
     } finally {
-        while ($db->isTransactionActive()) { $db->rollBack(); }
-        $em->close(); $db->close();
+        while ($db->isTransactionActive()) {
+            $db->rollBack();
+        }
+        $em->close();
+        $db->close();
     }
 }

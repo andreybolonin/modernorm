@@ -29,7 +29,10 @@ final class LazyFolder
     #[ORM\OrderBy(['slug' => 'ASC'])]
     public Collection $entries;
 
-    public function __construct() { $this->entries = new ArrayCollection(); }
+    public function __construct()
+    {
+        $this->entries = new ArrayCollection();
+    }
 
     public function add(string $slug): LazyEntry
     {
@@ -50,7 +53,8 @@ final class LazyEntry
         #[ORM\Column] public string $slug,
         #[ORM\ManyToOne(inversedBy: 'entries')]
         #[ORM\JoinColumn(nullable: false)] public LazyFolder $folder,
-    ) {}
+    ) {
+    }
 }
 
 final class ExtraLazyQueryRecorder extends AbstractLogger
@@ -82,7 +86,9 @@ final class ExtraLazyTest extends TestCase
             'password' => getenv('PGPASSWORD') ?: 'postgres', 'dbname' => getenv('PGDATABASE') ?: 'modernorm_test',
         ], $config);
         $this->em = new EntityManager($connection, ORMSetup::createAttributeMetadataConfig(
-            [__DIR__], true, cache: new ArrayAdapter(),
+            [__DIR__],
+            true,
+            cache: new ArrayAdapter(),
         ));
         $metadata = array_map($this->em->getClassMetadata(...), [LazyFolder::class, LazyEntry::class]);
         $schema = new SchemaTool($this->em);

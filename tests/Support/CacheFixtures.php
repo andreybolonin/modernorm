@@ -25,7 +25,10 @@ final class CountingCacheDriver extends AttributeDriver
 {
     public int $loads = 0;
 
-    public function __construct(private string $column = 'name_v1') { parent::__construct([]); }
+    public function __construct(private string $column = 'name_v1')
+    {
+        parent::__construct([]);
+    }
 
     public function loadMetadataForClass(string $className, ClassMetadata $metadata): void
     {
@@ -43,7 +46,9 @@ final class RecordingCachePool implements CacheItemPoolInterface
     /** @var list<string> */
     public array $writes = [];
 
-    public function __construct(private CacheItemPoolInterface $pool) {}
+    public function __construct(private CacheItemPoolInterface $pool)
+    {
+    }
 
     public function getItem(string $key): CacheItemInterface
     {
@@ -58,10 +63,22 @@ final class RecordingCachePool implements CacheItemPoolInterface
             yield $key => $item;
         }
     }
-    public function hasItem(string $key): bool { return $this->pool->hasItem($key); }
-    public function clear(): bool { return $this->pool->clear(); }
-    public function deleteItem(string $key): bool { return $this->pool->deleteItem($key); }
-    public function deleteItems(array $keys): bool { return $this->pool->deleteItems($keys); }
+    public function hasItem(string $key): bool
+    {
+        return $this->pool->hasItem($key);
+    }
+    public function clear(): bool
+    {
+        return $this->pool->clear();
+    }
+    public function deleteItem(string $key): bool
+    {
+        return $this->pool->deleteItem($key);
+    }
+    public function deleteItems(array $keys): bool
+    {
+        return $this->pool->deleteItems($keys);
+    }
     public function save(CacheItemInterface $item): bool
     {
         $this->writes[] = $item->getKey();
@@ -72,5 +89,8 @@ final class RecordingCachePool implements CacheItemPoolInterface
         $this->writes[] = $item->getKey();
         return $this->pool->saveDeferred($item);
     }
-    public function commit(): bool { return $this->pool->commit(); }
+    public function commit(): bool
+    {
+        return $this->pool->commit();
+    }
 }

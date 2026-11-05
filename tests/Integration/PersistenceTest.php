@@ -40,7 +40,9 @@ final class PersistenceTest extends TestCase
             'dbname' => getenv('PGDATABASE') ?: 'modernorm_test',
         ]);
         $this->em = new EntityManager($connection, ORMSetup::createAttributeMetadataConfig(
-            [__DIR__], true, cache: new ArrayAdapter(),
+            [__DIR__],
+            true,
+            cache: new ArrayAdapter(),
         ));
         $schema = new SchemaTool($this->em);
         $metadata = [$this->em->getClassMetadata(Record::class)];

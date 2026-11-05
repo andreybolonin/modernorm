@@ -87,9 +87,9 @@ class ArrayHydrator extends AbstractHydrator
                 if ($this->resultSetMapping()->isMixed && isset($this->rootAliases[$parent])) {
                     $first = reset($this->resultPointers);
                     // TODO: Exception if $key === null ?
-                    $baseElement =& $this->resultPointers[$parent][key($first)];
+                    $baseElement = & $this->resultPointers[$parent][key($first)];
                 } elseif (isset($this->resultPointers[$parent])) {
-                    $baseElement =& $this->resultPointers[$parent];
+                    $baseElement = & $this->resultPointers[$parent];
                 } else {
                     unset($this->resultPointers[$resultAlias]); // Ticket #1228
 
@@ -130,7 +130,7 @@ class ArrayHydrator extends AbstractHydrator
 
                     if (
                         ! isset($nonemptyComponents[$resultAlias]) &&
-                        ( ! isset($baseElement[$relationAlias]))
+                        (! isset($baseElement[$relationAlias]))
                     ) {
                         $baseElement[$relationAlias] = null;
                     } elseif (! isset($baseElement[$relationAlias])) {
@@ -138,7 +138,7 @@ class ArrayHydrator extends AbstractHydrator
                     }
                 }
 
-                $coll =& $baseElement[$relationAlias];
+                $coll = & $baseElement[$relationAlias];
 
                 if (is_array($coll)) {
                     $this->updateResultPointer($coll, $index, $resultAlias, $oneToOne);
@@ -249,13 +249,13 @@ class ArrayHydrator extends AbstractHydrator
         }
 
         if ($oneToOne) {
-            $this->resultPointers[$resultAlias] =& $coll;
+            $this->resultPointers[$resultAlias] = & $coll;
 
             return;
         }
 
         if ($index !== false) {
-            $this->resultPointers[$resultAlias] =& $coll[$index];
+            $this->resultPointers[$resultAlias] = & $coll[$index];
 
             return;
         }
@@ -264,6 +264,6 @@ class ArrayHydrator extends AbstractHydrator
             return;
         }
 
-        $this->resultPointers[$resultAlias] =& $coll[array_key_last($coll)];
+        $this->resultPointers[$resultAlias] = & $coll[array_key_last($coll)];
     }
 }

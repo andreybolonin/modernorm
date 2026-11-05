@@ -15,13 +15,22 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
 #[\ModernORM\Mapping\Entity, ORM\Immutable]
-final class ReadOnlyMappingRecord { #[ORM\Id, ORM\Column] public int $id; }
+final class ReadOnlyMappingRecord
+{
+    #[ORM\Id, ORM\Column] public int $id;
+}
 
 #[ORM\MappedSuperclass, ORM\Immutable]
-abstract class InvalidReadOnlySuperclass { #[ORM\Id, ORM\Column] public int $id; }
+abstract class InvalidReadOnlySuperclass
+{
+    #[ORM\Id, ORM\Column] public int $id;
+}
 
 #[ORM\Embeddable, ORM\Immutable]
-final class InvalidReadOnlyEmbeddable { #[ORM\Column] public string $value; }
+final class InvalidReadOnlyEmbeddable
+{
+    #[ORM\Column] public string $value;
+}
 
 final class ImmutableMappingTest extends TestCase
 {

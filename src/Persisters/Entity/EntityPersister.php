@@ -34,9 +34,9 @@ interface EntityPersister
      */
     public function getInserts(): array;
 
-     /**
-      * Gets the INSERT SQL used by the persister to persist a new entity.
-      */
+    /**
+     * Gets the INSERT SQL used by the persister to persist a new entity.
+     */
     public function getInsertSQL(): string;
 
     /**

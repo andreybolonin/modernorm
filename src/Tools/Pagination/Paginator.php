@@ -39,7 +39,8 @@ final class Paginator implements \Countable, \IteratorAggregate
         $roots->setFirstResult(0)->setMaxResults(null);
         return (int) $this->query->getEntityManager()->getConnection()->fetchOne(
             'SELECT COUNT(*) FROM (' . $roots->getSQL() . ') modernorm_roots',
-            $roots->getParameters(), $roots->getParameterTypes(),
+            $roots->getParameters(),
+            $roots->getParameterTypes(),
         );
     }
 

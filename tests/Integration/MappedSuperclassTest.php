@@ -19,7 +19,8 @@ final class MappedCategory
     public function __construct(
         #[ORM\Id, ORM\Column] public int $id,
         #[ORM\Column] public string $name = 'category',
-    ) {}
+    ) {
+    }
 }
 
 #[ORM\MappedSuperclass, ORM\Table(name: 'modernorm_test_unwanted_superclass'), ORM\HasLifecycleCallbacks]
@@ -33,13 +34,20 @@ abstract class MappedBase
         #[ORM\Id, ORM\Column] public int $id,
         #[ORM\ManyToOne(targetEntity: MappedCategory::class, cascade: ['persist'])]
         #[ORM\JoinColumn(nullable: false)] public MappedCategory $category,
-    ) {}
+    ) {
+    }
 
     #[ORM\PrePersist]
-    public function beforePersist(): void { $this->events[] = 'base-prePersist'; }
+    public function beforePersist(): void
+    {
+        $this->events[] = 'base-prePersist';
+    }
 
     #[ORM\PostLoad]
-    public function afterLoad(): void { $this->events[] = 'base-postLoad'; }
+    public function afterLoad(): void
+    {
+        $this->events[] = 'base-postLoad';
+    }
 }
 
 #[ORM\Entity, ORM\Table(name: 'modernorm_test_mapped_documents')]
@@ -62,7 +70,9 @@ abstract class PlainPhpBase
 #[ORM\Entity, ORM\Table(name: 'modernorm_test_plain_php_child')]
 final class PlainPhpChild extends PlainPhpBase
 {
-    public function __construct(#[ORM\Id, ORM\Column] public int $id) {}
+    public function __construct(#[ORM\Id, ORM\Column] public int $id)
+    {
+    }
 }
 
 final class MappedSuperclassTest extends TestCase

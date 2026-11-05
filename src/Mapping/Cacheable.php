@@ -11,5 +11,7 @@ use ModernORM\Cache\CacheWritePolicy;
 #[Attribute(Attribute::TARGET_CLASS)]
 final readonly class Cacheable implements MappingAttribute
 {
-    public function __construct(public int $ttl = 3600, public CacheWritePolicy $writePolicy = CacheWritePolicy::READ_ONLY) {}
+    public function __construct(public int $ttl = 3600, public CacheWritePolicy $writePolicy = CacheWritePolicy::READ_ONLY)
+    {
+    }
 }

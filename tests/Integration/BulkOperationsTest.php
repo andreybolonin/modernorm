@@ -24,7 +24,10 @@ use Psr\Log\AbstractLogger;
 use Stringable;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
-enum BulkState: string { case READY = 'ready'; }
+enum BulkState: string
+{
+    case READY = 'ready';
+}
 
 #[ORM\Entity, ORM\Table(name: 'modernorm_test_bulk_records'), ORM\HasLifecycleCallbacks]
 class BulkRecord
@@ -38,7 +41,10 @@ class BulkRecord
     #[ORM\Column(nullable: true)] public ?BulkState $state = null;
     #[ORM\Column(type: 'datetime_immutable', nullable: true)] public ?\DateTimeImmutable $created = null;
     #[ORM\OneToMany(mappedBy: 'owner', targetEntity: BulkLine::class, batchSize: 8)] public Collection $lines;
-    #[ORM\PrePersist, ORM\PreUpdate, ORM\PreRemove] public function callback(): void { ++self::$callbacks; }
+    #[ORM\PrePersist, ORM\PreUpdate, ORM\PreRemove] public function callback(): void
+    {
+        ++self::$callbacks;
+    }
 }
 
 #[ORM\Entity, ORM\Table(name: 'modernorm_test_bulk_lines')]
@@ -79,7 +85,10 @@ class BulkUnsupportedCacheGraph
 final class BulkPool extends ArrayAdapter
 {
     public bool $failWrites = false;
-    public function save(CacheItemInterface $item): bool { return !$this->failWrites && parent::save($item); }
+    public function save(CacheItemInterface $item): bool
+    {
+        return !$this->failWrites && parent::save($item);
+    }
 }
 
 final class BulkCommitLogger extends AbstractLogger
@@ -111,7 +120,9 @@ final class BulkOperationsTest extends TestCase
             $config->setSecondLevelCache($this->pool);
         }
         $dbal = new DBALConfiguration();
-        if ($logger) { $dbal->setMiddlewares([new Middleware($this->logger)]); }
+        if ($logger) {
+            $dbal->setMiddlewares([new Middleware($this->logger)]);
+        }
         $em = new EntityManager(DriverManager::getConnection([
             'driver' => 'pdo_pgsql', 'serverVersion' => '17',
             'host' => getenv('PGHOST') ?: '127.0.0.1', 'port' => getenv('PGPORT') ?: 5432,
@@ -145,11 +156,17 @@ final class BulkOperationsTest extends TestCase
         $this->logger->onCommit = null;
         foreach ($this->managers as $em) {
             $connection = $em->getConnection();
-            if (!$connection->isAutoCommit()) { $connection->setAutoCommit(true); }
-            while ($connection->isTransactionActive()) { $connection->rollBack(); }
+            if (!$connection->isAutoCommit()) {
+                $connection->setAutoCommit(true);
+            }
+            while ($connection->isTransactionActive()) {
+                $connection->rollBack();
+            }
         }
         (new SchemaTool($this->em))->dropSchema($this->metadata);
-        foreach ($this->managers as $em) { $em->getConnection()->close(); }
+        foreach ($this->managers as $em) {
+            $em->getConnection()->close();
+        }
     }
 
     public function testInsertAndUpsertReturnRawRowsWithoutManagingOrCallingCallbacks(): void
@@ -214,14 +231,23 @@ final class BulkOperationsTest extends TestCase
         $line = $this->em->find(BulkLine::class, 1);
         $this->em->getReference(BulkLine::class, 2);
         $first->name = 'dirty';
-        $pending = new BulkRecord(); $this->em->persist($pending);
+        $pending = new BulkRecord();
+        $this->em->persist($pending);
         $this->em->remove($second);
-        $events = new class { public int $calls = 0; public function onClear(): void { ++$this->calls; } };
+        $events = new class () {
+            public int $calls = 0;
+            public function onClear(): void
+            {
+                ++$this->calls;
+            }
+        };
         $this->em->getEventManager()->addEventListener([Events::onClear], $events);
         $result = $this->em->bulk()->delete(BulkRecord::class, 'FALSE', BulkPolicy::CLEAR);
         self::assertSame(0, $result->affectedRows);
         self::assertSame(1, $events->calls);
-        foreach ([$first, $second, $line, $pending] as $entity) { self::assertFalse($this->em->contains($entity)); }
+        foreach ([$first, $second, $line, $pending] as $entity) {
+            self::assertFalse($this->em->contains($entity));
+        }
         foreach ([$this->em->getUnitOfWork()->getLazyCollectionQueue(), $this->em->getProxyFactory()->getBatchQueue()] as $queue) {
             self::assertSame([], (new \ReflectionProperty($queue, 'pending'))->getValue($queue));
         }
@@ -242,7 +268,8 @@ final class BulkOperationsTest extends TestCase
                 ['name' => 'first', 'amount' => 2, 'payload' => []],
             ], BulkPolicy::CLEAR);
             self::fail('Expected unique constraint');
-        } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException) {}
+        } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException) {
+        }
         self::assertTrue($this->em->contains($entity));
         self::assertSame(100, $entity->amount);
         self::assertFalse($this->em->getConnection()->isTransactionActive());
@@ -285,7 +312,11 @@ final class BulkOperationsTest extends TestCase
     {
         $decorator = new class ($this->em) extends \ModernORM\Decorator\EntityManagerDecorator {
             public int $clears = 0;
-            public function clear(): void { ++$this->clears; parent::clear(); }
+            public function clear(): void
+            {
+                ++$this->clears;
+                parent::clear();
+            }
         };
         $decorator->bulk()->delete(BulkRecord::class, 'FALSE', BulkPolicy::CLEAR);
         self::assertSame(1, $decorator->clears);
@@ -299,7 +330,8 @@ final class BulkOperationsTest extends TestCase
         try {
             $this->em->bulk()->update(BulkRecord::class, ['name' => 'second'], 'id = 1', BulkPolicy::CLEAR);
             self::fail('Expected unique constraint');
-        } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException) {}
+        } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException) {
+        }
         self::assertTrue($connection->isTransactionActive());
         self::assertTrue($this->em->contains($entity));
         $connection->rollBack();
@@ -318,7 +350,10 @@ final class BulkOperationsTest extends TestCase
         $connection->setAutoCommit(true);
     }
 
-    public static function policies(): array { return [[BulkPolicy::BYPASS], [BulkPolicy::CLEAR]]; }
+    public static function policies(): array
+    {
+        return [[BulkPolicy::BYPASS], [BulkPolicy::CLEAR]];
+    }
 
     #[DataProvider('policies')]
     public function testL2RegionInvalidationIsIndependentOfPolicy(BulkPolicy $policy): void
@@ -376,7 +411,8 @@ final class BulkOperationsTest extends TestCase
         try {
             $em->bulk()->update(BulkCached::class, ['name' => null], 'id = 1', BulkPolicy::CLEAR);
             self::fail('Expected NOT NULL violation');
-        } catch (\Doctrine\DBAL\Exception\NotNullConstraintViolationException) {}
+        } catch (\Doctrine\DBAL\Exception\NotNullConstraintViolationException) {
+        }
         self::assertTrue($em->contains($entity));
         self::assertSame('old', $this->manager(l2: true)->find(BulkCached::class, 1)->name);
     }
@@ -389,7 +425,9 @@ final class BulkOperationsTest extends TestCase
         try {
             $em->bulk()->delete(BulkCached::class, 'TRUE', BulkPolicy::CLEAR);
             self::fail('Expected outer transaction rejection');
-        } catch (\LogicException $error) { self::assertStringContainsString('API-owned', $error->getMessage()); }
+        } catch (\LogicException $error) {
+            self::assertStringContainsString('API-owned', $error->getMessage());
+        }
         self::assertTrue($em->contains($entity));
         self::assertTrue($em->getCache()->contains(BulkCached::class, 1));
         self::assertSame(1, (int) $em->getConnection()->fetchOne('SELECT COUNT(*) FROM modernorm_test_bulk_cached'));
@@ -421,7 +459,8 @@ final class BulkOperationsTest extends TestCase
         try {
             $em->bulk()->delete(BulkCached::class, 'TRUE', BulkPolicy::CLEAR);
             self::fail('Expected cache failure');
-        } catch (\ModernORM\Exception\CacheException) {}
+        } catch (\ModernORM\Exception\CacheException) {
+        }
         self::assertTrue($em->contains($entity));
         self::assertFalse($em->getConnection()->isTransactionActive());
         self::assertSame(1, (int) $em->getConnection()->fetchOne('SELECT COUNT(*) FROM modernorm_test_bulk_cached'));
@@ -430,23 +469,34 @@ final class BulkOperationsTest extends TestCase
     public function testCacheFailureAfterCommitReportsCommittedAndClosesManager(): void
     {
         $em = $this->manager(l2: true, logger: true);
-        $this->logger->onCommit = function (): void { $this->pool->failWrites = true; };
+        $this->logger->onCommit = function (): void {
+            $this->pool->failWrites = true;
+        };
         try {
             $em->bulk()->update(BulkCached::class, ['name' => 'committed'], 'id = 1', BulkPolicy::CLEAR);
             self::fail('Expected committed cache failure');
-        } catch (BulkOperationException $error) { self::assertTrue($error->databaseCommitted); }
+        } catch (BulkOperationException $error) {
+            self::assertTrue($error->databaseCommitted);
+        }
         self::assertFalse($em->isOpen());
         self::assertSame('committed', $this->em->getConnection()->fetchOne('SELECT name FROM modernorm_test_bulk_cached WHERE id = 1'));
     }
 
     public function testClearListenerFailureReportsCommitAndCannotKeepManagerOpen(): void
     {
-        $listener = new class { public function onClear(): void { throw new \RuntimeException('listener failed'); } };
+        $listener = new class () {
+            public function onClear(): void
+            {
+                throw new \RuntimeException('listener failed');
+            }
+        };
         $this->em->getEventManager()->addEventListener([Events::onClear], $listener);
         try {
             $this->em->bulk()->update(BulkRecord::class, ['amount' => 100], 'id = 1', BulkPolicy::CLEAR);
             self::fail('Expected listener failure');
-        } catch (BulkOperationException $error) { self::assertTrue($error->databaseCommitted); }
+        } catch (BulkOperationException $error) {
+            self::assertTrue($error->databaseCommitted);
+        }
         self::assertFalse($this->em->isOpen());
         self::assertSame(100, (int) $this->em->getConnection()->fetchOne('SELECT quantity FROM modernorm_test_bulk_records WHERE id = 1'));
         $this->em->getEventManager()->removeEventListener([Events::onClear], $listener);
@@ -454,11 +504,15 @@ final class BulkOperationsTest extends TestCase
 
     public function testCommitFailureIsReportedAsUnknownWithoutRetry(): void
     {
-        $this->logger->onCommit = static function (): void { throw new \RuntimeException('transport failure'); };
+        $this->logger->onCommit = static function (): void {
+            throw new \RuntimeException('transport failure');
+        };
         try {
             $this->em->bulk()->update(BulkRecord::class, ['amount' => 100], 'id = 1', BulkPolicy::BYPASS);
             self::fail('Expected unknown commit');
-        } catch (BulkOperationException $error) { self::assertNull($error->databaseCommitted); }
+        } catch (BulkOperationException $error) {
+            self::assertNull($error->databaseCommitted);
+        }
         self::assertFalse($this->em->isOpen());
         self::assertFalse($this->em->getConnection()->isTransactionActive());
         self::assertSame(10, (int) $this->em->getConnection()->fetchOne('SELECT quantity FROM modernorm_test_bulk_records WHERE id = 1'));
@@ -494,8 +548,11 @@ final class BulkOperationsTest extends TestCase
     public function testInvalidPlanDoesNotWriteOrClear(\Closure $operation): void
     {
         $entity = $this->em->find(BulkRecord::class, 1);
-        try { $operation($this->em->bulk()); self::fail('Expected invalid plan'); }
-        catch (\InvalidArgumentException) {}
+        try {
+            $operation($this->em->bulk());
+            self::fail('Expected invalid plan');
+        } catch (\InvalidArgumentException) {
+        }
         self::assertTrue($this->em->contains($entity));
         self::assertSame(2, (int) $this->em->getConnection()->fetchOne('SELECT COUNT(*) FROM modernorm_test_bulk_records'));
         self::assertFalse($this->em->getConnection()->isTransactionActive());
@@ -505,10 +562,17 @@ final class BulkOperationsTest extends TestCase
         $em = $this->manager(l2: true);
         $entity = $em->find(BulkRecord::class, 1);
         try {
-            $em->bulk()->update(BulkRecord::class, ['amount' => 99], 'id = 1', BulkPolicy::CLEAR,
-                affectedEntities: [BulkUnsupportedCacheGraph::class]);
+            $em->bulk()->update(
+                BulkRecord::class,
+                ['amount' => 99],
+                'id = 1',
+                BulkPolicy::CLEAR,
+                affectedEntities: [BulkUnsupportedCacheGraph::class]
+            );
             self::fail('Expected unsupported declared cache graph');
-        } catch (\LogicException $error) { self::assertStringContainsString('without declared associations', $error->getMessage()); }
+        } catch (\LogicException $error) {
+            self::assertStringContainsString('without declared associations', $error->getMessage());
+        }
         self::assertTrue($em->contains($entity));
         self::assertSame(10, (int) $em->getConnection()->fetchOne('SELECT quantity FROM modernorm_test_bulk_records WHERE id = 1'));
         self::assertFalse($em->getConnection()->isTransactionActive());

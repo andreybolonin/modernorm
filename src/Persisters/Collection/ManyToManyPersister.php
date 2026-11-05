@@ -25,7 +25,6 @@ use function reset;
  */
 class ManyToManyPersister extends AbstractCollectionPersister
 {
-
     public function delete(PersistentCollection $collection): void
     {
         $mapping = $this->getMapping($collection);

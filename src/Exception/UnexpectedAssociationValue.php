@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace ModernORM\Exception;
 
-
 use function sprintf;
 
 final class UnexpectedAssociationValue extends CacheException

@@ -15,6 +15,10 @@ use ModernORM\Query\ResultSetMapping;
 /** @internal SQL delegation shared by the entity cache wrapper. */
 abstract class AbstractEntityPersister implements EntityPersister, CachedPersister
 {
+    public function __construct(protected EntityPersister $persister)
+    {
+    }
+
     public function addInsert(object $entity): void
     {
         $this->persister->addInsert($entity);

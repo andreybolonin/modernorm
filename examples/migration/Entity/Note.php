@@ -15,5 +15,7 @@ final class Note
     #[ORM\Id, ORM\Column, ORM\GeneratedValue]
     public ?int $id = null;
 
-    public function __construct(#[ORM\Column] public string $title) {}
+    public function __construct(#[ORM\Column] public string $title)
+    {
+    }
 }

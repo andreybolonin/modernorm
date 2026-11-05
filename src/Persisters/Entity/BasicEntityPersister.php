@@ -91,7 +91,6 @@ use function trim;
  */
 class BasicEntityPersister implements EntityPersister
 {
-
     /** @var array<string,string> */
 
     /**

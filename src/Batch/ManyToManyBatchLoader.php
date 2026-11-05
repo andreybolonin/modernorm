@@ -16,7 +16,9 @@ use ModernORM\Utility\PersisterHelper;
 /** @internal One SQL result row per join-table membership, preserving shared entity identities. */
 final class ManyToManyBatchLoader
 {
-    public function __construct(private readonly EntityManagerInterface $em) {}
+    public function __construct(private readonly EntityManagerInterface $em)
+    {
+    }
 
     /** @param array<int, PersistentCollection> $collections */
     public function load(AssociationMapping&ManyToManyAssociationMapping $mapping, array $collections): array
@@ -34,7 +36,9 @@ final class ManyToManyBatchLoader
         $ids = $byId = [];
         foreach ($collections as $oid => $collection) {
             $value = $source->getFieldValue($collection->getOwner(), $field);
-            if ($value instanceof \BackedEnum) { $value = $value->value; }
+            if ($value instanceof \BackedEnum) {
+                $value = $value->value;
+            }
             $ids[] = $value;
             $byId[UnitOfWork::getIdHashByIdentifier([$value])] = $oid;
         }
@@ -59,7 +63,9 @@ final class ManyToManyBatchLoader
             UnitOfWork::HINT_DEFEREAGERLOAD => true,
         ]) as $row) {
             $entity = $row[0];
-            if ($uow->isScheduledForDelete($entity)) { continue; }
+            if ($uow->isScheduledForDelete($entity)) {
+                continue;
+            }
             $oid = $byId[UnitOfWork::getIdHashByIdentifier([$row['orm_batch_owner']])];
             if ($index !== null) {
                 $rows[$oid][$index->getValue($entity)] = $entity;

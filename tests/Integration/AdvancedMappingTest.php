@@ -20,7 +20,8 @@ final class Translation
         #[ORM\Id, ORM\Column(length: 16)] public string $code,
         #[ORM\Id, ORM\Column(length: 8)] public string $locale,
         #[ORM\Column] public string $text,
-    ) {}
+    ) {
+    }
 }
 
 #[ORM\Entity, ORM\Table(name: 'modernorm_test_translation_links')]
@@ -40,7 +41,8 @@ final class PostalAddress
     public function __construct(
         #[ORM\Column] public string $city = 'Moscow',
         #[ORM\Column(length: 16)] public string $zip = '101000',
-    ) {}
+    ) {
+    }
 }
 
 #[ORM\MappedSuperclass]
@@ -59,13 +61,26 @@ final class ContactCard extends IdentifiedEntity
     public array $events = [];
     public ?array $nameChange = null;
 
-    public function __construct() { $this->address = new PostalAddress(); }
+    public function __construct()
+    {
+        $this->address = new PostalAddress();
+    }
     #[ORM\PrePersist]
-    public function beforePersist(): void { $this->name = 'prepared'; $this->events[] = 'prePersist'; }
+    public function beforePersist(): void
+    {
+        $this->name = 'prepared';
+        $this->events[] = 'prePersist';
+    }
     #[ORM\PostPersist]
-    public function afterPersist(): void { $this->events[] = 'postPersist'; }
+    public function afterPersist(): void
+    {
+        $this->events[] = 'postPersist';
+    }
     #[ORM\PostLoad]
-    public function afterLoad(): void { $this->events[] = 'postLoad'; }
+    public function afterLoad(): void
+    {
+        $this->events[] = 'postLoad';
+    }
     #[ORM\PreUpdate]
     public function beforeUpdate(PreUpdateEventArgs $event): void
     {
@@ -75,11 +90,20 @@ final class ContactCard extends IdentifiedEntity
         }
     }
     #[ORM\PostUpdate]
-    public function afterUpdate(): void { $this->events[] = 'postUpdate'; }
+    public function afterUpdate(): void
+    {
+        $this->events[] = 'postUpdate';
+    }
     #[ORM\PreRemove]
-    public function beforeRemove(): void { $this->events[] = 'preRemove'; }
+    public function beforeRemove(): void
+    {
+        $this->events[] = 'preRemove';
+    }
     #[ORM\PostRemove]
-    public function afterRemove(): void { $this->events[] = 'postRemove'; }
+    public function afterRemove(): void
+    {
+        $this->events[] = 'postRemove';
+    }
 }
 
 final class AdvancedMappingTest extends TestCase

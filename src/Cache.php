@@ -20,7 +20,9 @@ final class Cache
     private array $regions = [];
 
     /** @internal Constructed by EntityManager from its configuration. */
-    public function __construct(private readonly EntityManagerInterface $em, private readonly CacheConfiguration $configuration) {}
+    public function __construct(private readonly EntityManagerInterface $em, private readonly CacheConfiguration $configuration)
+    {
+    }
 
     public function contains(string $entity, mixed $id): bool
     {

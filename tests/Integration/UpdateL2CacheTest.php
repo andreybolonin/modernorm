@@ -26,7 +26,11 @@ use Psr\Log\AbstractLogger;
 use Stringable;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
-enum UpdateCacheState: string { case READY = 'ready'; case ACTIVE = 'active'; }
+enum UpdateCacheState: string
+{
+    case READY = 'ready';
+    case ACTIVE = 'active';
+}
 
 #[ORM\Entity, ORM\Table(name: 'modernorm_test_l2_update_records'), ORM\Cacheable(writePolicy: CacheWritePolicy::INVALIDATE), ORM\HasLifecycleCallbacks]
 final class UpdateCacheRecord
@@ -40,19 +44,31 @@ final class UpdateCacheRecord
     #[ORM\Column] public UpdateCacheState $state = UpdateCacheState::READY;
     #[ORM\Column(type: 'datetime')] public \DateTime $changedAt;
     #[ORM\Version, ORM\Column] public int $version = 1;
-    public function __construct(string $id, string $name) { $this->id = $id; $this->name = $name; $this->changedAt = new \DateTime('2026-01-01'); }
-    #[ORM\PreUpdate] public function preUpdate(): void { self::$events[] = 'pre:' . $this->id; }
+    public function __construct(string $id, string $name)
+    {
+        $this->id = $id;
+        $this->name = $name;
+        $this->changedAt = new \DateTime('2026-01-01');
+    }
+    #[ORM\PreUpdate] public function preUpdate(): void
+    {
+        self::$events[] = 'pre:' . $this->id;
+    }
     #[ORM\PostUpdate] public function postUpdate(): void
     {
         self::$events[] = 'post:' . $this->id;
-        if (self::$onPostUpdate !== null) { (self::$onPostUpdate)($this); }
+        if (self::$onPostUpdate !== null) {
+            (self::$onPostUpdate)($this);
+        }
     }
 }
 
 #[ORM\Entity, ORM\Table(name: 'modernorm_test_l2_update_immutable'), ORM\Immutable, ORM\Cacheable(writePolicy: CacheWritePolicy::INVALIDATE)]
 final class UpdateCacheImmutable
 {
-    public function __construct(#[ORM\Id, ORM\Column] public int $id, #[ORM\Column] public string $name) {}
+    public function __construct(#[ORM\Id, ORM\Column] public int $id, #[ORM\Column] public string $name)
+    {
+    }
 }
 
 #[ORM\Entity, ORM\Table(name: 'modernorm_test_l2_update_owners')]
@@ -66,7 +82,9 @@ final class UpdateCacheOwner
 #[ORM\Entity, ORM\Table(name: 'modernorm_test_l2_update_plain'), ORM\Cacheable(writePolicy: CacheWritePolicy::INVALIDATE)]
 final class UpdateCachePlain
 {
-    public function __construct(#[ORM\Id, ORM\Column] public int $id, #[ORM\Column] public string $name) {}
+    public function __construct(#[ORM\Id, ORM\Column] public int $id, #[ORM\Column] public string $name)
+    {
+    }
 }
 
 final class UpdateCachePool extends ArrayAdapter
@@ -75,7 +93,10 @@ final class UpdateCachePool extends ArrayAdapter
     public int $failNextWrites = 0;
     public function save(CacheItemInterface $item): bool
     {
-        if ($this->failNextWrites > 0) { --$this->failNextWrites; return false; }
+        if ($this->failNextWrites > 0) {
+            --$this->failNextWrites;
+            return false;
+        }
         return !$this->failWrites && parent::save($item);
     }
 }
@@ -86,9 +107,13 @@ final class UpdateCacheRecorder extends AbstractLogger
     public ?\Closure $onCommit = null;
     public function log($level, string|Stringable $message, array $context = []): void
     {
-        if (isset($context['sql'])) { $this->sql[] = $context['sql']; }
+        if (isset($context['sql'])) {
+            $this->sql[] = $context['sql'];
+        }
         if ((string) $message === 'Committing transaction' && $this->onCommit !== null) {
-            $callback = $this->onCommit; $this->onCommit = null; $callback();
+            $callback = $this->onCommit;
+            $this->onCommit = null;
+            $callback();
         }
     }
 }
@@ -100,21 +125,34 @@ final class UpdateCacheCommitFault
 
 final class UpdateCacheCommitMiddleware implements \Doctrine\DBAL\Driver\Middleware
 {
-    public function __construct(private readonly UpdateCacheCommitFault $fault) {}
+    public function __construct(private readonly UpdateCacheCommitFault $fault)
+    {
+    }
     public function wrap(\Doctrine\DBAL\Driver $driver): \Doctrine\DBAL\Driver
     {
         return new class ($driver, $this->fault) extends \Doctrine\DBAL\Driver\Middleware\AbstractDriverMiddleware {
-            public function __construct(\Doctrine\DBAL\Driver $driver, private readonly UpdateCacheCommitFault $fault) { parent::__construct($driver); }
+            public function __construct(\Doctrine\DBAL\Driver $driver, private readonly UpdateCacheCommitFault $fault)
+            {
+                parent::__construct($driver);
+            }
             public function connect(array $params): \Doctrine\DBAL\Driver\Connection
             {
                 return new class (parent::connect($params), $this->fault) extends \Doctrine\DBAL\Driver\Middleware\AbstractConnectionMiddleware {
-                    public function __construct(\Doctrine\DBAL\Driver\Connection $connection, private readonly UpdateCacheCommitFault $fault) { parent::__construct($connection); }
+                    public function __construct(\Doctrine\DBAL\Driver\Connection $connection, private readonly UpdateCacheCommitFault $fault)
+                    {
+                        parent::__construct($connection);
+                    }
                     public function commit(): void
                     {
-                        $mode = $this->fault->mode; $this->fault->mode = null;
-                        if ($mode === 'before') { throw new \RuntimeException('commit failure before driver commit'); }
+                        $mode = $this->fault->mode;
+                        $this->fault->mode = null;
+                        if ($mode === 'before') {
+                            throw new \RuntimeException('commit failure before driver commit');
+                        }
                         parent::commit();
-                        if ($mode === 'after') { throw new \RuntimeException('lost commit acknowledgement'); }
+                        if ($mode === 'after') {
+                            throw new \RuntimeException('lost commit acknowledgement');
+                        }
                     }
                 };
             }
@@ -137,7 +175,10 @@ final class UpdateL2CacheTest extends TestCase
         $statistics = new Statistics(enabled: true);
         $dbal = new DBALConfiguration();
         $middlewares = [new Middleware($statistics)];
-        if ($record) { $middlewares[] = new UpdateCacheCommitMiddleware($this->commitFault); $middlewares[] = new LoggingMiddleware($this->recorder); }
+        if ($record) {
+            $middlewares[] = new UpdateCacheCommitMiddleware($this->commitFault);
+            $middlewares[] = new LoggingMiddleware($this->recorder);
+        }
         $dbal->setMiddlewares($middlewares);
         $config = new Configuration();
         $config->setMetadataDriverImpl(new AttributeDriver([]));
@@ -154,18 +195,23 @@ final class UpdateL2CacheTest extends TestCase
 
     protected function setUp(): void
     {
-        UpdateCacheRecord::$events = []; UpdateCacheRecord::$onPostUpdate = null;
+        UpdateCacheRecord::$events = [];
+        UpdateCacheRecord::$onPostUpdate = null;
         $this->commitFault = new UpdateCacheCommitFault();
         $this->pool = new UpdateCachePool(storeSerialized: true);
-        $this->cacheLogger = new StatisticsCacheLogger(); $this->recorder = new UpdateCacheRecorder();
+        $this->cacheLogger = new StatisticsCacheLogger();
+        $this->recorder = new UpdateCacheRecorder();
         $this->em = $this->manager(record: true);
         $this->metadata = array_map($this->em->getClassMetadata(...), [UpdateCacheRecord::class, UpdateCacheImmutable::class, UpdateCacheOwner::class, UpdateCachePlain::class]);
-        $schema = new SchemaTool($this->em); $schema->dropSchema($this->metadata); $schema->createSchema($this->metadata);
+        $schema = new SchemaTool($this->em);
+        $schema->dropSchema($this->metadata);
+        $schema->createSchema($this->metadata);
         $this->em->persist(new UpdateCacheRecord('01', 'first'));
         $this->em->persist(new UpdateCacheRecord('1', 'second'));
         $this->em->persist(new UpdateCacheImmutable(1, 'immutable'));
         $this->em->persist(new UpdateCachePlain(1, 'plain'));
-        $this->em->flush(); $this->em->clear();
+        $this->em->flush();
+        $this->em->clear();
         $this->em->getConnection()->insert('modernorm_test_l2_update_owners', ['id' => 1, 'record_id' => '01']);
         $this->em->getConnection()->insert('modernorm_test_l2_update_owners', ['id' => 2, 'record_id' => '1']);
         $this->reset();
@@ -173,31 +219,50 @@ final class UpdateL2CacheTest extends TestCase
 
     protected function tearDown(): void
     {
-        $this->pool->failWrites = false; $this->pool->failNextWrites = 0;
-        $this->recorder->onCommit = null; $this->commitFault->mode = null;
-        UpdateCacheRecord::$onPostUpdate = null; UpdateCacheRecord::$events = [];
+        $this->pool->failWrites = false;
+        $this->pool->failNextWrites = 0;
+        $this->recorder->onCommit = null;
+        $this->commitFault->mode = null;
+        UpdateCacheRecord::$onPostUpdate = null;
+        UpdateCacheRecord::$events = [];
         foreach ($this->managers as $em) {
             $connection = $em->getConnection();
-            if (!$connection->isAutoCommit()) { $connection->setAutoCommit(true); }
-            while ($connection->isTransactionActive()) { $connection->rollBack(); }
+            if (!$connection->isAutoCommit()) {
+                $connection->setAutoCommit(true);
+            }
+            while ($connection->isTransactionActive()) {
+                $connection->rollBack();
+            }
         }
         (new SchemaTool($this->em))->dropSchema($this->metadata);
-        foreach ($this->managers as $em) { $em->getConnection()->close(); }
+        foreach ($this->managers as $em) {
+            $em->getConnection()->close();
+        }
     }
 
     private function reset(): void
     {
-        $this->em->getStatistics()->reset(); $this->cacheLogger->reset(); $this->recorder->sql = []; UpdateCacheRecord::$events = [];
+        $this->em->getStatistics()->reset();
+        $this->cacheLogger->reset();
+        $this->recorder->sql = [];
+        UpdateCacheRecord::$events = [];
     }
 
-    private function updateCount(): int { return count(array_filter($this->recorder->sql, static fn ($sql) => str_starts_with($sql, 'UPDATE '))); }
+    private function updateCount(): int
+    {
+        return count(array_filter($this->recorder->sql, static fn ($sql) => str_starts_with($sql, 'UPDATE ')));
+    }
 
     public function testUpdateInvalidatesOnlyItsKeyAndKeepsNormalVersionAndSnapshots(): void
     {
         $record = $this->em->find(UpdateCacheRecord::class, '01');
-        $this->em->find(UpdateCacheRecord::class, '1'); $this->reset();
-        $record->name = 'updated'; $record->amount = 9; $record->payload = ['changed' => [1, 2]];
-        $record->state = UpdateCacheState::ACTIVE; $record->changedAt = new \DateTime('2026-05-01');
+        $this->em->find(UpdateCacheRecord::class, '1');
+        $this->reset();
+        $record->name = 'updated';
+        $record->amount = 9;
+        $record->payload = ['changed' => [1, 2]];
+        $record->state = UpdateCacheState::ACTIVE;
+        $record->changedAt = new \DateTime('2026-05-01');
         $this->em->flush();
         self::assertSame(1, $this->updateCount());
         self::assertSame(2, $record->version);
@@ -207,20 +272,29 @@ final class UpdateL2CacheTest extends TestCase
         self::assertTrue($this->em->getCache()->contains(UpdateCacheRecord::class, '1'));
         self::assertSame(0, $this->cacheLogger->getPutCount());
         self::assertSame(2, $this->cacheLogger->getEvictionCount());
-        $this->em->flush(); self::assertSame(1, $this->updateCount());
-        $other = $this->manager(); $fresh = $other->find(UpdateCacheRecord::class, '01');
-        self::assertSame('updated', $fresh->name); self::assertSame(9, $fresh->amount);
-        self::assertSame(2, $fresh->version); self::assertSame(['changed' => [1, 2]], $fresh->payload);
-        self::assertSame(UpdateCacheState::ACTIVE, $fresh->state); self::assertSame('2026-05-01', $fresh->changedAt->format('Y-m-d'));
+        $this->em->flush();
+        self::assertSame(1, $this->updateCount());
+        $other = $this->manager();
+        $fresh = $other->find(UpdateCacheRecord::class, '01');
+        self::assertSame('updated', $fresh->name);
+        self::assertSame(9, $fresh->amount);
+        self::assertSame(2, $fresh->version);
+        self::assertSame(['changed' => [1, 2]], $fresh->payload);
+        self::assertSame(UpdateCacheState::ACTIVE, $fresh->state);
+        self::assertSame('2026-05-01', $fresh->changedAt->format('Y-m-d'));
         self::assertSame(1, $other->getStatistics()->snapshot()->sqlCount);
-        $warm = $this->manager(); self::assertSame(2, $warm->find(UpdateCacheRecord::class, '01')->version);
+        $warm = $this->manager();
+        self::assertSame(2, $warm->find(UpdateCacheRecord::class, '01')->version);
         self::assertSame(0, $warm->getStatistics()->snapshot()->sqlCount);
     }
 
     public function testPostUpdateMutationsAreNotPublishedAsDatabaseState(): void
     {
-        $record = $this->em->find(UpdateCacheRecord::class, '01'); $record->name = 'database';
-        UpdateCacheRecord::$onPostUpdate = static function (UpdateCacheRecord $entity): void { $entity->name = 'callback'; };
+        $record = $this->em->find(UpdateCacheRecord::class, '01');
+        $record->name = 'database';
+        UpdateCacheRecord::$onPostUpdate = static function (UpdateCacheRecord $entity): void {
+            $entity->name = 'callback';
+        };
         $this->em->flush();
         self::assertSame('callback', $record->name);
         self::assertFalse($this->em->getCache()->contains(UpdateCacheRecord::class, '01'));
@@ -230,26 +304,38 @@ final class UpdateL2CacheTest extends TestCase
     public function testStaleWriterRollsBackAndNeverPublishesItsValues(): void
     {
         $winner = $this->em->find(UpdateCacheRecord::class, '01');
-        $loser = $this->manager(); $stale = $loser->find(UpdateCacheRecord::class, '01');
-        $winner->name = 'winner'; $this->em->flush();
+        $loser = $this->manager();
+        $stale = $loser->find(UpdateCacheRecord::class, '01');
+        $winner->name = 'winner';
+        $this->em->flush();
         self::assertSame('winner', $this->manager()->find(UpdateCacheRecord::class, '01')->name);
         $stale->name = 'loser';
-        try { $loser->flush(); self::fail('Expected optimistic lock conflict'); }
-        catch (OptimisticLockException) {}
+        try {
+            $loser->flush();
+            self::fail('Expected optimistic lock conflict');
+        } catch (OptimisticLockException) {
+        }
         self::assertFalse($loser->isOpen());
         self::assertFalse($loser->getConnection()->isTransactionActive());
         self::assertFalse($this->em->getCache()->contains(UpdateCacheRecord::class, '01'));
         $fresh = $this->manager()->find(UpdateCacheRecord::class, '01');
-        self::assertSame('winner', $fresh->name); self::assertSame(2, $fresh->version);
+        self::assertSame('winner', $fresh->name);
+        self::assertSame(2, $fresh->version);
     }
 
     public function testFailureOnSecondUpdateRollsBackFirstUpdateAndBothVersions(): void
     {
-        $first = $this->em->find(UpdateCacheRecord::class, '01'); $second = $this->em->find(UpdateCacheRecord::class, '1');
-        $first->name = 'duplicate'; $second->name = 'duplicate';
-        try { $this->em->flush(); self::fail('Expected unique constraint'); }
-        catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException) {}
-        self::assertFalse($this->em->isOpen()); self::assertFalse($this->em->getConnection()->isTransactionActive());
+        $first = $this->em->find(UpdateCacheRecord::class, '01');
+        $second = $this->em->find(UpdateCacheRecord::class, '1');
+        $first->name = 'duplicate';
+        $second->name = 'duplicate';
+        try {
+            $this->em->flush();
+            self::fail('Expected unique constraint');
+        } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException) {
+        }
+        self::assertFalse($this->em->isOpen());
+        self::assertFalse($this->em->getConnection()->isTransactionActive());
         $fresh = $this->manager();
         self::assertSame('first', $fresh->find(UpdateCacheRecord::class, '01')->name);
         self::assertSame(1, $fresh->find(UpdateCacheRecord::class, '01')->version);
@@ -259,58 +345,97 @@ final class UpdateL2CacheTest extends TestCase
 
     public function testPostUpdateFailureRollsBackWithoutPublishingChangedVersion(): void
     {
-        $record = $this->em->find(UpdateCacheRecord::class, '01'); $record->name = 'rollback';
-        UpdateCacheRecord::$onPostUpdate = static function (): void { throw new \RuntimeException('callback failed'); };
-        try { $this->em->flush(); self::fail('Expected callback failure'); }
-        catch (\RuntimeException $error) { self::assertSame('callback failed', $error->getMessage()); }
+        $record = $this->em->find(UpdateCacheRecord::class, '01');
+        $record->name = 'rollback';
+        UpdateCacheRecord::$onPostUpdate = static function (): void {
+            throw new \RuntimeException('callback failed');
+        };
+        try {
+            $this->em->flush();
+            self::fail('Expected callback failure');
+        } catch (\RuntimeException $error) {
+            self::assertSame('callback failed', $error->getMessage());
+        }
         self::assertFalse($this->em->isOpen());
         $fresh = $this->manager()->find(UpdateCacheRecord::class, '01');
-        self::assertSame('first', $fresh->name); self::assertSame(1, $fresh->version);
+        self::assertSame('first', $fresh->name);
+        self::assertSame(1, $fresh->version);
     }
 
     public function testOuterTransactionUpdateIsRejectedBeforeDmlOrEviction(): void
     {
-        $record = $this->em->find(UpdateCacheRecord::class, '01'); $record->name = 'outer';
-        $connection = $this->em->getConnection(); $connection->beginTransaction(); $this->reset();
-        try { $this->em->flush(); self::fail('Expected outer transaction rejection'); }
-        catch (\LogicException $error) { self::assertStringContainsString('top-level ORM-owned', $error->getMessage()); }
-        self::assertSame(0, $this->updateCount()); self::assertSame(0, $this->cacheLogger->getEvictionCount());
-        self::assertFalse($this->em->isOpen()); self::assertTrue($connection->isTransactionActive());
+        $record = $this->em->find(UpdateCacheRecord::class, '01');
+        $record->name = 'outer';
+        $connection = $this->em->getConnection();
+        $connection->beginTransaction();
+        $this->reset();
+        try {
+            $this->em->flush();
+            self::fail('Expected outer transaction rejection');
+        } catch (\LogicException $error) {
+            self::assertStringContainsString('top-level ORM-owned', $error->getMessage());
+        }
+        self::assertSame(0, $this->updateCount());
+        self::assertSame(0, $this->cacheLogger->getEvictionCount());
+        self::assertFalse($this->em->isOpen());
+        self::assertTrue($connection->isTransactionActive());
         $connection->rollBack();
         self::assertSame('first', $this->manager()->find(UpdateCacheRecord::class, '01')->name);
     }
 
     public function testDisabledAutoCommitRejectsUpdate(): void
     {
-        $record = $this->em->find(UpdateCacheRecord::class, '01'); $record->name = 'disabled';
-        $connection = $this->em->getConnection(); $connection->setAutoCommit(false); $this->reset();
-        try { $this->em->flush(); self::fail('Expected disabled auto-commit rejection'); }
-        catch (\LogicException $error) { self::assertStringContainsString('top-level ORM-owned', $error->getMessage()); }
+        $record = $this->em->find(UpdateCacheRecord::class, '01');
+        $record->name = 'disabled';
+        $connection = $this->em->getConnection();
+        $connection->setAutoCommit(false);
+        $this->reset();
+        try {
+            $this->em->flush();
+            self::fail('Expected disabled auto-commit rejection');
+        } catch (\LogicException $error) {
+            self::assertStringContainsString('top-level ORM-owned', $error->getMessage());
+        }
         self::assertSame(0, $this->updateCount());
-        $connection->rollBack(); $connection->setAutoCommit(true);
+        $connection->rollBack();
+        $connection->setAutoCommit(true);
         self::assertSame('first', $this->manager()->find(UpdateCacheRecord::class, '01')->name);
     }
 
     public function testNestedTransactionFromCallbackCannotMasqueradeAsCommit(): void
     {
-        $record = $this->em->find(UpdateCacheRecord::class, '01'); $record->name = 'pending';
+        $record = $this->em->find(UpdateCacheRecord::class, '01');
+        $record->name = 'pending';
         $connection = $this->em->getConnection();
-        UpdateCacheRecord::$onPostUpdate = static function () use ($connection): void { $connection->beginTransaction(); };
-        try { $this->em->flush(); self::fail('Expected incomplete transaction completion'); }
-        catch (CacheSynchronizationException $error) { self::assertNull($error->databaseCommitted); }
-        self::assertFalse($this->em->isOpen()); self::assertTrue($connection->isTransactionActive());
+        UpdateCacheRecord::$onPostUpdate = static function () use ($connection): void {
+            $connection->beginTransaction();
+        };
+        try {
+            $this->em->flush();
+            self::fail('Expected incomplete transaction completion');
+        } catch (CacheSynchronizationException $error) {
+            self::assertNull($error->databaseCommitted);
+        }
+        self::assertFalse($this->em->isOpen());
+        self::assertTrue($connection->isTransactionActive());
         $connection->rollBack();
         self::assertSame('first', $this->manager()->find(UpdateCacheRecord::class, '01')->name);
     }
 
     public function testPreWriteCacheFailureDoesNotExecuteUpdate(): void
     {
-        $record = $this->em->find(UpdateCacheRecord::class, '01'); $record->name = 'not-written';
-        $this->reset(); $this->pool->failWrites = true;
-        try { $this->em->flush(); self::fail('Expected cache failure'); }
-        catch (\ModernORM\Exception\CacheException) {}
+        $record = $this->em->find(UpdateCacheRecord::class, '01');
+        $record->name = 'not-written';
+        $this->reset();
+        $this->pool->failWrites = true;
+        try {
+            $this->em->flush();
+            self::fail('Expected cache failure');
+        } catch (\ModernORM\Exception\CacheException) {
+        }
         $this->pool->failWrites = false;
-        self::assertSame(0, $this->updateCount()); self::assertFalse($this->em->isOpen());
+        self::assertSame(0, $this->updateCount());
+        self::assertFalse($this->em->isOpen());
         self::assertSame('first', $this->manager()->find(UpdateCacheRecord::class, '01')->name);
     }
 
@@ -318,65 +443,91 @@ final class UpdateL2CacheTest extends TestCase
     {
         $record = $this->em->find(UpdateCacheRecord::class, '01');
         $region = $this->em->getUnitOfWork()->getEntityPersister(UpdateCacheRecord::class)->getCacheRegion();
-        $key = new EntityCacheKey(UpdateCacheRecord::class, ['id' => '01']); $ticket = $entry = null;
+        $key = new EntityCacheKey(UpdateCacheRecord::class, ['id' => '01']);
+        $ticket = $entry = null;
         $this->recorder->onCommit = function () use ($region, $key, &$ticket, &$entry): void {
             $reader = $this->manager();
             self::assertNotSame($this->em->getConnection()->getNativeConnection(), $reader->getConnection()->getNativeConnection());
             self::assertSame('first', $reader->find(UpdateCacheRecord::class, '01')->name);
             self::assertSame(1, $reader->find(UpdateCacheRecord::class, '01')->version);
-            $ticket = $region->ticket($key); $entry = $region->get($key);
+            $ticket = $region->ticket($key);
+            $entry = $region->get($key);
         };
-        $record->name = 'committed'; $this->em->flush();
+        $record->name = 'committed';
+        $this->em->flush();
         self::assertFalse($this->em->getCache()->contains(UpdateCacheRecord::class, '01'));
         $region->putAt($ticket, $entry);
         self::assertFalse($this->em->getCache()->contains(UpdateCacheRecord::class, '01'));
         $fresh = $this->manager()->find(UpdateCacheRecord::class, '01');
-        self::assertSame('committed', $fresh->name); self::assertSame(2, $fresh->version);
+        self::assertSame('committed', $fresh->name);
+        self::assertSame(2, $fresh->version);
     }
 
     public function testPostCommitCacheFailureReportsCommitAndRequiresCacheRecovery(): void
     {
-        $record = $this->em->find(UpdateCacheRecord::class, '01'); $record->name = 'committed'; $this->reset();
+        $record = $this->em->find(UpdateCacheRecord::class, '01');
+        $record->name = 'committed';
+        $this->reset();
         $this->recorder->onCommit = function (): void {
             self::assertSame('first', $this->manager()->find(UpdateCacheRecord::class, '01')->name);
             $this->pool->failWrites = true;
         };
-        try { $this->em->flush(); self::fail('Expected committed cache failure'); }
-        catch (CacheSynchronizationException $error) { self::assertTrue($error->databaseCommitted); }
+        try {
+            $this->em->flush();
+            self::fail('Expected committed cache failure');
+        } catch (CacheSynchronizationException $error) {
+            self::assertTrue($error->databaseCommitted);
+        }
         $this->pool->failWrites = false;
-        self::assertFalse($this->em->isOpen()); self::assertSame(1, $this->updateCount());
+        self::assertFalse($this->em->isOpen());
+        self::assertSame(1, $this->updateCount());
         self::assertSame('committed', $this->em->getConnection()->fetchOne("SELECT name FROM modernorm_test_l2_update_records WHERE id = '01'"));
         // A failed post-commit invalidation is not hidden as a successful recovery.
         self::assertSame('first', $this->manager()->find(UpdateCacheRecord::class, '01')->name);
         $this->em->getCache()->evict(UpdateCacheRecord::class, '01');
         $fresh = $this->manager()->find(UpdateCacheRecord::class, '01');
-        self::assertSame('committed', $fresh->name); self::assertSame(2, $fresh->version);
+        self::assertSame('committed', $fresh->name);
+        self::assertSame(2, $fresh->version);
     }
 
     public function testImmutableStillIgnoresUpdatesButAllowsInsertAndDelete(): void
     {
-        $record = $this->em->find(UpdateCacheImmutable::class, 1); $record->name = 'ignored'; $this->reset();
+        $record = $this->em->find(UpdateCacheImmutable::class, 1);
+        $record->name = 'ignored';
+        $this->reset();
         $this->em->flush();
-        self::assertSame(0, $this->updateCount()); self::assertSame(0, $this->cacheLogger->getEvictionCount());
+        self::assertSame(0, $this->updateCount());
+        self::assertSame(0, $this->cacheLogger->getEvictionCount());
         self::assertSame('immutable', $this->manager()->find(UpdateCacheImmutable::class, 1)->name);
-        $new = new UpdateCacheImmutable(2, 'inserted'); $this->em->persist($new); $this->em->flush();
+        $new = new UpdateCacheImmutable(2, 'inserted');
+        $this->em->persist($new);
+        $this->em->flush();
         self::assertSame('inserted', $this->manager()->find(UpdateCacheImmutable::class, 2)->name);
-        $this->em->remove($new); $this->em->flush();
+        $this->em->remove($new);
+        $this->em->flush();
         self::assertNull($this->manager()->find(UpdateCacheImmutable::class, 2));
     }
 
     public function testAssignedPrimaryKeyChangeIsRejectedBeforeDml(): void
     {
-        $record = $this->em->find(UpdateCacheRecord::class, '01'); $record->id = 'changed'; $record->name = 'changed'; $this->reset();
-        try { $this->em->flush(); self::fail('Expected identifier-change rejection'); }
-        catch (\LogicException $error) { self::assertStringContainsString('primary key changes', $error->getMessage()); }
+        $record = $this->em->find(UpdateCacheRecord::class, '01');
+        $record->id = 'changed';
+        $record->name = 'changed';
+        $this->reset();
+        try {
+            $this->em->flush();
+            self::fail('Expected identifier-change rejection');
+        } catch (\LogicException $error) {
+            self::assertStringContainsString('primary key changes', $error->getMessage());
+        }
         self::assertSame(0, $this->updateCount());
         self::assertSame('first', $this->manager()->find(UpdateCacheRecord::class, '01')->name);
     }
 
     public function testUnversionedUpdateUsesTheSameInvalidationPolicy(): void
     {
-        $record = $this->em->find(UpdateCachePlain::class, 1); $record->name = 'updated';
+        $record = $this->em->find(UpdateCachePlain::class, 1);
+        $record->name = 'updated';
         $this->em->flush();
         self::assertFalse($this->em->getCache()->contains(UpdateCachePlain::class, 1));
         self::assertSame('updated', $this->manager()->find(UpdateCachePlain::class, 1)->name);
@@ -384,11 +535,16 @@ final class UpdateL2CacheTest extends TestCase
 
     public function testUpdatedEntityCanBeALazyBatchMissAlongsideUnchangedCacheHit(): void
     {
-        $record = $this->em->find(UpdateCacheRecord::class, '01'); $this->em->find(UpdateCacheRecord::class, '1');
-        $record->name = 'updated'; $this->em->flush();
-        $reader = $this->manager(); $owners = $reader->getRepository(UpdateCacheOwner::class)->findBy([], ['id' => 'ASC']);
-        $reader->getStatistics()->reset(); $this->cacheLogger->reset();
-        self::assertSame('updated', $owners[0]->record->name); self::assertSame(2, $owners[0]->record->version);
+        $record = $this->em->find(UpdateCacheRecord::class, '01');
+        $this->em->find(UpdateCacheRecord::class, '1');
+        $record->name = 'updated';
+        $this->em->flush();
+        $reader = $this->manager();
+        $owners = $reader->getRepository(UpdateCacheOwner::class)->findBy([], ['id' => 'ASC']);
+        $reader->getStatistics()->reset();
+        $this->cacheLogger->reset();
+        self::assertSame('updated', $owners[0]->record->name);
+        self::assertSame(2, $owners[0]->record->version);
         self::assertFalse($reader->isUninitializedObject($owners[1]->record));
         self::assertSame('second', $owners[1]->record->name);
         self::assertSame(1, $reader->getStatistics()->snapshot()->sqlCount);
@@ -402,12 +558,14 @@ final class UpdateL2CacheTest extends TestCase
         $connection->executeStatement("CREATE FUNCTION modernorm_test_l2_update_trigger() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN NEW.amount := NEW.amount + 100; RETURN NEW; END $$");
         try {
             $connection->executeStatement('CREATE TRIGGER cache_update_value BEFORE UPDATE ON modernorm_test_l2_update_records FOR EACH ROW EXECUTE FUNCTION modernorm_test_l2_update_trigger()');
-            $record = $this->em->find(UpdateCacheRecord::class, '01'); $record->amount = 2;
+            $record = $this->em->find(UpdateCacheRecord::class, '01');
+            $record->amount = 2;
             $this->em->flush();
             self::assertSame(2, $record->amount);
             self::assertFalse($this->em->getCache()->contains(UpdateCacheRecord::class, '01'));
             $fresh = $this->manager()->find(UpdateCacheRecord::class, '01');
-            self::assertSame(102, $fresh->amount); self::assertSame(2, $fresh->version);
+            self::assertSame(102, $fresh->amount);
+            self::assertSame(2, $fresh->version);
         } finally {
             $connection->executeStatement('DROP TRIGGER IF EXISTS cache_update_value ON modernorm_test_l2_update_records');
             $connection->executeStatement('DROP FUNCTION modernorm_test_l2_update_trigger()');
@@ -417,33 +575,44 @@ final class UpdateL2CacheTest extends TestCase
     public function testDeleteInvalidatesDatabaseIdentifierEvenIfLocalIdWasChanged(): void
     {
         $record = new UpdateCacheRecord('delete-me', 'deletable');
-        $this->em->persist($record); $this->em->flush(); $this->em->clear();
+        $this->em->persist($record);
+        $this->em->flush();
+        $this->em->clear();
         $record = $this->em->find(UpdateCacheRecord::class, 'delete-me');
-        $record->id = 'local-only'; $this->em->remove($record); $this->em->flush();
+        $record->id = 'local-only';
+        $this->em->remove($record);
+        $this->em->flush();
         self::assertFalse($this->em->getCache()->contains(UpdateCacheRecord::class, 'delete-me'));
         self::assertNull($this->manager()->find(UpdateCacheRecord::class, 'delete-me'));
     }
-    public static function commitOutcomes(): array { return [['before', 'first', 'plain'], ['after', 'updated', 'updated-plain']]; }
+    public static function commitOutcomes(): array
+    {
+        return [['before', 'first', 'plain'], ['after', 'updated', 'updated-plain']];
+    }
 
     #[DataProvider('commitOutcomes')]
     public function testCommitErrorsReportUnknownAndInvalidateEveryAffectedClass(string $mode, string $expectedRecord, string $expectedPlain): void
     {
         $record = $this->em->find(UpdateCacheRecord::class, '01');
         $plain = $this->em->find(UpdateCachePlain::class, 1);
-        $record->name = 'updated'; $plain->name = 'updated-plain';
+        $record->name = 'updated';
+        $plain->name = 'updated-plain';
         $this->recorder->onCommit = function (): void {
             $reader = $this->manager();
             self::assertSame('first', $reader->find(UpdateCacheRecord::class, '01')->name);
             self::assertSame('plain', $reader->find(UpdateCachePlain::class, 1)->name);
         };
         $this->commitFault->mode = $mode;
-        try { $this->em->flush(); self::fail('Expected uncertain commit'); }
-        catch (CacheSynchronizationException $error) {
+        try {
+            $this->em->flush();
+            self::fail('Expected uncertain commit');
+        } catch (CacheSynchronizationException $error) {
             self::assertNull($error->databaseCommitted);
             self::assertNull($error->cacheFailure);
             self::assertStringContainsString($mode === 'before' ? 'before driver commit' : 'lost commit acknowledgement', $error->getPrevious()->getMessage());
         }
-        self::assertFalse($this->em->isOpen()); self::assertFalse($this->em->getConnection()->isConnected());
+        self::assertFalse($this->em->isOpen());
+        self::assertFalse($this->em->getConnection()->isConnected());
         self::assertFalse($this->em->getCache()->contains(UpdateCacheRecord::class, '01'));
         self::assertFalse($this->em->getCache()->contains(UpdateCachePlain::class, 1));
         $reader = $this->manager();
@@ -453,14 +622,17 @@ final class UpdateL2CacheTest extends TestCase
 
     public function testUncertainCommitAndFailedCacheRecoveryPreserveBothFailures(): void
     {
-        $record = $this->em->find(UpdateCacheRecord::class, '01'); $record->name = 'committed';
+        $record = $this->em->find(UpdateCacheRecord::class, '01');
+        $record->name = 'committed';
         $this->recorder->onCommit = function (): void {
             self::assertSame('first', $this->manager()->find(UpdateCacheRecord::class, '01')->name);
             $this->pool->failWrites = true;
         };
         $this->commitFault->mode = 'after';
-        try { $this->em->flush(); self::fail('Expected commit/cache failure'); }
-        catch (CacheSynchronizationException $error) {
+        try {
+            $this->em->flush();
+            self::fail('Expected commit/cache failure');
+        } catch (CacheSynchronizationException $error) {
             self::assertNull($error->databaseCommitted);
             self::assertSame('lost commit acknowledgement', $error->getPrevious()->getMessage());
             self::assertInstanceOf(\ModernORM\Exception\CacheException::class, $error->cacheFailure);
@@ -477,13 +649,17 @@ final class UpdateL2CacheTest extends TestCase
         $connection = $this->em->getConnection();
         $connection->executeStatement('ALTER TABLE modernorm_test_l2_update_plain ADD CONSTRAINT modernorm_test_l2_update_deferred UNIQUE (name) DEFERRABLE INITIALLY DEFERRED');
         $connection->insert('modernorm_test_l2_update_plain', ['id' => 2, 'name' => 'other']);
-        $record = $this->em->find(UpdateCachePlain::class, 1); $record->name = 'other';
-        try { $this->em->flush(); self::fail('Expected commit constraint failure'); }
-        catch (CacheSynchronizationException $error) {
+        $record = $this->em->find(UpdateCachePlain::class, 1);
+        $record->name = 'other';
+        try {
+            $this->em->flush();
+            self::fail('Expected commit constraint failure');
+        } catch (CacheSynchronizationException $error) {
             self::assertNull($error->databaseCommitted);
             self::assertInstanceOf(\Doctrine\DBAL\Exception\UniqueConstraintViolationException::class, $error->getPrevious());
         }
-        self::assertFalse($this->em->isOpen()); self::assertFalse($connection->isConnected());
+        self::assertFalse($this->em->isOpen());
+        self::assertFalse($connection->isConnected());
         self::assertFalse($this->em->getCache()->contains(UpdateCachePlain::class, 1));
         self::assertSame('plain', $this->manager()->find(UpdateCachePlain::class, 1)->name);
     }
@@ -492,7 +668,9 @@ final class UpdateL2CacheTest extends TestCase
         $first = $this->em->find(UpdateCacheRecord::class, '01');
         $second = $this->em->find(UpdateCacheRecord::class, '1');
         $plain = $this->em->find(UpdateCachePlain::class, 1);
-        $first->name = 'new-first'; $second->name = 'new-second'; $plain->name = 'new-plain';
+        $first->name = 'new-first';
+        $second->name = 'new-second';
+        $plain->name = 'new-plain';
         $this->recorder->onCommit = function (): void {
             $reader = $this->manager();
             self::assertSame('first', $reader->find(UpdateCacheRecord::class, '01')->name);
@@ -500,13 +678,18 @@ final class UpdateL2CacheTest extends TestCase
             self::assertSame('plain', $reader->find(UpdateCachePlain::class, 1)->name);
             $this->pool->failNextWrites = 1;
         };
-        try { $this->em->flush(); self::fail('Expected post-commit invalidation failure'); }
-        catch (CacheSynchronizationException $error) { self::assertTrue($error->databaseCommitted); }
+        try {
+            $this->em->flush();
+            self::fail('Expected post-commit invalidation failure');
+        } catch (CacheSynchronizationException $error) {
+            self::assertTrue($error->databaseCommitted);
+        }
         $cached = [$this->em->getCache()->contains(UpdateCacheRecord::class, '01'),
             $this->em->getCache()->contains(UpdateCacheRecord::class, '1'), $this->em->getCache()->contains(UpdateCachePlain::class, 1)];
         self::assertSame(1, array_sum(array_map('intval', $cached)));
         self::assertFalse($this->em->isOpen());
-        $this->em->getCache()->evictAll(UpdateCacheRecord::class); $this->em->getCache()->evictAll(UpdateCachePlain::class);
+        $this->em->getCache()->evictAll(UpdateCacheRecord::class);
+        $this->em->getCache()->evictAll(UpdateCachePlain::class);
         $reader = $this->manager();
         self::assertSame('new-first', $reader->find(UpdateCacheRecord::class, '01')->name);
         self::assertSame('new-second', $reader->find(UpdateCacheRecord::class, '1')->name);
@@ -518,7 +701,8 @@ final class UpdateL2CacheTest extends TestCase
         $adapter = static fn () => new \Symfony\Component\Cache\Adapter\FilesystemAdapter('update_l2', 0, $directory);
         try {
             $writer = $this->manager(pool: $adapter());
-            $record = $writer->find(UpdateCacheRecord::class, '01'); $record->name = 'filesystem';
+            $record = $writer->find(UpdateCacheRecord::class, '01');
+            $record->name = 'filesystem';
             $writer->flush();
             self::assertFalse($writer->getCache()->contains(UpdateCacheRecord::class, '01'));
             $reader = $this->manager(pool: $adapter());

@@ -17,23 +17,51 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
 #[ORM\Entity, ORM\Cacheable(ttl: 17)]
-class L2ScopeRecord { #[ORM\Id, ORM\Column] public int $id; }
+class L2ScopeRecord
+{
+    #[ORM\Id, ORM\Column] public int $id;
+}
 #[ORM\Entity, ORM\Cacheable(ttl: 0)]
-class L2ScopeInfinite { #[ORM\Id, ORM\Column] public int $id; }
+class L2ScopeInfinite
+{
+    #[ORM\Id, ORM\Column] public int $id;
+}
 #[ORM\Entity, ORM\Cacheable(ttl: 17, writePolicy: \ModernORM\Cache\CacheWritePolicy::INVALIDATE)]
-class L2ScopeInvalidating { #[ORM\Id, ORM\Column] public int $id; }
+class L2ScopeInvalidating
+{
+    #[ORM\Id, ORM\Column] public int $id;
+}
 #[ORM\Entity, ORM\Cacheable(writePolicy: 'invalidate')]
-class L2ScopeStringPolicy { #[ORM\Id, ORM\Column] public int $id; }
+class L2ScopeStringPolicy
+{
+    #[ORM\Id, ORM\Column] public int $id;
+}
 #[ORM\Entity, ORM\Cacheable]
-class L2BinaryRecord { #[ORM\Id, ORM\Column] public int $id; #[ORM\Column(type: 'blob')] public mixed $content; }
+class L2BinaryRecord
+{
+    #[ORM\Id, ORM\Column] public int $id;
+    #[ORM\Column(type: 'blob')] public mixed $content;
+}
 #[ORM\Entity, ORM\cAcHe(usage: 'READ_WRITE')]
-class L2LegacyRecord { #[ORM\Id, ORM\Column] public int $id; }
+class L2LegacyRecord
+{
+    #[ORM\Id, ORM\Column] public int $id;
+}
 #[ORM\Entity, ORM\Cacheable(ttl: -1)]
-class L2NegativeTtl { #[ORM\Id, ORM\Column] public int $id; }
+class L2NegativeTtl
+{
+    #[ORM\Id, ORM\Column] public int $id;
+}
 #[ORM\MappedSuperclass, ORM\Cacheable]
-class L2CachedSuperclass { #[ORM\Id, ORM\Column] public int $id; }
+class L2CachedSuperclass
+{
+    #[ORM\Id, ORM\Column] public int $id;
+}
 #[ORM\Embeddable, ORM\Cacheable]
-class L2CachedEmbeddable { #[ORM\Column] public string $value; }
+class L2CachedEmbeddable
+{
+    #[ORM\Column] public string $value;
+}
 #[ORM\Entity]
 class L2CachedProperty
 {
@@ -54,13 +82,17 @@ final class ReadOnlyCacheScopeTest extends TestCase
         $config = new Configuration();
         $config->setMetadataDriverImpl(new AttributeDriver([]));
         $config->setSecondLevelCache(new ArrayAdapter());
-        if ($metadata !== null) { $config->setMetadataCache($metadata); }
+        if ($metadata !== null) {
+            $config->setMetadataCache($metadata);
+        }
         return new EntityManager(DriverManager::getConnection(['driver' => 'pdo_pgsql', 'serverVersion' => '17']), $config);
     }
 
     public function testMissingPoolIsAnExplicitConfigurationError(): void
     {
-        $config = new Configuration(); $config->setMetadataDriverImpl(new AttributeDriver([])); $config->setSecondLevelCacheEnabled();
+        $config = new Configuration();
+        $config->setMetadataDriverImpl(new AttributeDriver([]));
+        $config->setSecondLevelCacheEnabled();
         $this->expectException(\InvalidArgumentException::class);
         $this->expectExceptionMessage('PSR-6 pool');
         new EntityManager(DriverManager::getConnection(['driver' => 'pdo_pgsql', 'serverVersion' => '17']), $config);
@@ -79,7 +111,8 @@ final class ReadOnlyCacheScopeTest extends TestCase
 
     public function testResourceFieldCachingIsRejected(): void
     {
-        $this->expectException(\LogicException::class); $this->expectExceptionMessage('binary/resource');
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage('binary/resource');
         $this->manager()->getUnitOfWork()->getEntityPersister(L2BinaryRecord::class);
     }
 
@@ -98,7 +131,8 @@ final class ReadOnlyCacheScopeTest extends TestCase
     #[DataProvider('unsupportedAttributes')]
     public function testUnsupportedAttributesFailBeforeDatabaseAccess(string $class, string $message): void
     {
-        $this->expectException(MappingException::class); $this->expectExceptionMessage($message);
+        $this->expectException(MappingException::class);
+        $this->expectExceptionMessage($message);
         $this->manager()->getClassMetadata($class);
     }
 

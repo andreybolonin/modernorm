@@ -33,22 +33,39 @@ class UnsupportedJoined
 }
 
 #[ORM\Entity, ORM\DiscriminatorColumn(name: 'kind')]
-class UnsupportedDiscriminatorColumn { #[ORM\Id, ORM\Column] public int $id; }
+class UnsupportedDiscriminatorColumn
+{
+    #[ORM\Id, ORM\Column] public int $id;
+}
 
 #[ORM\Entity, ORM\DiscriminatorMap(['self' => UnsupportedDiscriminatorMap::class])]
-class UnsupportedDiscriminatorMap { #[ORM\Id, ORM\Column] public int $id; }
+class UnsupportedDiscriminatorMap
+{
+    #[ORM\Id, ORM\Column] public int $id;
+}
 
 #[ORM\Entity]
-class ScopeEntity { #[ORM\Id, ORM\Column] public int $id; }
+class ScopeEntity
+{
+    #[ORM\Id, ORM\Column] public int $id;
+}
 
 #[ORM\Entity]
-class UnsupportedEntityChild extends ScopeEntity {}
+class UnsupportedEntityChild extends ScopeEntity
+{
+}
 
 #[ORM\Entity]
-abstract class UnsupportedAbstractEntity { #[ORM\Id, ORM\Column] public int $id; }
+abstract class UnsupportedAbstractEntity
+{
+    #[ORM\Id, ORM\Column] public int $id;
+}
 
 #[ORM\MappedSuperclass, ORM\InheritanceType('JOINED')]
-abstract class UnsupportedPolymorphicSuperclass { #[ORM\Id, ORM\Column] public int $id; }
+abstract class UnsupportedPolymorphicSuperclass
+{
+    #[ORM\Id, ORM\Column] public int $id;
+}
 
 final class MappingScopeTest extends TestCase
 {
@@ -110,7 +127,7 @@ final class MappingScopeTest extends TestCase
     public function testMetadataListenerCannotReintroduceEntityInheritance(): void
     {
         $em = $this->manager();
-        $em->getEventManager()->addEventListener([Events::loadClassMetadata], new class {
+        $em->getEventManager()->addEventListener([Events::loadClassMetadata], new class () {
             public function loadClassMetadata(LoadClassMetadataEventArgs $args): void
             {
                 $args->getClassMetadata()->inheritanceType = ClassMetadata::INHERITANCE_TYPE_JOINED;

@@ -11,9 +11,14 @@ use ModernORM\Statistics;
 /** Install in DBAL Configuration before DriverManager::getConnection(). */
 final class Middleware implements DriverMiddleware
 {
-    public function __construct(private readonly Statistics $statistics) {}
+    public function __construct(private readonly Statistics $statistics)
+    {
+    }
 
-    public function getStatistics(): Statistics { return $this->statistics; }
+    public function getStatistics(): Statistics
+    {
+        return $this->statistics;
+    }
 
     public function wrap(Driver $driver): Driver
     {

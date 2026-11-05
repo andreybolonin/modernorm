@@ -27,7 +27,10 @@ class CompositeIdentifier
 }
 
 #[ORM\Entity]
-class ScalarIdentifier { #[ORM\Id, ORM\Column] public int $id; }
+class ScalarIdentifier
+{
+    #[ORM\Id, ORM\Column] public int $id;
+}
 
 #[ORM\Entity]
 class AssociationIdentifier
@@ -69,7 +72,7 @@ final class IdentifierScopeTest extends TestCase
     public function testMetadataListenerCannotIntroduceCompositeIdentifier(): void
     {
         $em = $this->manager();
-        $em->getEventManager()->addEventListener([Events::loadClassMetadata], new class {
+        $em->getEventManager()->addEventListener([Events::loadClassMetadata], new class () {
             public function loadClassMetadata(LoadClassMetadataEventArgs $args): void
             {
                 $args->getClassMetadata()->identifier[] = 'scope';

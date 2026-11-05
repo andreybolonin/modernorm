@@ -193,7 +193,8 @@ EXCEPTION
             . ' To solve this issue: Either explicitly call EntityManager#persist()'
             . ' on this unknown entity or configure cascade persist'
             . ' this association in the mapping for example #[ORM\ManyToOne(..., cascade: [\'persist\'])].'
-            . ($entity instanceof Stringable
+            . (
+                $entity instanceof Stringable
                 ? ''
                 : ' If you cannot find out which entity causes the problem implement \''
                 . $associationMapping->targetEntity . '#__toString()\' to get a clue.'

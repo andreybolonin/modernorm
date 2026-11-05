@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace ModernORM\Exception;
 
-
 class InvalidOrientation extends PersisterException
 {
     public static function fromClassNameAndField(string $className, string $field): self

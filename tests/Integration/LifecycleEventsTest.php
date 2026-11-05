@@ -33,10 +33,15 @@ final class EventRecord
     /** @var list<string> */
     public array $trace = [];
 
-    public function __construct(#[ORM\Column] public string $name = 'original') {}
+    public function __construct(#[ORM\Column] public string $name = 'original')
+    {
+    }
 
     #[ORM\PrePersist]
-    public function beforePersist(): void { $this->trace[] = 'callback'; }
+    public function beforePersist(): void
+    {
+        $this->trace[] = 'callback';
+    }
 }
 
 final class RecordEntityListener
@@ -52,7 +57,9 @@ final class RecordEntityListener
 /** Dispatch named events to a test-specific handler without shared static state. */
 final class LifecycleHandler
 {
-    public function __construct(private Closure $handler) {}
+    public function __construct(private Closure $handler)
+    {
+    }
 
     public function __call(string $event, array $args): void
     {
@@ -185,8 +192,12 @@ final class LifecycleEventsTest extends TestCase
     {
         $record = $this->seed();
         $events = [];
-        $this->listen([Events::preFlush, Events::onFlush, Events::postFlush, Events::preUpdate, Events::postUpdate],
-            function (string $event, EventArgs $args) use (&$events): void { $events[] = $event; });
+        $this->listen(
+            [Events::preFlush, Events::onFlush, Events::postFlush, Events::preUpdate, Events::postUpdate],
+            function (string $event, EventArgs $args) use (&$events): void {
+                $events[] = $event;
+            }
+        );
         $this->em->flush();
         self::assertSame(['preFlush', 'onFlush', 'postFlush'], $events);
         self::assertSame([], $this->em->getUnitOfWork()->getEntityChangeSet($record));
@@ -197,7 +208,8 @@ final class LifecycleEventsTest extends TestCase
     {
         $events = [];
         $record = new EventRecord();
-        $this->listen([Events::postPersist, Events::postFlush],
+        $this->listen(
+            [Events::postPersist, Events::postFlush],
             function (string $event, EventArgs $args) use (&$events, $record): void {
                 $events[] = $event;
                 if ($event === Events::postPersist) {
@@ -206,7 +218,8 @@ final class LifecycleEventsTest extends TestCase
                     self::assertTrue($this->em->getConnection()->isTransactionActive());
                     throw new RuntimeException('postPersist failed');
                 }
-            });
+            }
+        );
         $this->em->persist($record);
         try {
             $this->em->flush();
@@ -239,7 +252,8 @@ final class LifecycleEventsTest extends TestCase
         self::assertNotNull($record->id);
         // In the absence of an outer transaction, commit precedes postFlush.
         self::assertSame('original', $this->em->getConnection()->fetchOne(
-            'SELECT name FROM modernorm_test_event_records WHERE id = ?', [$record->id],
+            'SELECT name FROM modernorm_test_event_records WHERE id = ?',
+            [$record->id],
         ));
         // Do not retry flush in a context whose post-commit cleanup was interrupted.
         $this->em->clear();
@@ -250,14 +264,16 @@ final class LifecycleEventsTest extends TestCase
     {
         $record = new EventRecord();
         $events = [];
-        $this->listen([Events::preFlush, Events::onFlush, Events::postFlush],
+        $this->listen(
+            [Events::preFlush, Events::onFlush, Events::postFlush],
             function (string $event, EventArgs $args) use (&$events): void {
                 $events[] = $event;
                 if ($event === Events::preFlush) {
                     self::assertFalse($this->em->getConnection()->isTransactionActive());
                     throw new RuntimeException('preFlush failed');
                 }
-            });
+            }
+        );
         $this->em->persist($record);
         try {
             $this->em->flush();

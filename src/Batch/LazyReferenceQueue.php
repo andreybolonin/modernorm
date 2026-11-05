@@ -22,7 +22,9 @@ final class LazyReferenceQueue
     private array $pending = [];
     private bool $loading = false;
 
-    public function __construct(private readonly EntityManagerInterface $em) {}
+    public function __construct(private readonly EntityManagerInterface $em)
+    {
+    }
 
     public function add(object $entity, ClassMetadata $class, array $identifier, int|null $batchSize = null): void
     {
@@ -139,7 +141,9 @@ final class LazyReferenceQueue
             return true;
         } finally {
             $this->loading = false;
-            if ($measurement !== null) { $statistics->recordBatch($measurement, $failed); }
+            if ($measurement !== null) {
+                $statistics->recordBatch($measurement, $failed);
+            }
         }
     }
 }

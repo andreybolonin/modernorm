@@ -49,7 +49,8 @@ final class ManyBatchRole
         #[ORM\Id, ORM\Column(length: 32)] public string $id,
         #[ORM\Column(unique: true)] public string $name,
         #[ORM\Column] public int $position,
-    ) {}
+    ) {
+    }
     #[ORM\ManyToMany(targetEntity: ManyBatchGroup::class, mappedBy: 'roles', indexBy: 'name', batchSize: 3)]
     #[ORM\OrderBy(['name' => 'ASC'])] public Collection $groups;
     #[ORM\ManyToMany(targetEntity: ManyBatchGroup::class, mappedBy: 'favorites', batchSize: 2)] public Collection $favoredBy;
@@ -74,7 +75,9 @@ final class ManyBatchRecorder extends AbstractLogger
     public array $sql = [];
     public function log($level, string|Stringable $message, array $context = []): void
     {
-        if (isset($context['sql'])) { $this->sql[] = $context['sql']; }
+        if (isset($context['sql'])) {
+            $this->sql[] = $context['sql'];
+        }
     }
 }
 
@@ -127,10 +130,16 @@ final class ManyToManyBatchFetchingTest extends TestCase
     private function loadRoles(): array
     {
         $roles = [];
-        foreach (self::IDS as $id) { $roles[$id] = $this->em->find(ManyBatchRole::class, $id); }
+        foreach (self::IDS as $id) {
+            $roles[$id] = $this->em->find(ManyBatchRole::class, $id);
+        }
         return $roles;
     }
-    private function reset(): void { $this->statistics->reset(); $this->recorder->sql = []; }
+    private function reset(): void
+    {
+        $this->statistics->reset();
+        $this->recorder->sql = [];
+    }
 
     public function testOwningSevenCollectionsUseThreeSelectsAndKeepSharedTargets(): void
     {
@@ -143,16 +152,23 @@ final class ManyToManyBatchFetchingTest extends TestCase
         self::assertSame($groups[0]->roles->get('shared'), $groups[1]->roles->get('shared'));
         self::assertSame(1, $this->statistics->snapshot()->sqlCount);
         self::assertStringContainsString(' IN (', $this->recorder->sql[0]);
-        foreach ($groups as $group) { $group->roles->toArray(); }
+        foreach ($groups as $group) {
+            $group->roles->toArray();
+        }
         self::assertSame(3, $this->statistics->snapshot()->sqlCount);
     }
 
-    public static function l2Modes(): array { return [[false], [true]]; }
+    public static function l2Modes(): array
+    {
+        return [[false], [true]];
+    }
 
     #[DataProvider('l2Modes')]
     public function testInverseBatchesKeepAllMembershipsAndDistinctStringIds(bool $l2): void
     {
-        if ($l2) { $this->enableL2(); }
+        if ($l2) {
+            $this->enableL2();
+        }
         $roles = $this->loadRoles();
         $this->reset();
         self::assertSame(['group-1', 'group-2'], $roles['a b']->groups->getKeys());
@@ -160,7 +176,9 @@ final class ManyToManyBatchFetchingTest extends TestCase
         self::assertSame(['group-1'], $roles['1']->groups->getKeys());
         self::assertSame($roles['01']->groups->first(), $roles['1']->groups->first());
         self::assertSame(1, $this->statistics->snapshot()->sqlCount);
-        foreach ($roles as $role) { $role->groups->toArray(); }
+        foreach ($roles as $role) {
+            $role->groups->toArray();
+        }
         self::assertTrue($roles['five']->groups->isEmpty());
         self::assertSame(3, $this->statistics->snapshot()->sqlCount);
     }
@@ -170,7 +188,9 @@ final class ManyToManyBatchFetchingTest extends TestCase
         $groups = $this->loadGroups();
         $this->reset();
         $groups[5]->roles->toArray();
-        foreach ($groups as $group) { self::assertFalse($group->favorites->isInitialized()); }
+        foreach ($groups as $group) {
+            self::assertFalse($group->favorites->isInitialized());
+        }
         self::assertSame(['a b', '01', '1'], array_map(static fn ($role) => $role->id, $groups[0]->favorites->toArray()));
         self::assertSame([0, 1, 2], $groups[0]->favorites->getKeys());
         self::assertTrue($groups[1]->favorites->isInitialized());
@@ -239,20 +259,33 @@ final class ManyToManyBatchFetchingTest extends TestCase
         self::assertSame([2, 3], $this->em->getConnection()->fetchFirstColumn('SELECT group_id FROM modernorm_test_m2m_batch_links WHERE role_id = ? ORDER BY group_id', ['a b']));
     }
 
-    public static function sides(): array { return [[true], [false]]; }
+    public static function sides(): array
+    {
+        return [[true], [false]];
+    }
 
     #[DataProvider('sides')]
     public function testExtraLazyOperationsStayPartialUntilFullInitialization(bool $owning): void
     {
         if ($owning) {
-            $owners = $this->loadGroups(); $collections = array_map(static fn ($group) => $group->extraRoles, $owners); $trigger = $collections[0]; $key = 'a'; $count = 3;
+            $owners = $this->loadGroups();
+            $collections = array_map(static fn ($group) => $group->extraRoles, $owners);
+            $trigger = $collections[0];
+            $key = 'a';
+            $count = 3;
         } else {
-            $owners = $this->loadRoles(); $collections = array_values(array_map(static fn ($role) => $role->extraGroups, $owners)); $trigger = $owners['a b']->extraGroups; $key = 'group-1'; $count = 2;
+            $owners = $this->loadRoles();
+            $collections = array_values(array_map(static fn ($role) => $role->extraGroups, $owners));
+            $trigger = $owners['a b']->extraGroups;
+            $key = 'group-1';
+            $count = 2;
         }
         self::assertCount($count, $trigger);
         self::assertTrue($trigger->containsKey($key));
         self::assertCount(1, $trigger->slice(0, 1));
-        foreach ($collections as $collection) { self::assertFalse($collection->isInitialized()); }
+        foreach ($collections as $collection) {
+            self::assertFalse($collection->isInitialized());
+        }
         $this->reset();
         self::assertCount($count, $trigger->toArray());
         self::assertTrue($collections[0]->isInitialized());
@@ -273,19 +306,28 @@ final class ManyToManyBatchFetchingTest extends TestCase
         self::assertSame(2, $this->statistics->snapshot()->sqlCount);
     }
 
-    public static function lifecycleActions(): array { return [['clear', false], ['close', false], ['detach', false], ['clear', true], ['close', true], ['detach', true]]; }
+    public static function lifecycleActions(): array
+    {
+        return [['clear', false], ['close', false], ['detach', false], ['clear', true], ['close', true], ['detach', true]];
+    }
 
     #[DataProvider('lifecycleActions')]
     public function testLifecycleExcludesOwners(string $action, bool $l2): void
     {
-        if ($l2) { $this->enableL2(); }
+        if ($l2) {
+            $this->enableL2();
+        }
         $groups = $this->loadGroups();
         if ($action === 'detach') {
-            $this->em->detach($groups[0]); $this->reset(); $groups[1]->roles->toArray();
+            $this->em->detach($groups[0]);
+            $this->reset();
+            $groups[1]->roles->toArray();
             self::assertFalse($groups[0]->roles->isInitialized());
             self::assertTrue($groups[3]->roles->isInitialized());
         } else {
-            $this->em->$action(); $this->reset(); $groups[0]->roles->toArray();
+            $this->em->$action();
+            $this->reset();
+            $groups[0]->roles->toArray();
             self::assertFalse($groups[1]->roles->isInitialized());
         }
         self::assertSame(1, $this->statistics->snapshot()->sqlCount);
@@ -297,8 +339,10 @@ final class ManyToManyBatchFetchingTest extends TestCase
         $new = new ManyBatchRole('new', 'new-role', 1);
         $groups[0]->roles->add($new);
         $this->em->getConnection()->executeStatement('ALTER TABLE modernorm_test_m2m_batch_roles RENAME COLUMN position TO temporary_position');
-        try { $groups[0]->roles->toArray(); self::fail('Expected SQL error'); }
-        catch (\Doctrine\DBAL\Exception) {
+        try {
+            $groups[0]->roles->toArray();
+            self::fail('Expected SQL error');
+        } catch (\Doctrine\DBAL\Exception) {
             self::assertFalse($groups[0]->roles->isInitialized());
             self::assertTrue($groups[0]->roles->unwrap()->contains($new));
         }
@@ -348,7 +392,9 @@ final class ManyToManyBatchFetchingTest extends TestCase
         self::assertSame($groups[0]->roles->get('shared'), $groups[1]->roles->get('shared'));
         self::assertSame(1, $this->statistics->snapshot()->sqlCount);
         self::assertStringContainsString(' IN (', $this->recorder->sql[0]);
-        foreach ($groups as $group) { $group->roles->toArray(); }
+        foreach ($groups as $group) {
+            $group->roles->toArray();
+        }
         self::assertSame(3, $this->statistics->snapshot()->sqlCount);
     }
 
@@ -380,7 +426,9 @@ final class ManyToManyBatchFetchingTest extends TestCase
 
     public function testSelfReferencingMappingUsesTheCorrectJoinTableColumns(): void
     {
-        for ($id = 1; $id <= 4; ++$id) { $this->em->getConnection()->insert('modernorm_test_m2m_batch_nodes', ['id' => $id, 'name' => 'node-' . $id]); }
+        for ($id = 1; $id <= 4; ++$id) {
+            $this->em->getConnection()->insert('modernorm_test_m2m_batch_nodes', ['id' => $id, 'name' => 'node-' . $id]);
+        }
         foreach ([[1, 2], [1, 3], [2, 3]] as [$source, $target]) {
             $this->em->getConnection()->insert('modernorm_test_m2m_batch_follows', ['source_id' => $source, 'target_id' => $target]);
         }
@@ -399,11 +447,13 @@ final class ManyToManyBatchFetchingTest extends TestCase
     public function testPostLoadRunsOncePerSharedTarget(): void
     {
         $groups = $this->loadGroups();
-        $listener = new class {
+        $listener = new class () {
             public array $ids = [];
             public function postLoad(\ModernORM\Event\PostLoadEventArgs $event): void
             {
-                if ($event->getObject() instanceof ManyBatchRole) { $this->ids[] = $event->getObject()->id; }
+                if ($event->getObject() instanceof ManyBatchRole) {
+                    $this->ids[] = $event->getObject()->id;
+                }
             }
         };
         $this->em->getEventManager()->addEventListener([\ModernORM\Events::postLoad], $listener);

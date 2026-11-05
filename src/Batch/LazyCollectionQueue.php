@@ -19,7 +19,9 @@ final class LazyCollectionQueue
     private array $pending = [];
     private bool $loading = false;
 
-    public function __construct(private readonly EntityManagerInterface $em) {}
+    public function __construct(private readonly EntityManagerInterface $em)
+    {
+    }
 
     public function add(PersistentCollection $collection): void
     {
@@ -45,7 +47,10 @@ final class LazyCollectionQueue
         }
     }
 
-    public function clear(): void { $this->pending = []; }
+    public function clear(): void
+    {
+        $this->pending = [];
+    }
 
     public function initialize(PersistentCollection $trigger): bool
     {
@@ -66,41 +71,55 @@ final class LazyCollectionQueue
 
         $selected = [spl_object_id($owner) => $trigger];
         foreach ($this->pending[$key] as $oid => $candidate) {
-            if ($oid === spl_object_id($owner)) { continue; }
+            if ($oid === spl_object_id($owner)) {
+                continue;
+            }
             $collection = $candidate->get();
             if ($collection === null || ! $this->eligible($collection)) {
                 unset($this->pending[$key][$oid]);
                 continue;
             }
             $selected[$oid] = $collection;
-            if (count($selected) === $size) { break; }
+            if (count($selected) === $size) {
+                break;
+            }
         }
 
         $owners = array_map(static fn (PersistentCollection $collection): object => $collection->getOwner(), $selected);
         $uow = $this->em->getUnitOfWork();
         $statistics = $this->em->getStatistics();
         $measurement = $statistics?->isEnabled()
-            ? $statistics->startBatch($mapping->isManyToMany() ? BatchKind::MANY_TO_MANY : BatchKind::ONE_TO_MANY,
-                $mapping->targetEntity, $mapping->sourceEntity . '::' . $mapping->fieldName, $size, count($selected))
+            ? $statistics->startBatch(
+                $mapping->isManyToMany() ? BatchKind::MANY_TO_MANY : BatchKind::ONE_TO_MANY,
+                $mapping->targetEntity,
+                $mapping->sourceEntity . '::' . $mapping->fieldName,
+                $size,
+                count($selected)
+            )
             : null;
         $this->loading = true;
         $failed = true;
         try {
             if ($mapping->isManyToMany()) {
                 $rows = (new ManyToManyBatchLoader($this->em))->load($mapping, $selected);
-            } else {
+            } elseif ($mapping->isOneToMany()) {
                 $found = $uow->getEntityPersister($mapping->targetEntity)->loadAll(
-                    [$mapping->mappedBy => array_values($owners)], $mapping->orderBy(),
+                    [$mapping->mappedBy => array_values($owners)],
+                    $mapping->orderBy(),
                 );
                 $target = $this->em->getClassMetadata($mapping->targetEntity);
                 $parentProperty = $target->getPropertyAccessor($mapping->mappedBy);
                 $indexProperty = $mapping->isIndexed() ? $target->getPropertyAccessor($mapping->indexBy()) : null;
                 $rows = array_fill_keys(array_keys($selected), []);
                 foreach ($found as $entity) {
-                    if ($uow->isScheduledForDelete($entity)) { continue; }
+                    if ($uow->isScheduledForDelete($entity)) {
+                        continue;
+                    }
                     // Preserve a managed child's local FK change instead of overwriting its back reference.
                     $parent = $parentProperty->getValue($entity);
-                    if ($parent === null || ! isset($selected[spl_object_id($parent)])) { continue; }
+                    if ($parent === null || ! isset($selected[spl_object_id($parent)])) {
+                        continue;
+                    }
                     $oid = spl_object_id($parent);
                     if ($indexProperty !== null) {
                         $rows[$oid][$indexProperty->getValue($entity)] = $entity;
@@ -108,6 +127,8 @@ final class LazyCollectionQueue
                         $rows[$oid][] = $entity;
                     }
                 }
+            } else {
+                throw new \LogicException('Collection batching requires OneToMany or ManyToMany mapping.');
             }
             foreach ($selected as $oid => $collection) {
                 // PostLoad can explicitly initialize, replace, or detach a collection while rows hydrate.
@@ -116,14 +137,20 @@ final class LazyCollectionQueue
                 }
                 unset($this->pending[$key][$oid]);
             }
-            if (($this->pending[$key] ?? []) === []) { unset($this->pending[$key]); }
+            if (($this->pending[$key] ?? []) === []) {
+                unset($this->pending[$key]);
+            }
             $failed = false;
             $initialized = $trigger->isInitialized();
-            if (!$initialized) { $this->fallback($trigger, $this->exclusionReason($trigger) ?? BatchFallbackReason::NOT_QUEUED); }
+            if (!$initialized) {
+                $this->fallback($trigger, $this->exclusionReason($trigger) ?? BatchFallbackReason::NOT_QUEUED);
+            }
             return $initialized;
         } finally {
             $this->loading = false;
-            if ($measurement !== null) { $statistics->recordBatch($measurement, $failed); }
+            if ($measurement !== null) {
+                $statistics->recordBatch($measurement, $failed);
+            }
         }
     }
 
@@ -140,25 +167,35 @@ final class LazyCollectionQueue
     private function fallback(PersistentCollection $collection, BatchFallbackReason $reason): void
     {
         $statistics = $this->em->getStatistics();
-        if (!$statistics?->isEnabled()) { return; }
+        if (!$statistics?->isEnabled()) {
+            return;
+        }
         $mapping = $collection->getMapping();
         $statistics->recordBatchFallback(
             $mapping->isManyToMany() ? BatchKind::MANY_TO_MANY : BatchKind::ONE_TO_MANY,
-            $reason, $mapping->targetEntity, $mapping->sourceEntity . '::' . $mapping->fieldName,
+            $reason,
+            $mapping->targetEntity,
+            $mapping->sourceEntity . '::' . $mapping->fieldName,
             $mapping->batchSize ?? $this->em->getConfiguration()->getLazyFetchBatchSize(),
         );
     }
 
     private function exclusionReason(PersistentCollection $collection): ?BatchFallbackReason
     {
-        if ($collection->isInitialized()) { return BatchFallbackReason::ALREADY_INITIALIZED; }
-        if (!$this->em->isOpen()) { return BatchFallbackReason::MANAGER_CLOSED; }
+        if ($collection->isInitialized()) {
+            return BatchFallbackReason::ALREADY_INITIALIZED;
+        }
+        if (!$this->em->isOpen()) {
+            return BatchFallbackReason::MANAGER_CLOSED;
+        }
         $mapping = $collection->getMapping();
         if ($this->em->getCache() !== null && $this->em->getClassMetadata($mapping->targetEntity)->cache !== null) {
             return BatchFallbackReason::CACHED_TARGET;
         }
         $owner = $collection->getOwner();
-        if ($owner === null || $this->em->isUninitializedObject($owner)) { return BatchFallbackReason::UNMANAGED; }
+        if ($owner === null || $this->em->isUninitializedObject($owner)) {
+            return BatchFallbackReason::UNMANAGED;
+        }
         if ($mapping->isManyToMany()) {
             $owning = $this->em->getMetadataFactory()->getOwningSide($mapping);
             if (count($owning->joinTable->joinColumns) !== 1 || count($owning->joinTable->inverseJoinColumns) !== 1) {
@@ -167,9 +204,15 @@ final class LazyCollectionQueue
         }
         $class = $this->em->getClassMetadata($mapping->sourceEntity);
         $uow = $this->em->getUnitOfWork();
-        if ($uow->tryGetById($class->getIdentifierValues($owner), $class->name) !== $owner) { return BatchFallbackReason::UNMANAGED; }
-        if ($uow->isScheduledForDelete($owner)) { return BatchFallbackReason::PENDING_DELETE; }
-        if ($class->getPropertyAccessor($mapping->fieldName)->getValue($owner) !== $collection) { return BatchFallbackReason::REPLACED_COLLECTION; }
+        if ($uow->tryGetById($class->getIdentifierValues($owner), $class->name) !== $owner) {
+            return BatchFallbackReason::UNMANAGED;
+        }
+        if ($uow->isScheduledForDelete($owner)) {
+            return BatchFallbackReason::PENDING_DELETE;
+        }
+        if ($class->getPropertyAccessor($mapping->fieldName)->getValue($owner) !== $collection) {
+            return BatchFallbackReason::REPLACED_COLLECTION;
+        }
         return null;
     }
 }

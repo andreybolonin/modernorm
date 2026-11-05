@@ -30,9 +30,14 @@ final class Statistics
     private int $observerErrors = 0;
     private bool $notifying = false;
 
-    public function __construct(private bool $enabled = false, private readonly ?OperationObserver $observer = null) {}
+    public function __construct(private bool $enabled = false, private readonly ?OperationObserver $observer = null)
+    {
+    }
 
-    public function isEnabled(): bool { return $this->enabled; }
+    public function isEnabled(): bool
+    {
+        return $this->enabled;
+    }
 
     public function enable(): void
     {
@@ -57,15 +62,21 @@ final class Statistics
         ++$this->generation;
         $this->sqlCount = $this->sqlTimeNanoseconds = $this->sqlErrors = 0;
         $this->flushCount = $this->flushTimeNanoseconds = $this->flushErrors = 0;
-        $this->batches = []; $this->observerErrors = 0;
+        $this->batches = [];
+        $this->observerErrors = 0;
     }
 
     public function snapshot(): Snapshot
     {
         return new Snapshot(
-            $this->sqlCount, $this->sqlTimeNanoseconds, $this->sqlErrors,
-            $this->flushCount, $this->flushTimeNanoseconds, $this->flushErrors,
-            $this->batchSnapshot(), $this->observerErrors,
+            $this->sqlCount,
+            $this->sqlTimeNanoseconds,
+            $this->sqlErrors,
+            $this->flushCount,
+            $this->flushTimeNanoseconds,
+            $this->flushErrors,
+            $this->batchSnapshot(),
+            $this->observerErrors,
         );
     }
 
@@ -79,7 +90,10 @@ final class Statistics
     }
 
     /** @internal Detect middleware added too late to an already-created DBAL connection. */
-    public function isDriverBound(): bool { return $this->driverBound; }
+    public function isDriverBound(): bool
+    {
+        return $this->driverBound;
+    }
 
     /** @internal No clock read or measurement allocation when disabled. */
     public function start(): ?Measurement
@@ -126,7 +140,9 @@ final class Statistics
     public function recordBatch(BatchMeasurement $batch, bool $failed): void
     {
         $measurement = $batch->measurement;
-        if (!$this->enabled || $measurement->generation !== $this->generation) { return; }
+        if (!$this->enabled || $measurement->generation !== $this->generation) {
+            return;
+        }
         $duration = hrtime(true) - $measurement->startedAt;
         $key = $batch->kind->value;
         $this->batches[$key] ??= $this->emptyBatch();
@@ -135,14 +151,24 @@ final class Statistics
         $this->batches[$key]['timeNanoseconds'] += $duration;
         $sizeField = $batch->kind === BatchKind::MANY_TO_ONE ? 'selectedReferences' : 'selectedCollections';
         $this->batches[$key][$sizeField] += $batch->selectedCount;
-        foreach (['cacheHits', 'cacheMisses', 'cachePuts'] as $field) { $this->batches[$key][$field] += $batch->$field; }
+        foreach (['cacheHits', 'cacheMisses', 'cachePuts'] as $field) {
+            $this->batches[$key][$field] += $batch->$field;
+        }
         if ($this->observer !== null) {
             $this->emit(new OperationEvent(
-                OperationKind::BATCH, $measurement->startedAtUnixNanoseconds, $duration, $failed,
-                $batch->kind, $batch->entityClass, $batch->association, $batch->configuredSize,
+                OperationKind::BATCH,
+                $measurement->startedAtUnixNanoseconds,
+                $duration,
+                $failed,
+                $batch->kind,
+                $batch->entityClass,
+                $batch->association,
+                $batch->configuredSize,
                 $batch->kind === BatchKind::MANY_TO_ONE ? $batch->selectedCount : 0,
                 $batch->kind === BatchKind::MANY_TO_ONE ? 0 : $batch->selectedCount,
-                $batch->cacheHits, $batch->cacheMisses, $batch->cachePuts,
+                $batch->cacheHits,
+                $batch->cacheMisses,
+                $batch->cachePuts,
             ), $measurement->generation);
         }
     }
@@ -150,14 +176,23 @@ final class Statistics
     /** @internal A loader-selection decision, not proof that the following single load succeeded. */
     public function recordBatchFallback(BatchKind $kind, BatchFallbackReason $reason, string $entityClass, ?string $association, int $configuredSize): void
     {
-        if (!$this->enabled || $this->notifying) { return; }
+        if (!$this->enabled || $this->notifying) {
+            return;
+        }
         $key = $kind->value;
         $this->batches[$key] ??= $this->emptyBatch();
         $this->batches[$key]['fallbackCounts'][$reason->value] = ($this->batches[$key]['fallbackCounts'][$reason->value] ?? 0) + 1;
         if ($this->observer !== null) {
             $this->emit(new OperationEvent(
-                OperationKind::BATCH_FALLBACK, (int) (microtime(true) * 1_000_000_000), 0, false,
-                $kind, $entityClass, $association, $configuredSize, fallbackReason: $reason,
+                OperationKind::BATCH_FALLBACK,
+                (int) (microtime(true) * 1_000_000_000),
+                0,
+                false,
+                $kind,
+                $entityClass,
+                $association,
+                $configuredSize,
+                fallbackReason: $reason,
             ), $this->generation);
         }
     }
@@ -170,14 +205,19 @@ final class Statistics
 
     private function batchSnapshot(): BatchSnapshot
     {
-        $totals = $this->emptyBatch(); $byKind = [];
+        $totals = $this->emptyBatch();
+        $byKind = [];
         foreach (BatchKind::cases() as $kind) {
             $values = $this->batches[$kind->value] ?? $this->emptyBatch();
             $byKind[$kind->value] = new BatchSnapshot(...$values);
             foreach ($values as $field => $value) {
                 if ($field === 'fallbackCounts') {
-                    foreach ($value as $reason => $count) { $totals[$field][$reason] = ($totals[$field][$reason] ?? 0) + $count; }
-                } else { $totals[$field] += $value; }
+                    foreach ($value as $reason => $count) {
+                        $totals[$field][$reason] = ($totals[$field][$reason] ?? 0) + $count;
+                    }
+                } else {
+                    $totals[$field] += $value;
+                }
             }
         }
         return new BatchSnapshot(...$totals, byKind: $byKind);
@@ -192,11 +232,18 @@ final class Statistics
 
     private function emit(OperationEvent $event, int $generation): void
     {
-        if ($this->notifying) { return; }
+        if ($this->notifying) {
+            return;
+        }
         $this->notifying = true;
-        try { $this->observer->completed($event); }
-        catch (\Throwable) {
-            if ($this->enabled && $generation === $this->generation) { ++$this->observerErrors; }
-        } finally { $this->notifying = false; }
+        try {
+            $this->observer->completed($event);
+        } catch (\Throwable) {
+            if ($this->enabled && $generation === $this->generation) {
+                ++$this->observerErrors;
+            }
+        } finally {
+            $this->notifying = false;
+        }
     }
 }

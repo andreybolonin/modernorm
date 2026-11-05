@@ -16,8 +16,15 @@ final readonly class Snapshot
         public int $flushErrors,
         public BatchSnapshot $batch = new BatchSnapshot(),
         public int $observerErrors = 0,
-    ) {}
+    ) {
+    }
 
-    public function sqlTimeMilliseconds(): float { return $this->sqlTimeNanoseconds / 1_000_000; }
-    public function flushTimeMilliseconds(): float { return $this->flushTimeNanoseconds / 1_000_000; }
+    public function sqlTimeMilliseconds(): float
+    {
+        return $this->sqlTimeNanoseconds / 1_000_000;
+    }
+    public function flushTimeMilliseconds(): float
+    {
+        return $this->flushTimeNanoseconds / 1_000_000;
+    }
 }

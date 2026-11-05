@@ -33,7 +33,9 @@ final class L2BatchCurrency
     #[ORM\PostLoad] public function loaded(): void
     {
         self::$loaded[] = $this->code;
-        if (self::$onLoad !== null) { (self::$onLoad)($this); }
+        if (self::$onLoad !== null) {
+            (self::$onLoad)($this);
+        }
     }
 }
 
@@ -97,9 +99,14 @@ final class L2BatchRecorder extends AbstractLogger
     public ?\Closure $onSelect = null;
     public function log($level, string|Stringable $message, array $context = []): void
     {
-        if (isset($context['sql'])) { $this->sql[] = $context['sql']; $this->parameters[] = $context['params'] ?? []; }
+        if (isset($context['sql'])) {
+            $this->sql[] = $context['sql'];
+            $this->parameters[] = $context['params'] ?? [];
+        }
         if ($this->onSelect !== null && isset($context['sql']) && str_starts_with($context['sql'], 'SELECT')) {
-            $callback = $this->onSelect; $this->onSelect = null; $callback();
+            $callback = $this->onSelect;
+            $this->onSelect = null;
+            $callback();
         }
     }
 }
@@ -111,9 +118,13 @@ final class L2BatchPool extends ArrayAdapter
     public function save(\Psr\Cache\CacheItemInterface $item): bool
     {
         if ($item->get() instanceof \ModernORM\Cache\ReadOnlyEntityCacheEntry) {
-            if ($this->failPayloads) { return false; }
+            if ($this->failPayloads) {
+                return false;
+            }
             if ($this->beforePut !== null) {
-                $callback = $this->beforePut; $this->beforePut = null; $callback();
+                $callback = $this->beforePut;
+                $this->beforePut = null;
+                $callback();
             }
         }
         return parent::save($item);
@@ -127,7 +138,9 @@ final class L2BatchOperationRecorder implements \ModernORM\Statistics\OperationO
     public function completed(\ModernORM\Statistics\OperationEvent $event): void
     {
         $this->events[] = $event;
-        if ($this->onEvent !== null) { ($this->onEvent)($event); }
+        if ($this->onEvent !== null) {
+            ($this->onEvent)($event);
+        }
     }
 }
 
@@ -151,7 +164,8 @@ final class L2BatchFetchingTest extends TestCase
 
     protected function setUp(): void
     {
-        L2BatchCurrency::$loaded = []; L2BatchCurrency::$onLoad = null;
+        L2BatchCurrency::$loaded = [];
+        L2BatchCurrency::$onLoad = null;
         $this->operationObserver = new L2BatchOperationRecorder();
         $this->statistics = new Statistics(enabled: true, observer: $this->operationObserver);
         $this->cacheLogger = new StatisticsCacheLogger();
@@ -170,7 +184,8 @@ final class L2BatchFetchingTest extends TestCase
         ], $dbal), $config);
         $this->metadata = array_map($this->em->getClassMetadata(...), [L2BatchCurrency::class, L2BatchCustomer::class, L2BatchDocument::class, L2BatchLine::class, L2BatchTag::class]);
         $schema = new SchemaTool($this->em);
-        $schema->dropSchema($this->metadata); $schema->createSchema($this->metadata);
+        $schema->dropSchema($this->metadata);
+        $schema->createSchema($this->metadata);
         $connection = $this->em->getConnection();
         foreach (['USD', 'EUR', 'GBP'] as $index => $code) {
             $id = $index + 1;
@@ -192,11 +207,16 @@ final class L2BatchFetchingTest extends TestCase
 
     protected function tearDown(): void
     {
-        L2BatchCurrency::$onLoad = null; L2BatchCurrency::$loaded = [];
-        $this->pool->beforePut = null; $this->pool->failPayloads = false; $this->recorder->onSelect = null;
+        L2BatchCurrency::$onLoad = null;
+        L2BatchCurrency::$loaded = [];
+        $this->pool->beforePut = null;
+        $this->pool->failPayloads = false;
+        $this->recorder->onSelect = null;
         $this->operationObserver->onEvent = null;
         $connection = $this->em->getConnection();
-        while ($connection->isTransactionActive()) { $connection->rollBack(); }
+        while ($connection->isTransactionActive()) {
+            $connection->rollBack();
+        }
         (new SchemaTool($this->em))->dropSchema($this->metadata);
         $connection->close();
     }
@@ -205,7 +225,10 @@ final class L2BatchFetchingTest extends TestCase
     {
         L2BatchCurrency::$loaded = [];
         $this->operationObserver->events = [];
-        $this->statistics->reset(); $this->recorder->sql = []; $this->recorder->parameters = []; $this->cacheLogger->reset();
+        $this->statistics->reset();
+        $this->recorder->sql = [];
+        $this->recorder->parameters = [];
+        $this->cacheLogger->reset();
     }
 
     private function documents(): array
@@ -216,16 +239,23 @@ final class L2BatchFetchingTest extends TestCase
     private function warmCurrencies(): void
     {
         $warm = $this->manager();
-        foreach (['USD', 'EUR', 'GBP'] as $code) { $warm->find(L2BatchCurrency::class, $code); }
+        foreach (['USD', 'EUR', 'GBP'] as $code) {
+            $warm->find(L2BatchCurrency::class, $code);
+        }
         $warm->clear();
     }
 
-    public static function cacheStates(): array { return ['cold' => [false], 'warm' => [true]]; }
+    public static function cacheStates(): array
+    {
+        return ['cold' => [false], 'warm' => [true]];
+    }
 
     #[DataProvider('cacheStates')]
     public function testCachedAndUncachedBatchesCoexist(bool $warm): void
     {
-        if ($warm) { $this->warmCurrencies(); }
+        if ($warm) {
+            $this->warmCurrencies();
+        }
         $documents = $this->documents();
         $this->reset();
         self::assertSame('customer-1', $documents[0]->customer->name);
@@ -240,7 +270,10 @@ final class L2BatchFetchingTest extends TestCase
         self::assertSame($warm ? 1 : 2, $this->statistics->snapshot()->sqlCount);
         self::assertSame($warm ? 2 : 0, $this->cacheLogger->getHitCount());
         self::assertSame($warm ? 0 : 2, $this->cacheLogger->getMissCount());
-        foreach ($documents as $document) { $document->currency->name; $document->customer->name; }
+        foreach ($documents as $document) {
+            $document->currency->name;
+            $document->customer->name;
+        }
         self::assertSame($warm ? 2 : 4, $this->statistics->snapshot()->sqlCount);
         self::assertSame($warm ? 3 : 0, $this->cacheLogger->getHitCount());
         self::assertSame($warm ? 0 : 3, $this->cacheLogger->getPutCount());
@@ -254,14 +287,17 @@ final class L2BatchFetchingTest extends TestCase
         $events = array_values(array_filter($this->operationObserver->events, static fn ($event) => $event->kind === \ModernORM\Statistics\OperationKind::BATCH));
         self::assertCount(4, $events);
         self::assertSame([2, 2, 1, 1], array_column($events, 'selectedReferences'));
-        foreach ($documents as $document) { self::assertSame($document->currency, $this->em->find(L2BatchCurrency::class, $document->currency->code)); }
+        foreach ($documents as $document) {
+            self::assertSame($document->currency, $this->em->find(L2BatchCurrency::class, $document->currency->code));
+        }
     }
 
     public function testCachedReadsBypassL2InTransactionWithoutDisablingUncachedBatching(): void
     {
         $this->warmCurrencies();
         $documents = $this->documents();
-        $connection = $this->em->getConnection(); $connection->beginTransaction();
+        $connection = $this->em->getConnection();
+        $connection->beginTransaction();
         $connection->executeStatement("UPDATE modernorm_test_l2_batch_currencies SET name = 'private' WHERE code = 'USD'");
         $this->reset();
         self::assertSame('customer-1', $documents[0]->customer->name);
@@ -289,7 +325,9 @@ final class L2BatchFetchingTest extends TestCase
         self::assertTrue($documents[1]->tags->isInitialized());
         self::assertSame($documents[0]->tags->get('tag-1'), $documents[1]->tags->get('tag-1'));
         self::assertSame(2, $this->statistics->snapshot()->sqlCount);
-        foreach ($documents as $document) { self::assertFalse($document->currencies->isInitialized()); }
+        foreach ($documents as $document) {
+            self::assertFalse($document->currencies->isInitialized());
+        }
         $batch = $this->statistics->snapshot()->batch;
         self::assertSame(2, $batch->count);
         self::assertSame(4, $batch->selectedCollections);
@@ -299,7 +337,9 @@ final class L2BatchFetchingTest extends TestCase
         self::assertSame(['EUR', 'USD'], $documents[0]->currencies->getKeys());
         self::assertFalse($documents[1]->currencies->isInitialized());
         self::assertSame($documents[0]->currency, $documents[0]->currencies->get('USD'));
-        foreach ($documents as $document) { $document->currencies->toArray(); }
+        foreach ($documents as $document) {
+            $document->currencies->toArray();
+        }
         self::assertSame(3, $this->statistics->snapshot()->sqlCount);
         self::assertSame(['cached_target' => 3], $this->statistics->snapshot()->batch->fallbackCounts);
         self::assertSame(0, $this->cacheLogger->getHitCount());
@@ -309,12 +349,22 @@ final class L2BatchFetchingTest extends TestCase
     public function testDirtyEntitiesAndPendingCollectionChangesSurviveBatchingWithL2(): void
     {
         $documents = $this->documents();
-        $line = $this->em->find(L2BatchLine::class, 11); $line->name = 'local';
+        $line = $this->em->find(L2BatchLine::class, 11);
+        $line->name = 'local';
         $pending = new L2BatchLine();
-        $pending->id = 99; $pending->document = $documents[0]; $pending->code = 'pending'; $pending->position = 3; $pending->name = 'added';
-        $this->em->persist($pending); $documents[0]->lines->add($pending);
-        $tag = new L2BatchTag(); $tag->id = 99; $tag->name = 'pending'; $tag->position = 99;
-        $this->em->persist($tag); $documents[0]->tags->add($tag);
+        $pending->id = 99;
+        $pending->document = $documents[0];
+        $pending->code = 'pending';
+        $pending->position = 3;
+        $pending->name = 'added';
+        $this->em->persist($pending);
+        $documents[0]->lines->add($pending);
+        $tag = new L2BatchTag();
+        $tag->id = 99;
+        $tag->name = 'pending';
+        $tag->position = 99;
+        $this->em->persist($tag);
+        $documents[0]->tags->add($tag);
         $this->reset();
         self::assertSame($line, $documents[0]->lines->get('a'));
         self::assertSame('local', $line->name);
@@ -351,13 +401,17 @@ final class L2BatchFetchingTest extends TestCase
         self::assertNotSame($peers[0]->customer, $documents[0]->customer);
         self::assertSame(1, $this->statistics->snapshot()->sqlCount);
     }
-    public static function mixedTriggers(): array { return [[0], [1]]; }
+    public static function mixedTriggers(): array
+    {
+        return [[0], [1]];
+    }
 
     #[DataProvider('mixedTriggers')]
     public function testOnlyMissesAreSelectedWhenTriggerIsAHitOrMiss(int $trigger): void
     {
         $this->manager()->find(L2BatchCurrency::class, 'USD');
-        $documents = $this->documents(); $this->reset();
+        $documents = $this->documents();
+        $this->reset();
         self::assertSame($trigger === 0 ? 'USD' : 'EUR', $documents[$trigger]->currency->name);
         self::assertFalse($this->em->isUninitializedObject($documents[0]->currency));
         self::assertFalse($this->em->isUninitializedObject($documents[1]->currency));
@@ -376,9 +430,12 @@ final class L2BatchFetchingTest extends TestCase
         $this->warmCurrencies();
         $region = $this->em->getUnitOfWork()->getEntityPersister(L2BatchCurrency::class)->getCacheRegion();
         $key = new \ModernORM\Cache\EntityCacheKey(L2BatchCurrency::class, ['code' => 'EUR']);
-        $entry = $region->get($key); $data = $entry->data; $data['code'] = 'USD';
+        $entry = $region->get($key);
+        $data = $entry->data;
+        $data['code'] = 'USD';
         $region->put($key, new \ModernORM\Cache\ReadOnlyEntityCacheEntry(L2BatchCurrency::class, $data, $entry->mappingSignature));
-        $documents = $this->documents(); $this->reset();
+        $documents = $this->documents();
+        $this->reset();
         self::assertSame('USD', $documents[0]->currency->name);
         self::assertSame('EUR', $documents[1]->currency->name);
         self::assertSame(1, $this->statistics->snapshot()->sqlCount);
@@ -387,7 +444,10 @@ final class L2BatchFetchingTest extends TestCase
         self::assertSame(1, $this->cacheLogger->getMissCount());
     }
 
-    public static function missingTargets(): array { return ['trigger' => ['USD'], 'peer' => ['EUR']]; }
+    public static function missingTargets(): array
+    {
+        return ['trigger' => ['USD'], 'peer' => ['EUR']];
+    }
 
     #[DataProvider('missingTargets')]
     public function testMissingTriggerOrPeerDoesNotCreateNegativeCache(string $missing): void
@@ -438,10 +498,15 @@ final class L2BatchFetchingTest extends TestCase
     #[DataProvider('cacheStates')]
     public function testWholeBatchIsHydratedBeforeCallbacksAndOnlyRawRowsArePublished(bool $warm): void
     {
-        if ($warm) { $this->warmCurrencies(); }
-        $documents = $this->documents(); $this->reset();
+        if ($warm) {
+            $this->warmCurrencies();
+        }
+        $documents = $this->documents();
+        $this->reset();
         L2BatchCurrency::$onLoad = static function (L2BatchCurrency $currency) use ($documents): void {
-            if ($currency->code !== 'USD') { return; }
+            if ($currency->code !== 'USD') {
+                return;
+            }
             self::assertSame('EUR', $documents[1]->currency->name);
             $documents[1]->currency->name = 'local-peer';
             $currency->name = 'local-trigger';
@@ -480,11 +545,13 @@ final class L2BatchFetchingTest extends TestCase
     {
         $mapping = new \ModernORM\Query\ResultSetMapping();
         $mapping->addEntityResult(L2BatchCurrency::class, 'c');
-        $mapping->addFieldResult('c', 'code', 'code'); $mapping->addFieldResult('c', 'name', 'name');
+        $mapping->addFieldResult('c', 'code', 'code');
+        $mapping->addFieldResult('c', 'name', 'name');
         $mapping->partialAliases['c'] = true;
         $peer = $this->em->createNativeQuery("SELECT code, name FROM modernorm_test_l2_batch_currencies WHERE code = 'EUR'", $mapping)->getSingleResult();
         $peer->name = 'local';
-        $documents = $this->documents(); $this->reset();
+        $documents = $this->documents();
+        $this->reset();
         self::assertSame('USD', $documents[0]->currency->name);
         self::assertSame($peer, $documents[1]->currency);
         self::assertTrue($this->em->isUninitializedObject($peer));
@@ -519,51 +586,70 @@ final class L2BatchFetchingTest extends TestCase
 
     public function testCacheWriteFailurePropagatesBeforeHydrationAndCanBeRetriedExplicitly(): void
     {
-        $documents = $this->documents(); $this->pool->failPayloads = true;
-        try { $documents[0]->currency->name; self::fail('Expected cache failure'); }
-        catch (\ModernORM\Exception\CacheException) {
+        $documents = $this->documents();
+        $this->pool->failPayloads = true;
+        try {
+            $documents[0]->currency->name;
+            self::fail('Expected cache failure');
+        } catch (\ModernORM\Exception\CacheException) {
             self::assertTrue($this->em->isUninitializedObject($documents[0]->currency));
             self::assertTrue($this->em->isUninitializedObject($documents[1]->currency));
         }
-        $this->pool->failPayloads = false; $this->reset();
+        $this->pool->failPayloads = false;
+        $this->reset();
         self::assertSame('USD', $documents[0]->currency->name);
         self::assertSame('EUR', $documents[1]->currency->name);
         self::assertSame(1, $this->statistics->snapshot()->sqlCount);
     }
 
-    public static function evictionModes(): array { return [['key'], ['class']]; }
+    public static function evictionModes(): array
+    {
+        return [['key'], ['class']];
+    }
 
     #[DataProvider('evictionModes')]
     public function testEvictionBetweenSelectAndPublicationMakesLateFillUnreachable(string $mode): void
     {
-        $documents = $this->documents(); $this->reset();
+        $documents = $this->documents();
+        $this->reset();
         $this->pool->beforePut = function () use ($mode): void {
             // A separate PostgreSQL connection commits an external update before
             // the first raw batch payload is actually saved by the original reader.
             $writer = DriverManager::getConnection($this->em->getConnection()->getParams());
-            try { $writer->executeStatement("UPDATE modernorm_test_l2_batch_currencies SET name = 'external' WHERE code = 'USD'"); }
-            finally { $writer->close(); }
-            if ($mode === 'key') { $this->em->getCache()->evict(L2BatchCurrency::class, 'USD'); }
-            else { $this->em->getCache()->evictAll(L2BatchCurrency::class); }
+            try {
+                $writer->executeStatement("UPDATE modernorm_test_l2_batch_currencies SET name = 'external' WHERE code = 'USD'");
+            } finally {
+                $writer->close();
+            }
+            if ($mode === 'key') {
+                $this->em->getCache()->evict(L2BatchCurrency::class, 'USD');
+            } else {
+                $this->em->getCache()->evictAll(L2BatchCurrency::class);
+            }
         };
         self::assertSame('USD', $documents[0]->currency->name); // In-flight reader may finish with its old row.
         self::assertFalse($this->em->getCache()->contains(L2BatchCurrency::class, 'USD'));
         self::assertSame('external', $this->manager()->find(L2BatchCurrency::class, 'USD')->name);
     }
 
-    public static function lifecycleModes(): array { return [['clear'], ['detach'], ['close']]; }
+    public static function lifecycleModes(): array
+    {
+        return [['clear'], ['detach'], ['close']];
+    }
 
     #[DataProvider('lifecycleModes')]
     public function testCachedQueueCleanupRetainsSingleGhostLoading(string $action): void
     {
         $documents = $this->documents();
         if ($action === 'detach') {
-            $this->em->detach($documents[0]->currency); $this->reset();
+            $this->em->detach($documents[0]->currency);
+            $this->reset();
             self::assertSame('EUR', $documents[1]->currency->name);
             self::assertTrue($this->em->isUninitializedObject($documents[0]->currency));
             self::assertFalse($this->em->isUninitializedObject($documents[2]->currency));
         } else {
-            $this->em->$action(); $this->reset();
+            $this->em->$action();
+            $this->reset();
             self::assertSame('USD', $documents[0]->currency->name);
             self::assertTrue($this->em->isUninitializedObject($documents[1]->currency));
         }
@@ -589,7 +675,8 @@ final class L2BatchFetchingTest extends TestCase
         $this->warmCurrencies();
         $documents = $this->documents();
         $connection = $this->em->getConnection();
-        $connection->setAutoCommit(false); $connection->beginTransaction();
+        $connection->setAutoCommit(false);
+        $connection->beginTransaction();
         try {
             $this->reset();
             self::assertSame('USD', $documents[0]->currency->name);
@@ -598,7 +685,8 @@ final class L2BatchFetchingTest extends TestCase
             self::assertSame(0, $this->cacheLogger->getHitCount());
             self::assertSame(0, $this->cacheLogger->getPutCount());
         } finally {
-            $connection->rollBack(); $connection->setAutoCommit(true);
+            $connection->rollBack();
+            $connection->setAutoCommit(true);
         }
     }
 
@@ -610,8 +698,12 @@ final class L2BatchFetchingTest extends TestCase
             $connection->beginTransaction();
             $connection->executeStatement("UPDATE modernorm_test_l2_batch_currencies SET name = 'private' WHERE code = 'USD'");
         };
-        try { $documents[0]->currency->name; self::fail('Expected transaction mutation rejection'); }
-        catch (\LogicException $error) { self::assertStringContainsString('Callbacks must not change transaction', $error->getMessage()); }
+        try {
+            $documents[0]->currency->name;
+            self::fail('Expected transaction mutation rejection');
+        } catch (\LogicException $error) {
+            self::assertStringContainsString('Callbacks must not change transaction', $error->getMessage());
+        }
         self::assertTrue($this->em->isUninitializedObject($documents[0]->currency));
         self::assertFalse($this->em->getCache()->contains(L2BatchCurrency::class, 'USD'));
         $connection->rollBack();
@@ -624,9 +716,15 @@ final class L2BatchFetchingTest extends TestCase
         $connection = $this->em->getConnection();
         $connection->executeStatement('ALTER TABLE modernorm_test_l2_batch_currencies RENAME COLUMN name TO temporary_name');
         $this->reset();
-        try { $documents[0]->currency->name; self::fail('Expected SQL failure'); }
-        catch (\Doctrine\DBAL\Exception\InvalidFieldNameException) { $snapshot = $this->statistics->snapshot(); $events = $this->operationObserver->events; }
-        finally { $connection->executeStatement('ALTER TABLE modernorm_test_l2_batch_currencies RENAME COLUMN temporary_name TO name'); }
+        try {
+            $documents[0]->currency->name;
+            self::fail('Expected SQL failure');
+        } catch (\Doctrine\DBAL\Exception\InvalidFieldNameException) {
+            $snapshot = $this->statistics->snapshot();
+            $events = $this->operationObserver->events;
+        } finally {
+            $connection->executeStatement('ALTER TABLE modernorm_test_l2_batch_currencies RENAME COLUMN temporary_name TO name');
+        }
         self::assertSame(1, $snapshot->sqlCount);
         self::assertSame(1, $snapshot->sqlErrors);
         self::assertSame(1, $snapshot->batch->count);
@@ -656,9 +754,12 @@ final class L2BatchFetchingTest extends TestCase
 
     public function testReentrantLoadingIsCountedOnceWithoutInflatingSelectedBatchSize(): void
     {
-        $documents = $this->documents(); $this->reset();
+        $documents = $this->documents();
+        $this->reset();
         L2BatchCurrency::$onLoad = static function (L2BatchCurrency $currency) use ($documents): void {
-            if ($currency->code === 'USD') { $documents[2]->currency->name; }
+            if ($currency->code === 'USD') {
+                $documents[2]->currency->name;
+            }
         };
         self::assertSame('USD', $documents[0]->currency->name);
         self::assertSame('GBP', $documents[2]->currency->name);
@@ -674,7 +775,9 @@ final class L2BatchFetchingTest extends TestCase
 
     public function testDisabledStatisticsDoesNotChangeBatchOrL2Behavior(): void
     {
-        $documents = $this->documents(); $this->reset(); $this->statistics->disable();
+        $documents = $this->documents();
+        $this->reset();
+        $this->statistics->disable();
         self::assertSame('USD', $documents[0]->currency->name);
         self::assertFalse($this->em->isUninitializedObject($documents[1]->currency));
         self::assertTrue($this->em->getCache()->contains(L2BatchCurrency::class, 'EUR'));
@@ -689,9 +792,12 @@ final class L2BatchFetchingTest extends TestCase
 
     public function testResetDuringPostLoadDiscardsCompletionFromOldWorkerWindow(): void
     {
-        $documents = $this->documents(); $this->reset();
+        $documents = $this->documents();
+        $this->reset();
         L2BatchCurrency::$onLoad = function (L2BatchCurrency $currency): void {
-            if ($currency->code !== 'USD') { return; }
+            if ($currency->code !== 'USD') {
+                return;
+            }
             $this->statistics->reset();
             $this->operationObserver->events = [];
         };
@@ -708,14 +814,20 @@ final class L2BatchFetchingTest extends TestCase
 
     public function testFailingObserverCannotReplaceDatabaseErrorsOrChangeSuccessfulLoading(): void
     {
-        $documents = $this->documents(); $this->reset();
-        $this->operationObserver->onEvent = static function (): void { throw new \RuntimeException('export failed'); };
+        $documents = $this->documents();
+        $this->reset();
+        $this->operationObserver->onEvent = static function (): void {
+            throw new \RuntimeException('export failed');
+        };
         self::assertSame('USD', $documents[0]->currency->name);
         self::assertSame(1, $this->statistics->snapshot()->sqlCount);
         self::assertSame(1, $this->statistics->snapshot()->batch->count);
         self::assertSame(2, $this->statistics->snapshot()->observerErrors);
-        try { $this->em->getConnection()->executeQuery('SELECT nonexistent_column FROM modernorm_test_l2_batch_currencies'); self::fail('Expected database error'); }
-        catch (\Doctrine\DBAL\Exception\InvalidFieldNameException) {}
+        try {
+            $this->em->getConnection()->executeQuery('SELECT nonexistent_column FROM modernorm_test_l2_batch_currencies');
+            self::fail('Expected database error');
+        } catch (\Doctrine\DBAL\Exception\InvalidFieldNameException) {
+        }
         self::assertSame(1, $this->statistics->snapshot()->sqlErrors);
         self::assertSame(3, $this->statistics->snapshot()->observerErrors);
     }

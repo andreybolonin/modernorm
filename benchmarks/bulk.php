@@ -28,7 +28,9 @@ class Record
 function integerOption(string $name, int $default, int $min, int $max): int
 {
     $value = getenv($name);
-    if ($value === false) { return $default; }
+    if ($value === false) {
+        return $default;
+    }
     $parsed = filter_var($value, FILTER_VALIDATE_INT);
     if ($parsed === false || $parsed < $min || $parsed > $max) {
         throw new \InvalidArgumentException("$name must be an integer between $min and $max.");
@@ -73,7 +75,13 @@ $create = static function () use ($db, $schema): EntityManager {
 $managedCount = static fn (EntityManager $em): int => array_sum(array_map('count', $em->getUnitOfWork()->getIdentityMap()));
 
 $measure = static function (string $operation, string $mode, int $rows) use (
-    $db, $table, $statistics, $create, $managedCount, $contextSize, $chunkSize,
+    $db,
+    $table,
+    $statistics,
+    $create,
+    $managedCount,
+    $contextSize,
+    $chunkSize,
 ): array {
     // Rebuild identical database and persistence-context state outside the timed interval.
     $db->executeStatement('TRUNCATE '.$table);
@@ -99,14 +107,21 @@ $measure = static function (string $operation, string $mode, int $rows) use (
         if ($mode === 'uow') {
             if ($operation === 'insert') {
                 for ($id = 1; $id <= $rows; ++$id) {
-                    $record = new Record(); $record->id = $id; $record->label = 'inserted'; $record->amount = 1;
+                    $record = new Record();
+                    $record->id = $id;
+                    $record->label = 'inserted';
+                    $record->amount = 1;
                     $em->persist($record);
                 }
             } else {
                 $records = $em->getRepository(Record::class)->findBy(['label' => 'original'], ['id' => 'ASC']);
                 foreach ($records as $record) {
-                    if ($operation === 'update') { $record->label = 'updated'; $record->amount = 1; }
-                    else { $em->remove($record); }
+                    if ($operation === 'update') {
+                        $record->label = 'updated';
+                        $record->amount = 1;
+                    } else {
+                        $em->remove($record);
+                    }
                 }
             }
             $em->flush();
@@ -156,7 +171,9 @@ $measure = static function (string $operation, string $mode, int $rows) use (
             'peak_heap_delta_bytes' => $peak, 'retained_heap_delta_bytes' => $retained,
             'managed_before' => $managedBefore, 'managed_after' => $managedAfter];
     } finally {
-        while ($db->isTransactionActive()) { $db->rollBack(); }
+        while ($db->isTransactionActive()) {
+            $db->rollBack();
+        }
         $em->close();
     }
 };
@@ -166,9 +183,13 @@ try {
     $db->executeStatement("CREATE TABLE $table (id INTEGER PRIMARY KEY, label VARCHAR(255) NOT NULL, amount INTEGER NOT NULL)");
     $cases = [];
     foreach (['insert', 'update', 'delete'] as $operation) {
-        foreach (['uow', 'bypass', 'clear'] as $mode) { $cases[] = [$operation, $mode]; }
+        foreach (['uow', 'bypass', 'clear'] as $mode) {
+            $cases[] = [$operation, $mode];
+        }
     }
-    foreach ($cases as [$operation, $mode]) { $measure($operation, $mode, min(1000, min($sizes))); }
+    foreach ($cases as [$operation, $mode]) {
+        $measure($operation, $mode, min(1000, min($sizes)));
+    }
     $measurements = [];
     foreach (array_unique($sizes) as $rows) {
         $samples = [];
@@ -197,7 +218,9 @@ try {
         'method' => 'One outer transaction including commit per sample. Timed: input/entity construction, target hydration for UoW UPDATE/DELETE, DML and policy handling. Setup, context preloading and verification excluded. SQL counts include the two flush SAVEPOINT statements, but exclude driver begin/commit calls. One warm-up per case; case order rotates. Assigned IDs, no associations/callbacks/RETURNING/L2. PHP heap deltas, not RSS; retained references to preloaded entities stay alive for all modes. CLEAR empties the context on the first INSERT chunk. No Doctrine comparison or timing thresholds.',
     ], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR)."\n";
 } finally {
-    while ($db->isTransactionActive()) { $db->rollBack(); }
+    while ($db->isTransactionActive()) {
+        $db->rollBack();
+    }
     $db->executeStatement('DROP SCHEMA IF EXISTS '.$db->quoteIdentifier($schema).' CASCADE');
     $db->close();
 }

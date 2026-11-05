@@ -18,5 +18,6 @@ final class BatchMeasurement
         public readonly ?string $association,
         public readonly int $configuredSize,
         public readonly int $selectedCount,
-    ) {}
+    ) {
+    }
 }

@@ -34,9 +34,12 @@
         }
     },
     "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.90",
+        "phpstan/phpstan": "^2.1",
         "phpunit/phpunit": "^11.5",
+        "psr/log": "^3",
         "symfony/cache": "^7.4",
-        "psr/log": "^3"
+        "symfony/console": "^7.4"
     },
     "autoload-dev": {
         "psr-4": {
@@ -44,7 +47,14 @@
         }
     },
     "scripts": {
-        "test": "phpunit"
+        "test": "phpunit",
+        "analyse": "@php vendor/bin/phpstan analyse --configuration=phpstan.neon.dist --memory-limit=1G --no-progress",
+        "cs:check": "@php vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --dry-run --diff --sequential",
+        "cs:fix": "@php vendor/bin/php-cs-fixer fix --config=.php-cs-fixer.dist.php --sequential",
+        "quality": [
+            "@analyse",
+            "@cs:check"
+        ]
     },
     "archive": {
         "exclude": [
@@ -54,7 +64,9 @@
             "/.phpunit.cache",
             "/vendor",
             "/.env",
-            "/.env.*"
+            "/.env.*",
+            "/.phpstan-cache",
+            "/.php-cs-fixer.cache"
         ]
     },
     "homepage": "https://github.com/andreybolonin/modernorm",

@@ -162,7 +162,7 @@ abstract class AbstractHydrator
     /**
      * Hydrates all rows returned by the passed statement instance at once.
      *
-     * @phpstan-param array<string, string> $hints
+     * @phpstan-param array<string, mixed> $hints
      */
     public function hydrateAll(Result $stmt, ResultSetMapping $resultSetMapping, array $hints = []): mixed
     {
@@ -318,7 +318,7 @@ abstract class AbstractHydrator
 
                     break;
 
-                //case (isset($cacheKeyInfo['isMetaColumn'])):
+                    //case (isset($cacheKeyInfo['isMetaColumn'])):
                 default:
                     $resultAlias = $cacheKeyInfo['resultAlias'];
                     $type     = $cacheKeyInfo['type'];

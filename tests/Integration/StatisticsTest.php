@@ -27,7 +27,8 @@ final class StatisticsRecord
     public function __construct(
         #[ORM\Id, ORM\Column] public int $id,
         #[ORM\Column(unique: true)] public string $name,
-    ) {}
+    ) {
+    }
 }
 
 final class StatisticsTest extends TestCase
@@ -195,8 +196,11 @@ final class StatisticsTest extends TestCase
 
     public function testPreFlushFailureIsAFlushErrorWithoutSqlOrManagerClosure(): void
     {
-        $this->em->getEventManager()->addEventListener([Events::preFlush], new class {
-            public function preFlush(PreFlushEventArgs $args): void { throw new RuntimeException('preFlush failed'); }
+        $this->em->getEventManager()->addEventListener([Events::preFlush], new class () {
+            public function preFlush(PreFlushEventArgs $args): void
+            {
+                throw new RuntimeException('preFlush failed');
+            }
         });
         try {
             $this->em->flush();
@@ -213,8 +217,11 @@ final class StatisticsTest extends TestCase
 
     public function testPostFlushFailureCountsAsErrorAfterCommit(): void
     {
-        $this->em->getEventManager()->addEventListener([Events::postFlush], new class {
-            public function postFlush(): void { throw new RuntimeException('postFlush failed'); }
+        $this->em->getEventManager()->addEventListener([Events::postFlush], new class () {
+            public function postFlush(): void
+            {
+                throw new RuntimeException('postFlush failed');
+            }
         });
         $this->em->persist(new StatisticsRecord(1, 'committed'));
         try {
@@ -295,9 +302,11 @@ final class StatisticsTest extends TestCase
     }
     public function testResetInsidePostFlushDiscardsPreviousFlushMeasurement(): void
     {
-        $this->em->getEventManager()->addEventListener([Events::postFlush], new class($this->statistics) {
+        $this->em->getEventManager()->addEventListener([Events::postFlush], new class ($this->statistics) {
             private bool $reset = false;
-            public function __construct(private Statistics $statistics) {}
+            public function __construct(private Statistics $statistics)
+            {
+            }
             public function postFlush(): void
             {
                 if (! $this->reset) {

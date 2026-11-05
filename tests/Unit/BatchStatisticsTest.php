@@ -15,7 +15,10 @@ use PHPUnit\Framework\TestCase;
 final class StatisticsEventRecorder implements OperationObserver
 {
     public array $events = [];
-    public function completed(OperationEvent $event): void { $this->events[] = $event; }
+    public function completed(OperationEvent $event): void
+    {
+        $this->events[] = $event;
+    }
 }
 
 final class BatchStatisticsTest extends TestCase
@@ -36,7 +39,9 @@ final class BatchStatisticsTest extends TestCase
     {
         $statistics = new Statistics(enabled: true);
         $references = $statistics->startBatch(BatchKind::MANY_TO_ONE, 'Target', null, 8, 3);
-        $references->cacheHits = 2; $references->cacheMisses = 1; $references->cachePuts = 1;
+        $references->cacheHits = 2;
+        $references->cacheMisses = 1;
+        $references->cachePuts = 1;
         $statistics->recordBatch($references, false);
         $collections = $statistics->startBatch(BatchKind::ONE_TO_MANY, 'Line', 'Document::lines', 8, 2);
         $statistics->recordBatch($collections, true);
@@ -70,7 +75,8 @@ final class BatchStatisticsTest extends TestCase
         $statistics->reset();
         $statistics->recordBatch($old, false);
         $old = $statistics->startBatch(BatchKind::ONE_TO_MANY, 'Line', 'Document::lines', 3, 2);
-        $statistics->disable(); $statistics->enable();
+        $statistics->disable();
+        $statistics->enable();
         $statistics->recordBatch($old, true);
         self::assertSame(0, $statistics->snapshot()->batch->count);
         self::assertSame([], $observer->events);
@@ -86,10 +92,14 @@ final class BatchStatisticsTest extends TestCase
     {
         $observer = new StatisticsEventRecorder();
         $statistics = new Statistics(enabled: true, observer: $observer);
-        $measurement = $statistics->start(); $statistics->recordSql($measurement, true);
-        $measurement = $statistics->start(); $statistics->recordFlush($measurement, false);
+        $measurement = $statistics->start();
+        $statistics->recordSql($measurement, true);
+        $measurement = $statistics->start();
+        $statistics->recordFlush($measurement, false);
         $batch = $statistics->startBatch(BatchKind::MANY_TO_ONE, 'Target', null, 32, 2);
-        $batch->cacheHits = 1; $batch->cacheMisses = 1; $batch->cachePuts = 1;
+        $batch->cacheHits = 1;
+        $batch->cacheMisses = 1;
+        $batch->cachePuts = 1;
         $statistics->recordBatch($batch, false);
         $statistics->recordBatchFallback(BatchKind::MANY_TO_MANY, BatchFallbackReason::CACHED_TARGET, 'Currency', 'Document::currencies', 32);
         self::assertSame([OperationKind::SQL, OperationKind::FLUSH, OperationKind::BATCH, OperationKind::BATCH_FALLBACK], array_column($observer->events, 'kind'));
@@ -113,7 +123,7 @@ final class BatchStatisticsTest extends TestCase
 
     public function testObserverFailuresAreIsolatedAndCannotRecursivelyInstrumentExport(): void
     {
-        $observer = new class implements OperationObserver {
+        $observer = new class () implements OperationObserver {
             public Statistics $statistics;
             public int $calls = 0;
             public bool $nestedMeasurementWasNull = false;
@@ -125,8 +135,10 @@ final class BatchStatisticsTest extends TestCase
                 throw new \RuntimeException('export unavailable');
             }
         };
-        $statistics = new Statistics(enabled: true, observer: $observer); $observer->statistics = $statistics;
-        $measurement = $statistics->start(); $statistics->recordSql($measurement, false);
+        $statistics = new Statistics(enabled: true, observer: $observer);
+        $observer->statistics = $statistics;
+        $measurement = $statistics->start();
+        $statistics->recordSql($measurement, false);
         self::assertSame(1, $observer->calls);
         self::assertTrue($observer->nestedMeasurementWasNull);
         self::assertSame(1, $statistics->snapshot()->sqlCount);
@@ -138,7 +150,7 @@ final class BatchStatisticsTest extends TestCase
 
     public function testResetInsideFailingObserverDoesNotLeakItsErrorIntoNextJob(): void
     {
-        $observer = new class implements OperationObserver {
+        $observer = new class () implements OperationObserver {
             public Statistics $statistics;
             public function completed(OperationEvent $event): void
             {
@@ -146,8 +158,10 @@ final class BatchStatisticsTest extends TestCase
                 throw new \RuntimeException('old request exporter failed');
             }
         };
-        $statistics = new Statistics(enabled: true, observer: $observer); $observer->statistics = $statistics;
-        $measurement = $statistics->start(); $statistics->recordSql($measurement, false);
+        $statistics = new Statistics(enabled: true, observer: $observer);
+        $observer->statistics = $statistics;
+        $measurement = $statistics->start();
+        $statistics->recordSql($measurement, false);
         self::assertSame(0, $statistics->snapshot()->sqlCount);
         self::assertSame(0, $statistics->snapshot()->observerErrors);
     }

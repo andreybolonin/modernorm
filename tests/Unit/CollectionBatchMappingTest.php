@@ -63,7 +63,10 @@ final class CollectionBatchMappingTest extends TestCase
         }
     }
 
-    public static function invalidSizes(): array { return [[0], [-1], [65536]]; }
+    public static function invalidSizes(): array
+    {
+        return [[0], [-1], [65536]];
+    }
 
     #[DataProvider('invalidSizes')]
     public function testInvalidBatchSizeIsRejected(int $size): void

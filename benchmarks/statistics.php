@@ -19,8 +19,10 @@ $collectors = [];
 $samples = [];
 $memory = [];
 foreach ($modes as $mode) {
-    $observer = $mode === 'observer' ? new class implements OperationObserver {
-        public function completed(OperationEvent $event): void {}
+    $observer = $mode === 'observer' ? new class () implements OperationObserver {
+        public function completed(OperationEvent $event): void
+        {
+        }
     } : null;
     $statistics = new Statistics($mode !== 'disabled', $observer);
     $config = new Configuration();
@@ -31,7 +33,9 @@ foreach ($modes as $mode) {
         'dbname' => getenv('PGDATABASE') ?: 'modernorm_test', 'serverVersion' => '17',
     ], $config);
     $collectors[$mode] = $statistics;
-    for ($i = 0; $i < 20; ++$i) { $connections[$mode]->fetchOne('SELECT 1'); }
+    for ($i = 0; $i < 20; ++$i) {
+        $connections[$mode]->fetchOne('SELECT 1');
+    }
 }
 try {
     for ($round = 0; $round < $rounds; ++$round) {
@@ -42,11 +46,15 @@ try {
             memory_reset_peak_usage();
             $before = memory_get_usage();
             $start = hrtime(true);
-            for ($i = 0; $i < $iterations; ++$i) { $connections[$mode]->fetchOne('SELECT 1'); }
+            for ($i = 0; $i < $iterations; ++$i) {
+                $connections[$mode]->fetchOne('SELECT 1');
+            }
             $samples[$mode][] = (hrtime(true) - $start) / 1_000_000;
             $memory[$mode][] = ['retained_bytes' => memory_get_usage() - $before, 'peak_delta_bytes' => memory_get_peak_usage() - $before];
             $expected = $mode === 'disabled' ? 0 : $iterations;
-            if ($collectors[$mode]->snapshot()->sqlCount !== $expected) { throw new RuntimeException('Statistics count mismatch.'); }
+            if ($collectors[$mode]->snapshot()->sqlCount !== $expected) {
+                throw new RuntimeException('Statistics count mismatch.');
+            }
         }
     }
     $summary = [];
@@ -59,5 +67,7 @@ try {
     }
     echo json_encode(['php' => PHP_VERSION, 'os' => PHP_OS_FAMILY, 'postgresql' => $connections['disabled']->fetchOne('SHOW server_version'), 'query' => 'SELECT 1 (including result fetch)', 'iterations_per_round' => $iterations, 'rounds' => $rounds, 'measurements' => $summary, 'note' => 'Local microbenchmark; no latency thresholds or Doctrine comparison.'], JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR)."\n";
 } finally {
-    foreach ($connections as $connection) { $connection->close(); }
+    foreach ($connections as $connection) {
+        $connection->close();
+    }
 }

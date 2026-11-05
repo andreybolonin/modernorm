@@ -21,7 +21,6 @@ use function md5;
 
 final class ORMSetup
 {
-
     /**
      * Creates a configuration with an attribute metadata driver.
      *

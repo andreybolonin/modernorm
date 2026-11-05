@@ -19,7 +19,9 @@ abstract class RedisL2ProcessTestCase extends TestCase
 
     protected function setUp(): void
     {
-        if (!getenv('MODERNORM_TEST_REDIS_DSN')) { self::markTestSkipped('Set MODERNORM_TEST_REDIS_DSN for Redis process tests.'); }
+        if (!getenv('MODERNORM_TEST_REDIS_DSN')) {
+            self::markTestSkipped('Set MODERNORM_TEST_REDIS_DSN for Redis process tests.');
+        }
         if (!extension_loaded('redis') || !function_exists('proc_open')) {
             self::fail('Redis process tests require ext-redis and proc_open.');
         }
@@ -34,10 +36,14 @@ abstract class RedisL2ProcessTestCase extends TestCase
     protected function tearDown(): void
     {
         foreach ($this->workers as [$process, $pipes, $stderr]) {
-            fclose($pipes[0]); fclose($pipes[1]);
+            fclose($pipes[0]);
+            fclose($pipes[1]);
             $status = proc_get_status($process);
-            if ($status['running']) { proc_terminate($process); }
-            proc_close($process); fclose($stderr);
+            if ($status['running']) {
+                proc_terminate($process);
+            }
+            proc_close($process);
+            fclose($stderr);
         }
         $this->workers = [];
         if (isset($this->db, $this->schema)) {
@@ -45,8 +51,11 @@ abstract class RedisL2ProcessTestCase extends TestCase
                 // clear() applies only to this test's random adapter namespace, never FLUSHDB.
                 (new RedisAdapter(RedisAdapter::createConnection(getenv('MODERNORM_TEST_REDIS_DSN')), $this->namespace))->clear();
             } finally {
-                try { $this->db->executeStatement('DROP SCHEMA IF EXISTS '.$this->schema.' CASCADE'); }
-                finally { $this->db->close(); }
+                try {
+                    $this->db->executeStatement('DROP SCHEMA IF EXISTS '.$this->schema.' CASCADE');
+                } finally {
+                    $this->db->close();
+                }
             }
         }
     }
@@ -54,8 +63,11 @@ abstract class RedisL2ProcessTestCase extends TestCase
     protected function worker(?string $namespace = null, int $ttl = 60): int
     {
         $stderr = tmpfile();
-        $process = proc_open([PHP_BINARY, __DIR__.'/RedisL2Worker.php', json_encode([$this->schema, $namespace ?? $this->namespace, $ttl], JSON_THROW_ON_ERROR)],
-            [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => $stderr], $pipes);
+        $process = proc_open(
+            [PHP_BINARY, __DIR__.'/RedisL2Worker.php', json_encode([$this->schema, $namespace ?? $this->namespace, $ttl], JSON_THROW_ON_ERROR)],
+            [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => $stderr],
+            $pipes
+        );
         self::assertIsResource($process);
         $id = count($this->workers);
         $this->workers[$id] = [$process, $pipes, $stderr];
@@ -72,7 +84,8 @@ abstract class RedisL2ProcessTestCase extends TestCase
 
     protected function receive(int $worker): array
     {
-        $read = [$this->workers[$worker][1][1]]; $write = $except = [];
+        $read = [$this->workers[$worker][1][1]];
+        $write = $except = [];
         if (stream_select($read, $write, $except, 15) !== 1 || ($line = fgets($read[0])) === false) {
             rewind($this->workers[$worker][2]);
             self::fail('Redis worker timeout/exit: '.stream_get_contents($this->workers[$worker][2]));

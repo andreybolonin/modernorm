@@ -137,7 +137,8 @@ class EntityManager implements EntityManagerInterface
         }
 
         $this->eventManager = $eventManager
-            ?? (method_exists($conn, 'getEventManager')
+            ?? (
+                method_exists($conn, 'getEventManager')
                 ? $conn->getEventManager()
                 : new EventManager()
             );
@@ -155,7 +156,9 @@ class EntityManager implements EntityManagerInterface
 
         if ($config->isSecondLevelCacheEnabled()) {
             $cacheConfig  = $config->getSecondLevelCacheConfiguration();
-            if ($cacheConfig === null) { throw new \InvalidArgumentException('L2 requires an explicitly configured PSR-6 pool.'); }
+            if ($cacheConfig === null) {
+                throw new \InvalidArgumentException('L2 requires an explicitly configured PSR-6 pool.');
+            }
             $this->cache = new Cache($this, $cacheConfig);
         }
     }

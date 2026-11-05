@@ -22,7 +22,10 @@ use Psr\Log\AbstractLogger;
 use Stringable;
 
 #[ORM\Embeddable]
-final class ReadOnlyDetails { #[ORM\Column] public string $code = 'original-code'; }
+final class ReadOnlyDetails
+{
+    #[ORM\Column] public string $code = 'original-code';
+}
 
 #[ORM\Entity, ORM\Immutable, ORM\HasLifecycleCallbacks]
 #[ORM\Table(name: 'modernorm_test_ro_catalogs')]
@@ -46,26 +49,48 @@ final class ReadOnlyCatalog
         $this->children = new ArrayCollection();
         $this->tags = new ArrayCollection();
     }
-    #[ORM\PrePersist] public function prePersist(): void { $this->events[] = 'prePersist'; }
-    #[ORM\PostPersist] public function postPersist(): void { $this->events[] = 'postPersist'; }
-    #[ORM\PreUpdate] public function preUpdate(): void { $this->events[] = 'preUpdate'; }
-    #[ORM\PostUpdate] public function postUpdate(): void { $this->events[] = 'postUpdate'; }
-    #[ORM\PreRemove] public function preRemove(): void { $this->events[] = 'preRemove'; }
-    #[ORM\PostRemove] public function postRemove(): void { $this->events[] = 'postRemove'; }
+    #[ORM\PrePersist] public function prePersist(): void
+    {
+        $this->events[] = 'prePersist';
+    }
+    #[ORM\PostPersist] public function postPersist(): void
+    {
+        $this->events[] = 'postPersist';
+    }
+    #[ORM\PreUpdate] public function preUpdate(): void
+    {
+        $this->events[] = 'preUpdate';
+    }
+    #[ORM\PostUpdate] public function postUpdate(): void
+    {
+        $this->events[] = 'postUpdate';
+    }
+    #[ORM\PreRemove] public function preRemove(): void
+    {
+        $this->events[] = 'preRemove';
+    }
+    #[ORM\PostRemove] public function postRemove(): void
+    {
+        $this->events[] = 'postRemove';
+    }
 }
 
 #[ORM\Entity, ORM\Table(name: 'modernorm_test_ro_regions')]
 final class ReadOnlyRegion
 {
     #[ORM\Id, ORM\Column, ORM\GeneratedValue] public ?int $id = null;
-    public function __construct(#[ORM\Column] public string $name = 'region') {}
+    public function __construct(#[ORM\Column] public string $name = 'region')
+    {
+    }
 }
 
 #[ORM\Entity, ORM\Table(name: 'modernorm_test_ro_tags')]
 final class ReadOnlyTag
 {
     #[ORM\Id, ORM\Column, ORM\GeneratedValue] public ?int $id = null;
-    public function __construct(#[ORM\Column] public string $name) {}
+    public function __construct(#[ORM\Column] public string $name)
+    {
+    }
 }
 
 #[ORM\Entity, ORM\Table(name: 'modernorm_test_ro_children')]
@@ -76,7 +101,8 @@ final class ReadOnlyChild
         #[ORM\ManyToOne(targetEntity: ReadOnlyCatalog::class, inversedBy: 'children')]
         #[ORM\JoinColumn(nullable: false)] public ReadOnlyCatalog $catalog,
         #[ORM\Column] public string $name,
-    ) {}
+    ) {
+    }
 }
 
 #[ORM\Entity, ORM\Table(name: 'modernorm_test_ro_owners')]
@@ -85,7 +111,8 @@ final class ReadOnlyOwner
     #[ORM\Id, ORM\Column, ORM\GeneratedValue] public ?int $id = null;
     public function __construct(
         #[ORM\ManyToOne(targetEntity: ReadOnlyCatalog::class, cascade: ['persist'], batchSize: 2)] public ReadOnlyCatalog $catalog,
-    ) {}
+    ) {
+    }
 }
 
 #[ORM\Entity(readOnly: true), ORM\Table(name: 'modernorm_test_ro_legacy')]
@@ -100,7 +127,9 @@ final class ReadOnlySqlRecorder extends AbstractLogger
     public array $queries = [];
     public function log($level, string|Stringable $message, array $context = []): void
     {
-        if (isset($context['sql'])) { $this->queries[] = $context['sql']; }
+        if (isset($context['sql'])) {
+            $this->queries[] = $context['sql'];
+        }
     }
 }
 
@@ -241,7 +270,9 @@ final class ImmutableEntityTest extends TestCase
 
     public function testLazyBatchHydrationIdentityAndRefreshPreserveReadOnlyPolicy(): void
     {
-        for ($i = 0; $i < 3; ++$i) { $this->em->persist(new ReadOnlyOwner(new ReadOnlyCatalog())); }
+        for ($i = 0; $i < 3; ++$i) {
+            $this->em->persist(new ReadOnlyOwner(new ReadOnlyCatalog()));
+        }
         $this->em->flush();
         $this->em->clear();
         $owners = $this->em->getRepository(ReadOnlyOwner::class)->findBy([], ['id' => 'ASC']);
@@ -280,8 +311,10 @@ final class ImmutableEntityTest extends TestCase
     public function testOnFlushCanStillCompleteAnInsert(): void
     {
         $catalog = new ReadOnlyCatalog();
-        $this->em->getEventManager()->addEventListener([Events::onFlush], new class($catalog, $this->em) {
-            public function __construct(private ReadOnlyCatalog $catalog, private EntityManager $em) {}
+        $this->em->getEventManager()->addEventListener([Events::onFlush], new class ($catalog, $this->em) {
+            public function __construct(private ReadOnlyCatalog $catalog, private EntityManager $em)
+            {
+            }
             public function onFlush(): void
             {
                 $this->catalog->name = 'inserted-on-flush';

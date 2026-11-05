@@ -15,7 +15,9 @@ use Throwable;
 /** Single-statement PostgreSQL writes. Values use mapped field names; predicates are trusted SQL. */
 final class BulkExecutor
 {
-    public function __construct(private readonly EntityManagerInterface $em) {}
+    public function __construct(private readonly EntityManagerInterface $em)
+    {
+    }
 
     /**
      * @param list<array<string, mixed>> $rows All rows must have the same fields (in any order).

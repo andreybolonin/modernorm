@@ -73,7 +73,9 @@ final class QueryTest extends TestCase
             'dbname' => getenv('PGDATABASE') ?: 'modernorm_test',
         ]);
         $this->em = new EntityManager($connection, ORMSetup::createAttributeMetadataConfig(
-            [__DIR__], true, cache: new ArrayAdapter(),
+            [__DIR__],
+            true,
+            cache: new ArrayAdapter(),
         ));
         $metadata = array_map($this->em->getClassMetadata(...), [QueryProject::class, QueryTask::class]);
         $schema = new SchemaTool($this->em);
@@ -209,7 +211,8 @@ final class QueryTest extends TestCase
     public function testNativeSqlJoinMapsCollectionsAndEmptyResults(): void
     {
         $mapping = new \ModernORM\Query\ResultSetMappingBuilder(
-            $this->em, \ModernORM\Query\ResultSetMappingBuilder::COLUMN_RENAMING_INCREMENT,
+            $this->em,
+            \ModernORM\Query\ResultSetMappingBuilder::COLUMN_RENAMING_INCREMENT,
         );
         $mapping->addRootEntityFromClassMetadata(QueryProject::class, 'p');
         $mapping->addJoinedEntityFromClassMetadata(QueryTask::class, 't', 'p', 'tasks');
@@ -232,7 +235,8 @@ final class QueryTest extends TestCase
         $mapping->addScalarResult('total', 'total', 'integer');
         $mapping->addScalarResult('matches', 'matches', 'boolean');
         $rows = $this->em->createNativeQuery(
-            'SELECT COUNT(*)::int AS total, COUNT(*) = 4 AS matches FROM modernorm_test_tasks', $mapping,
+            'SELECT COUNT(*)::int AS total, COUNT(*) = 4 AS matches FROM modernorm_test_tasks',
+            $mapping,
         )->getScalarResult();
         self::assertSame([['total' => 4, 'matches' => true]], $rows);
         self::assertSame([], $this->em->getUnitOfWork()->getIdentityMap());
@@ -263,7 +267,8 @@ final class QueryTest extends TestCase
     {
         $project = $this->em->find(QueryProject::class, $this->ids['alpha']);
         self::assertSame(1, $this->em->getConnection()->executeStatement(
-            'UPDATE modernorm_test_projects SET name = ? WHERE id = ?', ['native', $project->id],
+            'UPDATE modernorm_test_projects SET name = ? WHERE id = ?',
+            ['native', $project->id],
         ));
         $mapping = new \ModernORM\Query\ResultSetMappingBuilder($this->em);
         $mapping->addRootEntityFromClassMetadata(QueryProject::class, 'p');
@@ -327,11 +332,17 @@ final class QueryTest extends TestCase
 
     public function testBulkDmlBypassesEntityLifecycleEvents(): void
     {
-        $listener = new class {
+        $listener = new class () {
             public int $updates = 0;
             public int $removals = 0;
-            public function postUpdate(): void { ++$this->updates; }
-            public function postRemove(): void { ++$this->removals; }
+            public function postUpdate(): void
+            {
+                ++$this->updates;
+            }
+            public function postRemove(): void
+            {
+                ++$this->removals;
+            }
         };
         $this->em->getEventManager()->addEventListener(['postUpdate', 'postRemove'], $listener);
         $this->em->createQueryBuilder()->update('modernorm_test_projects')->set('name', ':name')->where('id = :id')

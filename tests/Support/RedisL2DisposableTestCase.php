@@ -15,9 +15,15 @@ abstract class RedisL2DisposableTestCase extends RedisL2ProcessTestCase
     protected function setUp(): void
     {
         $binary = getenv('MODERNORM_TEST_REDIS_SERVER');
-        if (!$binary) { self::markTestSkipped('Set MODERNORM_TEST_REDIS_SERVER to run disposable Redis recovery tests.'); }
-        if (!extension_loaded('redis')) { self::fail('Redis recovery tests require ext-redis.'); }
-        if (!defined('SIGSTOP') || !defined('SIGCONT')) { self::fail('Redis recovery tests require POSIX signal constants (ext-pcntl).'); }
+        if (!$binary) {
+            self::markTestSkipped('Set MODERNORM_TEST_REDIS_SERVER to run disposable Redis recovery tests.');
+        }
+        if (!extension_loaded('redis')) {
+            self::fail('Redis recovery tests require ext-redis.');
+        }
+        if (!defined('SIGSTOP') || !defined('SIGCONT')) {
+            self::fail('Redis recovery tests require POSIX signal constants (ext-pcntl).');
+        }
         $this->previousDsn = getenv('MODERNORM_TEST_REDIS_DSN');
         $this->server = new RedisTestServer($binary);
         $this->server->start();
@@ -27,7 +33,9 @@ abstract class RedisL2DisposableTestCase extends RedisL2ProcessTestCase
 
     protected function tearDown(): void
     {
-        if ($this->server === null) { return; }
+        if ($this->server === null) {
+            return;
+        }
         try {
             // Parent cleanup uses Redis, including when an assertion failed during an outage.
             $this->server->startIfStopped();

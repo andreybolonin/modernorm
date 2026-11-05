@@ -83,7 +83,9 @@ final class ExtraLazyManyToManyTest extends TestCase
             'password' => getenv('PGPASSWORD') ?: 'postgres', 'dbname' => getenv('PGDATABASE') ?: 'modernorm_test',
         ], $config);
         $this->em = new EntityManager($connection, ORMSetup::createAttributeMetadataConfig(
-            [__DIR__], true, cache: new ArrayAdapter(),
+            [__DIR__],
+            true,
+            cache: new ArrayAdapter(),
         ));
         $metadata = array_map($this->em->getClassMetadata(...), [LazyPlaylist::class, LazyTrack::class]);
         $schema = new SchemaTool($this->em);

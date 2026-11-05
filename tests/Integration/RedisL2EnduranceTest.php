@@ -29,7 +29,9 @@ final class RedisL2EnduranceTest extends RedisL2DisposableTestCase
     {
         $deadline = microtime(true) + $seconds;
         do {
-            if ($condition()) { return; }
+            if ($condition()) {
+                return;
+            }
             usleep(10000);
         } while (microtime(true) < $deadline);
         self::fail('Redis expiry/eviction condition did not occur within the bounded deadline.');
@@ -40,7 +42,9 @@ final class RedisL2EnduranceTest extends RedisL2DisposableTestCase
         $cursor = null;
         do {
             foreach ($client->scan($cursor) ?: [] as $key) {
-                if (str_ends_with($key, $logical)) { return $key; }
+                if (str_ends_with($key, $logical)) {
+                    return $key;
+                }
             }
         } while ($cursor !== 0);
         self::fail('Fixture key was not found in the disposable Redis instance.');
@@ -59,10 +63,13 @@ final class RedisL2EnduranceTest extends RedisL2DisposableTestCase
 
     private function persistentKeys(\Redis $client): int
     {
-        $cursor = null; $keys = [];
+        $cursor = null;
+        $keys = [];
         do {
             foreach ($client->scan($cursor) ?: [] as $key) {
-                if ($client->pTtl($key) === -1) { $keys[$key] = true; }
+                if ($client->pTtl($key) === -1) {
+                    $keys[$key] = true;
+                }
             }
         } while ($cursor !== 0);
         return count($keys);
@@ -75,13 +82,19 @@ final class RedisL2EnduranceTest extends RedisL2DisposableTestCase
             [$region, $key, , $payload, $metadata] = $this->fixture($client, 1);
             self::assertGreaterThan(0, $client->pTtl($payload));
             self::assertLessThanOrEqual(1000, $client->pTtl($payload));
-            foreach ($metadata as $physical) { self::assertSame(-1, $client->pTtl($physical)); }
+            foreach ($metadata as $physical) {
+                self::assertSame(-1, $client->pTtl($physical));
+            }
             $this->until(static fn (): bool => !$client->exists($payload));
             self::assertNull($region->get($key));
-            foreach ($metadata as $physical) { self::assertSame(1, $client->exists($physical)); }
+            foreach ($metadata as $physical) {
+                self::assertSame(1, $client->exists($physical));
+            }
             $region->put($key, new EntityCacheEntry('Record', ['name' => 'fresh']));
             self::assertSame('fresh', $region->get($key)->data['name']);
-        } finally { $client->close(); }
+        } finally {
+            $client->close();
+        }
     }
 
     public function testZeroTtlPreservesPayloadButEvictionStillInvalidatesItsTicket(): void
@@ -94,7 +107,9 @@ final class RedisL2EnduranceTest extends RedisL2DisposableTestCase
             $region->putAt($ticket, new EntityCacheEntry('Record', ['name' => 'late']));
             self::assertNull($region->get($key));
             self::assertSame(1, $client->exists($payload));
-        } finally { $client->close(); }
+        } finally {
+            $client->close();
+        }
     }
 
     public function testExpiringGenerationMetadataCannotReviveLongerLivedPayload(): void
@@ -102,13 +117,17 @@ final class RedisL2EnduranceTest extends RedisL2DisposableTestCase
         $client = $this->client();
         try {
             [$region, $key, $ticket, $payload, $metadata] = $this->fixture($client, 60, 1);
-            foreach ($metadata as $physical) { self::assertGreaterThan(0, $client->pTtl($physical)); }
+            foreach ($metadata as $physical) {
+                self::assertGreaterThan(0, $client->pTtl($physical));
+            }
             $this->until(static fn (): bool => !$client->exists($metadata[0]) && !$client->exists($metadata[1]));
             self::assertSame(1, $client->exists($payload));
             self::assertNull($region->get($key));
             $region->putAt($ticket, new EntityCacheEntry('Record', ['name' => 'late']));
             self::assertNull($region->get($key));
-        } finally { $client->close(); }
+        } finally {
+            $client->close();
+        }
     }
 
     #[DataProvider('evictionPolicies')]
@@ -126,19 +145,24 @@ final class RedisL2EnduranceTest extends RedisL2DisposableTestCase
             $client->config('SET', 'maxmemory', (string) ($used + 262144));
             $observed = false;
             for ($i = 0; $i < 256; ++$i) {
-                if ($policy === 'allkeys-lru') { $client->get($payload); }
+                if ($policy === 'allkeys-lru') {
+                    $client->get($payload);
+                }
                 $client->setEx('pressure_'.$i, 30, str_repeat('p', 65536));
                 $lostMetadata = !$client->exists($metadata[0]) || !$client->exists($metadata[1]);
                 $payloadExists = (bool) $client->exists($payload);
                 if (($policy === 'volatile-lru' && !$payloadExists) || ($policy === 'allkeys-lru' && $lostMetadata)) {
-                    $observed = true; break;
+                    $observed = true;
+                    break;
                 }
             }
             self::assertTrue($observed, 'Did not observe the intended real Redis eviction.');
             self::assertGreaterThan($before, (int) $client->info('stats')['evicted_keys']);
             $client->config('SET', 'maxmemory', '0');
             if ($policy === 'volatile-lru') {
-                foreach ($metadata as $physical) { self::assertSame(1, $client->exists($physical)); }
+                foreach ($metadata as $physical) {
+                    self::assertSame(1, $client->exists($physical));
+                }
             } else {
                 // Redis may evict payload and metadata in the same command. Both are safe misses.
                 // Recreate the old payload as a delayed SELECT fill after the actual metadata loss.
@@ -149,7 +173,10 @@ final class RedisL2EnduranceTest extends RedisL2DisposableTestCase
             self::assertNull($region->get($key));
             $region->put($key, new EntityCacheEntry('Record', ['name' => 'fresh']));
             self::assertSame('fresh', $region->get($key)->data['name']);
-        } finally { $client->config('SET', 'maxmemory', '0'); $client->close(); }
+        } finally {
+            $client->config('SET', 'maxmemory', '0');
+            $client->close();
+        }
     }
 
     public static function evictionPolicies(): iterable
@@ -161,7 +188,9 @@ final class RedisL2EnduranceTest extends RedisL2DisposableTestCase
     private function cycle(int $number, int $writer, array $readers): void
     {
         $this->send($writer, ['op' => 'update', 'name' => 'value_'.$number]);
-        foreach ($readers as $reader) { $this->send($reader, ['op' => 'find']); }
+        foreach ($readers as $reader) {
+            $this->send($reader, ['op' => 'find']);
+        }
         $written = $this->receive($writer);
         self::assertSame($number + 1, $written['version'] ?? null, json_encode($written));
         foreach ($readers as $reader) {
@@ -171,7 +200,9 @@ final class RedisL2EnduranceTest extends RedisL2DisposableTestCase
             self::assertSame($expected, $inFlight['name']);
         }
         // These reads start after commit/invalidation acknowledgement, unlike the in-flight group.
-        foreach ($readers as $reader) { $this->send($reader, ['op' => 'find']); }
+        foreach ($readers as $reader) {
+            $this->send($reader, ['op' => 'find']);
+        }
         foreach ($readers as $reader) {
             $fresh = $this->receive($reader);
             self::assertSame($number + 1, $fresh['version'] ?? null, json_encode($fresh));
@@ -190,43 +221,62 @@ final class RedisL2EnduranceTest extends RedisL2DisposableTestCase
             $writer = $this->worker(ttl: 1);
             $readers = [$this->worker(ttl: 1), $this->worker(ttl: 1), $this->worker(ttl: 1), $this->worker(ttl: 1)];
             $all = [$writer, ...$readers];
-            for ($i = 1; $i <= 20; ++$i) { $this->cycle($i, $writer, $readers); }
+            for ($i = 1; $i <= 20; ++$i) {
+                $this->cycle($i, $writer, $readers);
+            }
             // Concurrent first initialization can leave orphan entry-generation keys.
             $baselineGenerations = $this->persistentKeys($client);
             self::assertGreaterThanOrEqual(2, $baselineGenerations);
             $sample = function (float $elapsed, int $cycles) use ($all, $client): array {
                 $workers = [];
-                foreach ($all as $worker) { $workers[] = $this->request($worker, ['op' => 'metrics']); }
+                foreach ($all as $worker) {
+                    $workers[] = $this->request($worker, ['op' => 'metrics']);
+                }
                 return ['elapsed_seconds' => $elapsed, 'cycles' => $cycles, 'redis_keys' => $client->dbSize(),
                     'persistent_generation_keys' => $this->persistentKeys($client),
                     'redis_used_memory_bytes' => (int) $client->info('memory')['used_memory'], 'workers' => $workers];
             };
             $samples = [$sample(0, 0)];
-            $start = hrtime(true); $nextSample = 1; $nextProgress = 5; $cycles = 0;
+            $start = hrtime(true);
+            $nextSample = 1;
+            $nextProgress = 5;
+            $cycles = 0;
             do {
-                $this->cycle(21 + $cycles, $writer, $readers); ++$cycles;
+                $this->cycle(21 + $cycles, $writer, $readers);
+                ++$cycles;
                 $elapsed = (hrtime(true) - $start) / 1e9;
-                if ($elapsed >= $nextSample) { $samples[] = $sample($elapsed, $cycles); $nextSample = $elapsed + 1; }
+                if ($elapsed >= $nextSample) {
+                    $samples[] = $sample($elapsed, $cycles);
+                    $nextSample = $elapsed + 1;
+                }
                 if ($elapsed >= $nextProgress && getenv('MODERNORM_L2_SOAK_REPORT')) {
                     fwrite(STDERR, sprintf("L2 soak: %.1fs, %d committed updates, four readers\n", $elapsed, $cycles));
                     $nextProgress = $elapsed + 5;
                 }
             } while ($elapsed < (int) $seconds);
             $samples[] = $sample($elapsed, $cycles);
-            foreach ($samples as $point) { self::assertSame($baselineGenerations, $point['persistent_generation_keys']); }
+            foreach ($samples as $point) {
+                self::assertSame($baselineGenerations, $point['persistent_generation_keys']);
+            }
             foreach ($all as $index => $worker) {
                 $heaps = array_map(static fn (array $point): int => $point['workers'][$index]['heap_bytes'], $samples);
                 self::assertLessThan(4194304, max($heaps) - min($heaps), 'Worker retained heap grew by 4 MiB after warm-up.');
-                foreach ($samples as $point) { self::assertSame(1, $point['workers'][$index]['managed_entities']); }
+                foreach ($samples as $point) {
+                    self::assertSame(1, $point['workers'][$index]['managed_entities']);
+                }
             }
             // Stop filling, then let the one-second payload TTL reclaim all old addresses.
-            try { $this->until(static fn (): bool => $client->dbSize() === $baselineGenerations); }
-            catch (\Throwable $error) {
-                $keys = []; $cursor = null;
+            try {
+                $this->until(static fn (): bool => $client->dbSize() === $baselineGenerations);
+            } catch (\Throwable $error) {
+                $keys = [];
+                $cursor = null;
                 $diagnostics = new RedisAdapter($client, $this->namespace);
-                do { foreach ($client->scan($cursor) ?: [] as $key) {
-                    $keys[$key] = ['ttl' => $client->pTtl($key), 'type' => get_debug_type($diagnostics->getItem(substr($key, -64))->get())];
-                } } while ($cursor !== 0);
+                do {
+                    foreach ($client->scan($cursor) ?: [] as $key) {
+                        $keys[$key] = ['ttl' => $client->pTtl($key), 'type' => get_debug_type($diagnostics->getItem(substr($key, -64))->get())];
+                    }
+                } while ($cursor !== 0);
                 throw new \RuntimeException('Remaining Redis key TTLs: '.json_encode($keys), 0, $error);
             }
             $remaining = $client->dbSize();
@@ -241,6 +291,8 @@ final class RedisL2EnduranceTest extends RedisL2DisposableTestCase
                     throw new \RuntimeException('Cannot write L2 soak report.');
                 }
             }
-        } finally { $client->close(); }
+        } finally {
+            $client->close();
+        }
     }
 }

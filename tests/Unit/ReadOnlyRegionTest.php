@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+
 namespace ModernORM\Tests\Unit;
 
 use ModernORM\Cache\EntityCacheEntry;
@@ -85,7 +86,8 @@ final class ReadOnlyRegionTest extends TestCase
     public function testRegionEvictionIsScopedAndInvalidatesOldFillTickets(): void
     {
         $pool = new RecordingCachePool(new ArrayAdapter(storeSerialized: true));
-        $first = new ReadOnlyRegion('a', $pool); $other = new ReadOnlyRegion('b', $pool);
+        $first = new ReadOnlyRegion('a', $pool);
+        $other = new ReadOnlyRegion('b', $pool);
         $key = new EntityCacheKey('Country', ['id' => 1]);
         $ticket = $first->ticket($key);
         $other->put($key, new EntityCacheEntry('Country', ['id' => 1]));
@@ -105,10 +107,12 @@ final class ReadOnlyRegionTest extends TestCase
     }
     public function testPhysicalKeysFitThePsr6GuaranteedLength(): void
     {
-        $pool = new class extends ArrayAdapter {
+        $pool = new class () extends ArrayAdapter {
             public function getItem(mixed $key): \Symfony\Component\Cache\CacheItem
             {
-                if (strlen($key) > 64) { throw new \InvalidArgumentException('Provider only supports 64-character keys.'); }
+                if (strlen($key) > 64) {
+                    throw new \InvalidArgumentException('Provider only supports 64-character keys.');
+                }
                 return parent::getItem($key);
             }
         };
@@ -122,8 +126,11 @@ final class ReadOnlyRegionTest extends TestCase
     }
     public function testFailedGenerationWriteIsReported(): void
     {
-        $pool = new class extends ArrayAdapter {
-            public function save(CacheItemInterface $item): bool { return false; }
+        $pool = new class () extends ArrayAdapter {
+            public function save(CacheItemInterface $item): bool
+            {
+                return false;
+            }
         };
         $this->expectException(CacheException::class);
         (new ReadOnlyRegion('test', $pool))->evictAll();

@@ -64,7 +64,10 @@ final class ManyToManyBatchMappingTest extends TestCase
         }
     }
 
-    public static function invalidSizes(): array { return [[0, false], [-1, false], [65536, false], [0, true], [-1, true], [65536, true]]; }
+    public static function invalidSizes(): array
+    {
+        return [[0, false], [-1, false], [65536, false], [0, true], [-1, true], [65536, true]];
+    }
 
     #[DataProvider('invalidSizes')]
     public function testInvalidOwningAndInverseBatchSizesAreRejected(int $size, bool $inverse): void
@@ -77,8 +80,12 @@ final class ManyToManyBatchMappingTest extends TestCase
     public function testInvalidAttributeFailsBeforeConnecting(): void
     {
         $em = $this->manager(new ArrayAdapter());
-        try { $em->getClassMetadata(ManyBatchInvalidMetadata::class); self::fail('Expected invalid attribute'); }
-        catch (MappingException $exception) { self::assertStringContainsString('ManyToMany batchSize', $exception->getMessage()); }
+        try {
+            $em->getClassMetadata(ManyBatchInvalidMetadata::class);
+            self::fail('Expected invalid attribute');
+        } catch (MappingException $exception) {
+            self::assertStringContainsString('ManyToMany batchSize', $exception->getMessage());
+        }
         self::assertFalse($em->getConnection()->isConnected());
     }
 
@@ -89,7 +96,9 @@ final class ManyToManyBatchMappingTest extends TestCase
         $metadata->associationMappings['owners']->batchSize = 0;
         foreach ($cache->getValues() as $key => $value) {
             $stored = $cache->getItem($key)->get();
-            if ($stored instanceof ORM\ClassMetadata && $stored->name === $metadata->name) { $cache->save($cache->getItem($key)->set($metadata)); }
+            if ($stored instanceof ORM\ClassMetadata && $stored->name === $metadata->name) {
+                $cache->save($cache->getItem($key)->set($metadata));
+            }
         }
         $this->expectException(MappingException::class);
         $this->manager($cache)->getClassMetadata(ManyBatchMetadataRole::class);

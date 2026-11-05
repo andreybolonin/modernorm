@@ -24,9 +24,13 @@ final class BatchTarget
     public function __construct(
         #[ORM\Id, ORM\Column] public int $id,
         #[ORM\Column] public string $name,
-    ) {}
+    ) {
+    }
     #[ORM\PostLoad]
-    public function loaded(): void { self::$loaded[] = $this->id; }
+    public function loaded(): void
+    {
+        self::$loaded[] = $this->id;
+    }
 }
 
 #[ORM\Entity, ORM\Table(name: 'modernorm_test_batch_owners')]
@@ -36,7 +40,8 @@ final class BatchOwner
         #[ORM\Id, ORM\Column] public int $id,
         #[ORM\ManyToOne(targetEntity: BatchTarget::class)]
         #[ORM\JoinColumn(name: 'target_id', nullable: false)] public BatchTarget $target,
-    ) {}
+    ) {
+    }
 }
 
 #[ORM\Entity, ORM\Table(name: 'modernorm_test_batch_text_targets')]
@@ -45,7 +50,8 @@ final class BatchTextTarget
     public function __construct(
         #[ORM\Id, ORM\Column(length: 32)] public string $code,
         #[ORM\Column] public string $name,
-    ) {}
+    ) {
+    }
 }
 
 #[ORM\Entity, ORM\Table(name: 'modernorm_test_batch_text_owners')]
@@ -55,7 +61,8 @@ final class BatchTextOwner
         #[ORM\Id, ORM\Column] public int $id,
         #[ORM\ManyToOne(targetEntity: BatchTextTarget::class)]
         #[ORM\JoinColumn(name: 'target_code', referencedColumnName: 'code', nullable: false)] public BatchTextTarget $target,
-    ) {}
+    ) {
+    }
 }
 
 #[ORM\Entity, ORM\Table(name: 'modernorm_test_batch_owners')]
@@ -219,12 +226,17 @@ final class BatchFetchingTest extends TestCase
         $owners[1]->target->name;
     }
 
-    public static function lifecycleActions(): array { return [['clear', false], ['close', false], ['detach', false], ['clear', true], ['close', true], ['detach', true]]; }
+    public static function lifecycleActions(): array
+    {
+        return [['clear', false], ['close', false], ['detach', false], ['clear', true], ['close', true], ['detach', true]];
+    }
 
     #[DataProvider('lifecycleActions')]
     public function testLifecycleRemovesOldReferencesFromBatch(string $action, bool $l2): void
     {
-        if ($l2) { $this->enableL2(); }
+        if ($l2) {
+            $this->enableL2();
+        }
         $owners = $this->owners();
         if ($action === 'detach') {
             $this->em->detach($owners[0]->target);
@@ -310,7 +322,9 @@ final class BatchFetchingTest extends TestCase
         self::assertTrue($other->isUninitializedObject($owners[3]->target));
         self::assertSame($owners[1]->target, $other->find(BatchTarget::class, 2));
         self::assertSame(1, $this->statistics->snapshot()->sqlCount);
-        foreach ($owners as $owner) { self::assertSame('target-' . $owner->id, $owner->target->name); }
+        foreach ($owners as $owner) {
+            self::assertSame('target-' . $owner->id, $owner->target->name);
+        }
         self::assertSame(3, $this->statistics->snapshot()->sqlCount);
     }
 
@@ -347,7 +361,10 @@ final class BatchFetchingTest extends TestCase
         self::assertSame(2, $this->statistics->snapshot()->sqlCount);
     }
 
-    public static function sharedReferenceOrders(): array { return [[true], [false]]; }
+    public static function sharedReferenceOrders(): array
+    {
+        return [[true], [false]];
+    }
 
     #[DataProvider('sharedReferenceOrders')]
     public function testSharedReferenceUsesStrictestPolicyRegardlessOfHydrationOrder(bool $disabledFirst): void

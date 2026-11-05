@@ -18,7 +18,10 @@ final class BatchConfigurationTest extends TestCase
         self::assertSame(32, $configuration->getLazyFetchBatchSize());
     }
 
-    public static function invalidSizes(): array { return [[0], [-1], [65536]]; }
+    public static function invalidSizes(): array
+    {
+        return [[0], [-1], [65536]];
+    }
 
     #[DataProvider('invalidSizes')]
     public function testBatchSizeRespectsParameterLimit(int $size): void

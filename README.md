@@ -129,7 +129,7 @@ The observed differences overlap run-to-run variation. These measurements do not
 Measured on **PHP 8.4.27, DBAL 4.5.0, PostgreSQL 17.11 (Homebrew), macOS arm64**, using a local connection and a 1 GiB PHP memory limit. Three measured rounds per case after warm-up; the table shows median milliseconds. L2 is disabled and Statistics counters are enabled.
 
 | Rows | Operation | UnitOfWork | Bulk BYPASS | Bulk CLEAR |
-| --- | --- | --- | --- | --- | --- |
+| --- | --- | --- | --- | --- |
 | 1,000 | INSERT | 52.00 ms | 6.18 ms | 6.13 ms |
 | 1,000 | UPDATE | 68.41 ms | 2.00 ms | 1.99 ms |
 | 1,000 | DELETE | 57.78 ms | 0.44 ms | 0.73 ms |

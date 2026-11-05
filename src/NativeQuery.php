@@ -14,8 +14,6 @@ use function ksort;
 
 /**
  * Represents a native SQL query.
- *
- * @final
  */
 class NativeQuery extends AbstractQuery
 {
