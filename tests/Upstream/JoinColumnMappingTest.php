@@ -1,0 +1,59 @@
+<?php
+
+declare(strict_types=1);
+
+namespace ModernORM\Tests\Upstream;
+
+use ModernORM\Mapping\JoinColumnMapping;
+use PHPUnit\Framework\TestCase;
+
+use function assert;
+use function serialize;
+use function unserialize;
+
+final class JoinColumnMappingTest extends TestCase
+{
+    public function testItSurvivesSerialization(): void
+    {
+        $mapping = new JoinColumnMapping('foo', 'id');
+
+        $mapping->deferrable           = true;
+        $mapping->unique               = true;
+        $mapping->quoted               = true;
+        $mapping->fieldName            = 'bar';
+        $mapping->onDelete             = 'CASCADE';
+        $mapping->columnDefinition     = 'VARCHAR(255)';
+        $mapping->nullable             = true;
+        $mapping->referencedColumnName = 'baz';
+        $mapping->options              = ['foo' => 'bar'];
+        $mapping->foreignKeyName       = 'fk_foo_bar';
+
+        $resurrectedMapping = unserialize(serialize($mapping));
+        assert($resurrectedMapping instanceof JoinColumnMapping);
+
+        self::assertTrue($resurrectedMapping->deferrable);
+        self::assertSame('foo', $resurrectedMapping->name);
+        self::assertTrue($resurrectedMapping->unique);
+        self::assertTrue($resurrectedMapping->quoted);
+        self::assertSame('bar', $resurrectedMapping->fieldName);
+        self::assertSame('CASCADE', $resurrectedMapping->onDelete);
+        self::assertSame('VARCHAR(255)', $resurrectedMapping->columnDefinition);
+        self::assertTrue($resurrectedMapping->nullable);
+        self::assertSame('baz', $resurrectedMapping->referencedColumnName);
+        self::assertSame(['foo' => 'bar'], $resurrectedMapping->options);
+        self::assertSame('fk_foo_bar', $resurrectedMapping->foreignKeyName);
+    }
+
+    public function testFromMappingArrayIncludesForeignKeyName(): void
+    {
+        $mapping = JoinColumnMapping::fromMappingArray([
+            'name' => 'user_id',
+            'referencedColumnName' => 'id',
+            'foreignKeyName' => 'fk_article_user',
+        ]);
+
+        self::assertSame('user_id', $mapping->name);
+        self::assertSame('id', $mapping->referencedColumnName);
+        self::assertSame('fk_article_user', $mapping->foreignKeyName);
+    }
+}

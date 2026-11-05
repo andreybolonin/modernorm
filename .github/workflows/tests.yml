@@ -1,0 +1,84 @@
+name: Tests
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  integration:
+    name: PHP ${{ matrix.php }} / ${{ matrix.dependencies }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.4', '8.5']
+        dependencies: ['locked', 'latest', 'lowest']
+    env:
+      COMPOSER_ROOT_VERSION: 0.1.0-beta.1
+      PGHOST: 127.0.0.1
+      PGPORT: 5432
+      PGDATABASE: modernorm_test
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: modernorm_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: pdo_pgsql, ctype, dom, mbstring, xml, xmlwriter, zip
+          tools: composer:v2
+          coverage: none
+      - name: Validate checked-in manifest and lock
+        run: composer validate --strict
+      - name: Install locked dependencies
+        if: matrix.dependencies == 'locked'
+        run: composer install --no-interaction --prefer-dist --no-progress
+      - name: Install latest allowed dependencies
+        if: matrix.dependencies == 'latest'
+        run: composer update --no-interaction --prefer-dist --no-progress
+      - name: Install lowest allowed dependencies
+        if: matrix.dependencies == 'lowest'
+        run: composer update --prefer-lowest --prefer-stable --no-interaction --prefer-dist --no-progress
+      - run: composer check-platform-reqs
+      - run: composer test -- --fail-on-skipped
+      - name: Clean consumer from release ZIP
+        if: matrix.dependencies == 'locked'
+        env:
+          MODERNORM_RELEASE_DIR: ${{ runner.temp }}/modernorm-release
+        run: php tools/release/check-consumer.php
+      - name: Reproducible measurements
+        if: matrix.dependencies == 'locked' && matrix.php == '8.4'
+        run: |
+          php benchmarks/statistics.php > "$RUNNER_TEMP/statistics-benchmark.json"
+          php benchmarks/batching.php > "$RUNNER_TEMP/batching-benchmark.json"
+      - run: composer install --no-dev --no-interaction --prefer-dist --no-progress
+      - run: php tests/Smoke/runtime.php
+      - run: php examples/migration/run.php --test-schema
+      - name: Upload release evidence
+        if: always() && matrix.dependencies == 'locked'
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-evidence-php-${{ matrix.php }}
+          path: |
+            ${{ runner.temp }}/modernorm-release/dist/*.zip
+            ${{ runner.temp }}/modernorm-release/report.json
+            ${{ runner.temp }}/*-benchmark.json
+          if-no-files-found: ignore
+          retention-days: 7

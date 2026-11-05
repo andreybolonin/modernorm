@@ -1,0 +1,50 @@
+{
+  "decision": "Attributes-only and removal of entity inheritance; retain MappedSuperclass and ordinary PHP inheritance.",
+  "removed_files": [
+    "src/Mapping/Driver/DatabaseDriver.php",
+    "src/Mapping/Driver/LoadMappingFileImplementation.php",
+    "src/Mapping/Driver/SimplifiedXmlDriver.php",
+    "src/Mapping/Driver/XmlDriver.php",
+    "src/Persisters/Entity/AbstractEntityInheritancePersister.php",
+    "src/Persisters/Entity/JoinedSubclassPersister.php",
+    "src/Persisters/Entity/SingleTablePersister.php",
+    "src/Utility/HierarchyDiscriminatorResolver.php",
+    "tests/Integration/JoinedInheritanceTest.php"
+  ],
+  "adapted_files": [
+    "src/AbstractQuery.php",
+    "src/Configuration.php",
+    "src/Internal/Hydration/AbstractHydrator.php",
+    "src/Internal/Hydration/ObjectHydrator.php",
+    "src/Internal/Hydration/SimpleObjectHydrator.php",
+    "src/Mapping/Builder/ClassMetadataBuilder.php",
+    "src/Mapping/ClassMetadata.php",
+    "src/Mapping/ClassMetadataFactory.php",
+    "src/Mapping/Driver/AttributeDriver.php",
+    "src/Mapping/MappingException.php",
+    "src/ORMSetup.php",
+    "src/Persisters/Collection/OneToManyPersister.php",
+    "src/Persisters/Entity/EntityPersister.php",
+    "src/Query/EntityResultPlan.php",
+    "src/Query/ResultSetMapping.php",
+    "src/Query/ResultSetMappingBuilder.php",
+    "src/QueryBuilder.php",
+    "src/Tools/Console/Command/MappingDescribeCommand.php",
+    "src/Tools/SchemaTool.php",
+    "src/Tools/SchemaValidator.php",
+    "src/UnitOfWork.php",
+    "tests/Integration/AdvancedMappingTest.php",
+    "tests/Smoke/runtime.php",
+    "tests/Unit/AdvancedMetadataTest.php"
+  ],
+  "new_tests": [
+    "tests/Unit/MappingScopeTest.php",
+    "tests/Integration/MappedSuperclassTest.php"
+  ],
+  "cache_schema_versions": {
+    "metadata": "__MODERNORM_ATTRIBUTES_NO_INHERITANCE_V1__",
+    "entity_projection": "sql_entity_v2_"
+  },
+  "next_scope": "Single scalar entity primary key; Criteria and ORM Filters remain unchanged in this slice.",
+  "superseded_by": "tools/persistence-simplification.json"
+}

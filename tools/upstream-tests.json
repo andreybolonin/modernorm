@@ -1,0 +1,44 @@
+{
+  "repository": "https://github.com/doctrine/orm",
+  "tag": "3.7.6",
+  "commit": "4487f850401c0e1f27891cce5897fa90b3055c2a",
+  "license": "licenses/Doctrine-ORM-MIT.txt",
+  "files": [
+    {
+      "source": "tests/Tests/ORM/Mapping/AssociationMappingTest.php",
+      "target": "tests/Upstream/AssociationMappingTest.php",
+      "upstream_sha256": "5189ea278ef121b84b94e3e40ce6b95a7b232628a56ab0d6ffcc2b7399df9a70",
+      "adaptations": "Namespace/imports renamed only; full test file."
+    },
+    {
+      "source": "tests/Tests/ORM/Mapping/EmbeddedClassMappingTest.php",
+      "target": "tests/Upstream/EmbeddedClassMappingTest.php",
+      "upstream_sha256": "5c8518c01ebfb0a5797ccf6a8f64c85e05a936e5465b01f4e70e8c6407df9dd6",
+      "adaptations": "Namespace/imports renamed only; full test file."
+    },
+    {
+      "source": "tests/Tests/ORM/Mapping/ToManyAssociationMappingTest.php",
+      "target": "tests/Upstream/ToManyAssociationMappingTest.php",
+      "upstream_sha256": "3d222e4fe814cca47a3443515c48dcea1ab954131675d423e0e5f8b6b542a2e6",
+      "adaptations": "Namespace/imports renamed only; full test file."
+    },
+    {
+      "source": "tests/Tests/ORM/Mapping/JoinColumnMappingTest.php",
+      "target": "tests/Upstream/JoinColumnMappingTest.php",
+      "upstream_sha256": "f4fbea617f141857bd7106786c88d7c6471c0561d7f4bd147d59297e5420035c",
+      "adaptations": "Namespace/imports renamed only; full test file."
+    },
+    {
+      "source": "tests/Tests/ORM/UnitOfWorkTest.php",
+      "target": "tests/Upstream/UnitOfWorkTest.php",
+      "upstream_sha256": "e2bf9f14bc62286b37b4cfae23b9138616cd2f6ca84388d798b67535723f5b83",
+      "adaptations": "Selected methods testAddToIdentityMapValidIdentifiers, entitiesWithValidIdentifiersProvider, testRegisteringAManagedInstanceRequiresANonEmptyIdentifier, testAddToIdentityMapInvalidIdentifiers, entitiesWithInvalidIdentifiersProvider, testItThrowsWhenLookingUpIdentifierForUnknownEntity and three identifier fixtures; real UnitOfWork/EntityManager setup with offline PostgreSQL platform replaces upstream mocks; assertions preserved. Composite identifier datasets removed after adopting a single scalar entity PK; scalar cases retained."
+    },
+    {
+      "source": "tests/Tests/ORM/Mapping/ClassMetadataTest.php",
+      "target": "tests/Upstream/ClassMetadataTest.php",
+      "upstream_sha256": "5d601d9da9cacabcfbda948e3eda870b025c5bf5b6c049211a7ee756a333f6b5",
+      "adaptations": "Selected methods testFieldIsNullable, testSetInvalidVersionMappingThrowsException, testGetSingleIdentifierFieldNameMultipleIdentifierEntityThrowsException, testGetSingleIdentifierFieldNameNoIdEntityThrowsException, testSetMultipleIdentifierSetsComposite; standalone reflection fixture replaces CMS/file fixtures; assertions preserved."
+    }
+  ]
+}

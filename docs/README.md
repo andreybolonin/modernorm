@@ -1,0 +1,33 @@
+# Documentation
+
+For installation, examples, benchmark results and the Doctrine comparison, start with the [project README](../README.md).
+
+## Design and supported behavior
+
+| Topic | Document |
+| --- | --- |
+| Architecture and component boundaries | [Architecture](architecture.md) |
+| Tested scenarios and exclusions | [Compatibility matrix](compatibility.md) |
+| Attributes, identifiers and inheritance boundary | [Mapping scope](mapping-scope.md) |
+| Queries, hydration, joins and pagination | [SQL query API](sql-query-api.md) |
+| Immutable entities | [Immutable contract](immutable-entities.md) |
+| ManyToOne batching and shared settings | [Batch fetching](batch-fetching.md) |
+| OneToMany loading | [Collection batching](collection-batch-fetching.md) |
+| ManyToMany loading | [ManyToMany batching](many-to-many-batch-fetching.md) |
+| PostgreSQL bulk writes and context policies | [Bulk API](bulk-api.md) |
+| Entity L2 configuration, writes and recovery | [L2 cache contract](read-only-l2-cache.md) |
+| L2 supported/excluded scenarios | [L2 scenario matrix](l2-scope-matrix.md) |
+| SQL/flush/batch measurement | [Statistics API](statistics.md) |
+| Batch aggregates and observer events | [Batch statistics](batch-statistics.md) |
+
+## Release and participation
+
+- [Beta contract and release gates](beta-release.md)
+- [Local verification evidence](beta-verification.md)
+- [Roadmap](../roadmap.md)
+- [Contributing](../CONTRIBUTING.md)
+- [Security reporting](../SECURITY.md)
+- [Changelog](../CHANGELOG.md)
+- [MIT license](../LICENSE) and [Doctrine provenance](../tools/upstream.json)
+
+Historical design drafts and superseded local audits have been removed. Current contracts and the roadmap distinguish implemented behavior from proposals. ModernORMBundle maintains its Symfony, migration and fixture integration documentation in its own package.

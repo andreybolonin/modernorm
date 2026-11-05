@@ -1,0 +1,1421 @@
+{
+  "repository": "https://github.com/doctrine/orm",
+  "tag": "3.7.6",
+  "commit": "4487f850401c0e1f27891cce5897fa90b3055c2a",
+  "transformation": "Doctrine\\ORM namespace renamed to ModernORM; subsequent changes tracked in git",
+  "files": {
+    "src/AbstractQuery.php": {
+      "upstream_sha256": "32c7479aa6ae264855091de9483266a812c8d99bafa1b1f5550c08a7134d81a3"
+    },
+    "src/Cache/AssociationCacheEntry.php": {
+      "upstream_sha256": "b7738546d556086b8dbf34fa26018c8dbb699e9ee942e369fcbb13d9782be4a5"
+    },
+    "src/Cache/CacheConfiguration.php": {
+      "upstream_sha256": "0efdaf76e25422b713332eb614823e7931204a76016de3c4ae5f5123824c5896"
+    },
+    "src/Cache/CacheEntry.php": {
+      "upstream_sha256": "7ce1f178a39ca4989bbf50340405aadfb75c8e339a70b588998f639a8623fcea"
+    },
+    "src/Cache/CacheException.php": {
+      "upstream_sha256": "b1bdd41d4c434ce1b6124e13dbee180f7f491c976289091017b0f7694b92b167"
+    },
+    "src/Cache/CacheFactory.php": {
+      "upstream_sha256": "f5ff5b237dedb0e4411c7fe9e49c11c4ad752bdf07d1ddf5d426625565bba18c"
+    },
+    "src/Cache/CacheKey.php": {
+      "upstream_sha256": "4832846e1ddcf04b4dbd50b04f616c161c1763715af2bb15417a76a2f9af1ef0"
+    },
+    "src/Cache/CollectionCacheEntry.php": {
+      "upstream_sha256": "18f92f0c948fe48393e39e75f068ad749b41fa1949ed2a7bd408a7727eba05d4"
+    },
+    "src/Cache/CollectionCacheKey.php": {
+      "upstream_sha256": "d1d1ff8f88f49ee08bdffce9da4de52c777d1ece37a8e30cd09563df5eafdca6"
+    },
+    "src/Cache/CollectionHydrator.php": {
+      "upstream_sha256": "acbc4cf4c1c6b2b6fb5eb688852f3f3679341df82f2e1b539a6d2fa500c4dd76"
+    },
+    "src/Cache/ConcurrentRegion.php": {
+      "upstream_sha256": "e121ea5ab28082bbd3819497cde15abe07b79742ab7dd6cc19907e22b5a4fc20"
+    },
+    "src/Cache/DefaultCache.php": {
+      "upstream_sha256": "b259fd7d8ba5234bb31daf6a7b5edee506cdf2c65f7ba5fe2bfb54cbb953f2a9"
+    },
+    "src/Cache/DefaultCacheFactory.php": {
+      "upstream_sha256": "2ed972d3b553c007cc25ce6cccbc6a852382f00d7f807b1c2d29d0a40c968ada"
+    },
+    "src/Cache/DefaultCollectionHydrator.php": {
+      "upstream_sha256": "a598bfafeed02e54b74a0de70992258b9c6437c9ba7276c99db5e612abe62e27"
+    },
+    "src/Cache/DefaultEntityHydrator.php": {
+      "upstream_sha256": "36665c720f30aa96563981c292f28d4ac68c4a4e17b060a688dafa737fa22dde"
+    },
+    "src/Cache/DefaultQueryCache.php": {
+      "upstream_sha256": "b08ce476a3ff95e0e565c592f11c79d800fd5614476efbf1a8bfa380a47c07c8"
+    },
+    "src/Cache/EntityCacheEntry.php": {
+      "upstream_sha256": "38af2f63c1698605d9a8a4b07b1c77ee01699f2805083cbb2e1ef8583a224b20"
+    },
+    "src/Cache/EntityCacheKey.php": {
+      "upstream_sha256": "7fa978ae78fcce2cd11855ae8053e083e8aa189f99c741fad0637c73a269dd48"
+    },
+    "src/Cache/EntityHydrator.php": {
+      "upstream_sha256": "529a00d11facc09e2df310706a11abbb8bfa4b34293c1fe69bf508b8438bf0ee"
+    },
+    "src/Cache/Exception/CacheException.php": {
+      "upstream_sha256": "261dcd5d7068741e553fbfad9359d4dc567b158f4868d85e58f59854c2427faa"
+    },
+    "src/Cache/Exception/CannotUpdateReadOnlyCollection.php": {
+      "upstream_sha256": "1df61059d6f9037196220dabf351177a3aafc183725cc431558754a0aeb16c58"
+    },
+    "src/Cache/Exception/CannotUpdateReadOnlyEntity.php": {
+      "upstream_sha256": "09c037ef79947d3c325dbf0a45c1928d841599b8a4a660372c54a08d4bb265b4"
+    },
+    "src/Cache/Exception/FeatureNotImplemented.php": {
+      "upstream_sha256": "67bcf78a1f5248204acd649cea08e8332bb33c3cf2b6a62f71d9264ba5186a7b"
+    },
+    "src/Cache/Exception/NonCacheableEntity.php": {
+      "upstream_sha256": "9166cfded939443994f2f93dbf68d00a31a7f770b0b7af5363c3033e52a589e5"
+    },
+    "src/Cache/Exception/NonCacheableEntityAssociation.php": {
+      "upstream_sha256": "44b7408981fc6c8baccffe5c45eb7c0d324403518c262a8fa5af587e2007bc5c"
+    },
+    "src/Cache/Lock.php": {
+      "upstream_sha256": "80ac5650ebd1f5dc5dc929c7c78b456af6a9300851164343d01b8d8a86dbb843"
+    },
+    "src/Cache/LockException.php": {
+      "upstream_sha256": "c2df6ba3761a60981a79258cfd8962a8fa71c2018735277cc62e089a78dc7aba"
+    },
+    "src/Cache/Logging/CacheLogger.php": {
+      "upstream_sha256": "40125201326e32c753ce57b9a6d4cc4ef02212d1cbcf2401178c10dc4155b617"
+    },
+    "src/Cache/Logging/CacheLoggerChain.php": {
+      "upstream_sha256": "692f80fa4c8b2bef6e54279a351c115d37fd67517fbd72291056c8d737b7297a"
+    },
+    "src/Cache/Logging/StatisticsCacheLogger.php": {
+      "upstream_sha256": "37355570a1d02f1afa1a2d374997367a356cf220f1e8bb863e5dd01c98496912"
+    },
+    "src/Cache/Persister/CachedPersister.php": {
+      "upstream_sha256": "9e76b5e5c4f7af377f326d9beb37d2542592389523d89769e4aec544d420684d"
+    },
+    "src/Cache/Persister/Collection/AbstractCollectionPersister.php": {
+      "upstream_sha256": "b3fab05e23b952d6bf352c4d2eebda65ba1902998cf6ad4947e65e110922d8dd"
+    },
+    "src/Cache/Persister/Collection/CachedCollectionPersister.php": {
+      "upstream_sha256": "c5933ae888d105fb9ae4c77f2da99ad8e1a4cd74ab1e42edce90d2b82a2c2494"
+    },
+    "src/Cache/Persister/Collection/NonStrictReadWriteCachedCollectionPersister.php": {
+      "upstream_sha256": "9b15bbd116f210b36dbf3fc31491da9b22eb04407ec755e25cb4ceb50ab24621"
+    },
+    "src/Cache/Persister/Collection/ReadOnlyCachedCollectionPersister.php": {
+      "upstream_sha256": "8e09750b61986af82d6b62f05918b8cc64280da2f849583b3f9012ea8525c039"
+    },
+    "src/Cache/Persister/Collection/ReadWriteCachedCollectionPersister.php": {
+      "upstream_sha256": "5c6cc9eaed195372cdd777419400acc69ff9a9d6aa1165b87daf417eab3603fa"
+    },
+    "src/Cache/Persister/CompatOrderings.php": {
+      "upstream_sha256": "48267d899c73d4a2b26a3d54cd09b88839b5b3439512684b594a0f45cc4e711a"
+    },
+    "src/Cache/Persister/Entity/AbstractEntityPersister.php": {
+      "upstream_sha256": "63134c2fee1478ffffbc26daf25cfefab4996a3dfa91f22d1889f18bfe53c112"
+    },
+    "src/Cache/Persister/Entity/CachedEntityPersister.php": {
+      "upstream_sha256": "c28d169b4511249824f4dc8edd4546e19edd21a1d847ab673a189c0a4e148c9f"
+    },
+    "src/Cache/Persister/Entity/NonStrictReadWriteCachedEntityPersister.php": {
+      "upstream_sha256": "e888704f3e796b40efa9e92c54a2037536866b837d0cf271cddee42bfbf796d5"
+    },
+    "src/Cache/Persister/Entity/ReadOnlyCachedEntityPersister.php": {
+      "upstream_sha256": "56ad749a607d4aeb18c3a816b7f18b60efc94578f68437eae36e5a885337b810"
+    },
+    "src/Cache/Persister/Entity/ReadWriteCachedEntityPersister.php": {
+      "upstream_sha256": "1cae5b21ab18290c593c5d3c9bb33343effda7b58e78d1d845f61120fe4fe438"
+    },
+    "src/Cache/QueryCache.php": {
+      "upstream_sha256": "169be0559da9406192d708254245998b4ada7ff801a21c970b427d29c79ed0c7"
+    },
+    "src/Cache/QueryCacheEntry.php": {
+      "upstream_sha256": "f83a536fa6a4b6b000010f46174a8de233f1c87c4af61d0c32009afdf5f63ff2"
+    },
+    "src/Cache/QueryCacheKey.php": {
+      "upstream_sha256": "fc27dc05e390be384ddbd7822c6dd7d501ec5e5302d199404738263fd48aba21"
+    },
+    "src/Cache/QueryCacheValidator.php": {
+      "upstream_sha256": "8b1af4f9128cb348cb3840c8ae2f9107b2a24c821e8bfddbe0288d238a4a5858"
+    },
+    "src/Cache/Region/DefaultRegion.php": {
+      "upstream_sha256": "14098f7a88b39a5c1a1171398d5244c161688e7a5cb9fe74c2793a74007d8b46"
+    },
+    "src/Cache/Region/FileLockRegion.php": {
+      "upstream_sha256": "6e566d61caedc877d5532c5f58e3c2d6c1a4298c001c9c86bc51ad48d6290daa"
+    },
+    "src/Cache/Region/UpdateTimestampCache.php": {
+      "upstream_sha256": "3cde96ce50696800ee7ac04615f55b553effa3e07a387b737a340bc60b3a5f97"
+    },
+    "src/Cache/Region.php": {
+      "upstream_sha256": "b0e46d54920a80d9297c001902ebd0ed24d259b6f48cb3076906df0716a9a230"
+    },
+    "src/Cache/RegionsConfiguration.php": {
+      "upstream_sha256": "c643791d8bebf80c29b7d2f4e79fe003cff2d906017728f2b8c92f20f8123348"
+    },
+    "src/Cache/TimestampCacheEntry.php": {
+      "upstream_sha256": "37098a93de6f3ee4b6374478ac72858f36694dca9f79a21fe57d1691924f8c13"
+    },
+    "src/Cache/TimestampCacheKey.php": {
+      "upstream_sha256": "74c90ff911d431f2a4bd807b70889b04f932e04f7e62b5b4c9a4500f8dbdd22e"
+    },
+    "src/Cache/TimestampQueryCacheValidator.php": {
+      "upstream_sha256": "86db4f95b66ebb48ed1b14f8407a31c406d7cdfc36e94d8cdc938585c04810b5"
+    },
+    "src/Cache/TimestampRegion.php": {
+      "upstream_sha256": "adb570ed9b572a12fb0717c8bfa6c2d0e702fae8c2c82fe1671f7e5150ad3d96"
+    },
+    "src/Cache.php": {
+      "upstream_sha256": "c2db4f5f84d28f0b73ab4ac9732e094996a60a3d46b6463fe664e19af9787c16"
+    },
+    "src/Configuration.php": {
+      "upstream_sha256": "3a3a09258a68fcbabc789f3d3cddc9c6077846ee12048c5245fb33468c1cec63"
+    },
+    "src/Decorator/EntityManagerDecorator.php": {
+      "upstream_sha256": "c2dd2ff38265b9e3293ba9d88ec8d140f4c0412026a1f291083fe1eab52c410e"
+    },
+    "src/EntityManager.php": {
+      "upstream_sha256": "869d75de02edef48d158acecb60e73a89378589febefb092945bec7b28908867"
+    },
+    "src/EntityManagerInterface.php": {
+      "upstream_sha256": "4346f1798279eb34747e7e11286de757e7d9f0fdde8e3d19be9565e270cef5a2"
+    },
+    "src/EntityNotFoundException.php": {
+      "upstream_sha256": "b3347b33e7c123303b05aea7eae2020ced160d58543798ebdce9fb332c39d3ef"
+    },
+    "src/EntityRepository.php": {
+      "upstream_sha256": "2eab4b822a2feb381b811dc441ac46dbc7d276becb8c649735f852a093038d7b"
+    },
+    "src/Event/ListenersInvoker.php": {
+      "upstream_sha256": "03aa928c01240eeca965a9b07adf8c527e30fe892bbff07653a3c9c54bfcf4bc"
+    },
+    "src/Event/LoadClassMetadataEventArgs.php": {
+      "upstream_sha256": "80a14ea0279160e8b8fb71a38863841d063fec195b80f92073c935c3eaa9155d"
+    },
+    "src/Event/OnClassMetadataNotFoundEventArgs.php": {
+      "upstream_sha256": "0c0743d14971994ad87e555e9cc7c7eba82e730c30b75a61a95f4ab400d62c06"
+    },
+    "src/Event/OnClearEventArgs.php": {
+      "upstream_sha256": "b3522ad9530b2b014b1a59f58ba980ef236950c6f3e030e1bf5e95d179c29af3"
+    },
+    "src/Event/OnFlushEventArgs.php": {
+      "upstream_sha256": "940974ff849c8290045092c32e97c5fcba8399a108074ca051db9b761bf38649"
+    },
+    "src/Event/PostFlushEventArgs.php": {
+      "upstream_sha256": "fb6591dd5966bb2c26b804ff6563c1f6550f18268df37c352c216756d809bcf0"
+    },
+    "src/Event/PostLoadEventArgs.php": {
+      "upstream_sha256": "0eac6a41d0caea24e987a6271c68476d8a349d054304b20d4a4b66d689409805"
+    },
+    "src/Event/PostPersistEventArgs.php": {
+      "upstream_sha256": "87dcea2d75eb53eedb6741ac3c6aa7d520faf7bf8d5feff419eda82361245a9a"
+    },
+    "src/Event/PostRemoveEventArgs.php": {
+      "upstream_sha256": "6b2820b3ccdecfaf3fa44331a81ef5d55faa6ac561264e43fb5c76768f6f2041"
+    },
+    "src/Event/PostUpdateEventArgs.php": {
+      "upstream_sha256": "d0f62f79fbbbbf9b756cd5b07b74a2684c3682039610080884a784937d6bf651"
+    },
+    "src/Event/PreFlushEventArgs.php": {
+      "upstream_sha256": "83801fe2ae71b5207627e8082fafa8f06d2f1d3efe2d2e3f8073360b2b0913ea"
+    },
+    "src/Event/PrePersistEventArgs.php": {
+      "upstream_sha256": "a984a913be7ee2bbe217db60f48a38dc092071d3438c96fd3e0b45e5bd75aa6b"
+    },
+    "src/Event/PreRemoveEventArgs.php": {
+      "upstream_sha256": "f6ff4e9b73a3076b42dd47be2b430f8683bf0407d95a3b0ae976e2627e20af3d"
+    },
+    "src/Event/PreUpdateEventArgs.php": {
+      "upstream_sha256": "a6a8cb921e1b567590e45c1431c4ad955598d123ec0f76d3fda21addae20b10a"
+    },
+    "src/Events.php": {
+      "upstream_sha256": "f22b2b5d1697ebc0bbe9f913c67af070095fbf9864a3224f080ccf1a6fe7f10f"
+    },
+    "src/Exception/ConfigurationException.php": {
+      "upstream_sha256": "d66fd33492d5b29e6e11e0da1bef3649a7b681ef3327515ac90a4aa830f66a29"
+    },
+    "src/Exception/DuplicateFieldException.php": {
+      "upstream_sha256": "cca1db563616b56dae05755106c0adb3227d007047e381a51ddba158d05aa20d"
+    },
+    "src/Exception/EntityIdentityCollisionException.php": {
+      "upstream_sha256": "6f03b87c1db3d1ab1ce41932e5c76f5c3c2cb672e3e6c452500f8f5c1be1204a"
+    },
+    "src/Exception/EntityManagerClosed.php": {
+      "upstream_sha256": "4a9577899976d9f48a73a436491258d7f356b12b954a70586654c2408e5afe17"
+    },
+    "src/Exception/EntityMissingAssignedId.php": {
+      "upstream_sha256": "7437a014f2912ac35c0f44fc8d0198575f9cab961c007eac2b58798b9fc391dc"
+    },
+    "src/Exception/InvalidEntityRepository.php": {
+      "upstream_sha256": "229a3386ea70cf5fd5c8bdc36bb9e55f07e223e2737641657c7cb85541911e8e"
+    },
+    "src/Exception/InvalidHydrationMode.php": {
+      "upstream_sha256": "eb847de0b715dae2f816d37f30cc0e9c40af7b95f88baa0b4cda0f36b09f3a15"
+    },
+    "src/Exception/ManagerException.php": {
+      "upstream_sha256": "8bb732c24df0584fd2976c79ae704e7ef0d98c08a347ffe9bc0534108e4c99ab"
+    },
+    "src/Exception/MissingIdentifierField.php": {
+      "upstream_sha256": "7c04951d26ff3928e1b24681bf13b5b03b131dfde9774902948b015613b9b917"
+    },
+    "src/Exception/MissingMappingDriverImplementation.php": {
+      "upstream_sha256": "48129aa51e1a883d7b5e13d2ded6b3a5e0dad2bf0cf0d46665975147da055a69"
+    },
+    "src/Exception/MultipleSelectorsFoundException.php": {
+      "upstream_sha256": "4a33c17c39048e09bc5ba75a4c0ebd168ac4ddcdc6d5ed0ad74de2be8471ba38"
+    },
+    "src/Exception/NoMatchingPropertyException.php": {
+      "upstream_sha256": "16ae6b9858fd5e5e7835139a1519498c6832623b47da238ae1b65f6ca0954b39"
+    },
+    "src/Exception/NotSupported.php": {
+      "upstream_sha256": "2e410b23e6f3bda5419ee3d3b3f2dd9cb8b54a5830d6796ee54d9d7fae62b5ff"
+    },
+    "src/Exception/ORMException.php": {
+      "upstream_sha256": "f29b038ef91ea5259008cb231cd1eae276440802ba6dfe2a95e2a3ff61bb061c"
+    },
+    "src/Exception/PersisterException.php": {
+      "upstream_sha256": "dcd517de35eb028716fd3f42580531bc269d74c01e17fd75281f87ca579cf69d"
+    },
+    "src/Exception/RepositoryException.php": {
+      "upstream_sha256": "b77c4e4d87e80563dffa56a52ecfc8aab87ebcf91bdf978d5804f1f2388d6746"
+    },
+    "src/Exception/SchemaToolException.php": {
+      "upstream_sha256": "f7fe06f7c7bfbe782bf1aca1f6e5183d1bbfbfc66960e6bc7c68579117ba96e0"
+    },
+    "src/Exception/UnexpectedAssociationValue.php": {
+      "upstream_sha256": "95a0a8447874890b81bb6cc312af8735fa32efb85ec22232994ba49ad5020ab7"
+    },
+    "src/Exception/UnrecognizedIdentifierFields.php": {
+      "upstream_sha256": "de8fc4792ebccbef9c6a975ec831d0ad9ed9b63bd606579f3d9e0ff9e7170f2d"
+    },
+    "src/Id/AbstractIdGenerator.php": {
+      "upstream_sha256": "551b5dd6cc9464018f7af44e7956b55bc7ef5d810be3f3519d63c06ff2105090"
+    },
+    "src/Id/AssignedGenerator.php": {
+      "upstream_sha256": "378e80310992ee38fddc5502ff0975a8bf5a52cc9aa66c7f0edc6df51ded7355"
+    },
+    "src/Id/BigIntegerIdentityGenerator.php": {
+      "upstream_sha256": "136bab63f365f75bbf2e772879688cdc64e7d3a651526c04660829685cb04022"
+    },
+    "src/Id/IdentityGenerator.php": {
+      "upstream_sha256": "cea51ed1fc93ee36a14a414c4abf716d8a29bcd7939bc4de178ad219c1907597"
+    },
+    "src/Id/SequenceGenerator.php": {
+      "upstream_sha256": "9e9b227972f99a16c430fb58e829889f7afb9f0f957c457c792457021e621011"
+    },
+    "src/Internal/Hydration/AbstractHydrator.php": {
+      "upstream_sha256": "166660254892ad6157223b0689b56201278fadd97d13b95622c0e9c3a830556a"
+    },
+    "src/Internal/Hydration/ArrayHydrator.php": {
+      "upstream_sha256": "9b3286a57495a587b0f3782dd4a9a309d2b8f9d85f0578819497e6280e32161e"
+    },
+    "src/Internal/Hydration/HydrationException.php": {
+      "upstream_sha256": "be3de545c37fec0a4b81ed7323597e2849a32959626f1f0084814ab3fc284858"
+    },
+    "src/Internal/Hydration/ObjectHydrator.php": {
+      "upstream_sha256": "c87731d664f646ae01ac4936152a4b907022cdd62a945a718e2b81ea91090959"
+    },
+    "src/Internal/Hydration/ScalarColumnHydrator.php": {
+      "upstream_sha256": "90941845ee34ddc5b29dc0fb929895c3dc2b7e2931da1449f3ba4ec7c8939417"
+    },
+    "src/Internal/Hydration/ScalarHydrator.php": {
+      "upstream_sha256": "e73f336397598e9bd628cbf301a85a5103fe057419276f4e815433391d97f891"
+    },
+    "src/Internal/Hydration/SimpleObjectHydrator.php": {
+      "upstream_sha256": "965445e228d1fe91ab1efbb0ab8746f47f38cd766529a11be384538f32098e3d"
+    },
+    "src/Internal/Hydration/SingleScalarHydrator.php": {
+      "upstream_sha256": "edc39f8f5e71e48b4f0168ec7c329e7d44d917c11832abc79b6368aa4cb65d11"
+    },
+    "src/Internal/HydrationCompleteHandler.php": {
+      "upstream_sha256": "cc8c3707315a43a729b147ba5d51ee0786514364af41679cc542f5033caad138"
+    },
+    "src/Internal/NoUnknownNamedArguments.php": {
+      "upstream_sha256": "9afa3ab659c8fa23cfeb64db30fd24a7d009269c420b5142659aa6479c402889"
+    },
+    "src/Internal/SQLResultCasing.php": {
+      "upstream_sha256": "2dcae7953af9e91b53e80ae05fec347766cdf5c67a1c86a7a79ca7480726da7f"
+    },
+    "src/Internal/StronglyConnectedComponents.php": {
+      "upstream_sha256": "5340d169e4d3cdc5967126e85543afe11a15836c05fe70dd4000dd505e3a46c2"
+    },
+    "src/Internal/TopologicalSort/CycleDetectedException.php": {
+      "upstream_sha256": "1853b944a1e1b46355c40105ad540b33d7f97e20c60d3767dc2d78837753e168"
+    },
+    "src/Internal/TopologicalSort.php": {
+      "upstream_sha256": "032b51e940df1de55f1091e69fa7561656b8a726396d4dbbb052821625dd7938"
+    },
+    "src/Internal/UnitOfWork/InsertBatch.php": {
+      "upstream_sha256": "213fa0479a141c85b48066d85cdeb5bb26d849d6d1b9b2fba893666d929c59c8"
+    },
+    "src/LazyCriteriaCollection.php": {
+      "upstream_sha256": "99c510fa7f5f03fdaf249294d10af8a8c08bc741cecdff3a8f375ba37cf5126e"
+    },
+    "src/Mapping/AnsiQuoteStrategy.php": {
+      "upstream_sha256": "164446b94656bafdf747978fb158abcc63a9958cfb6613311ff707c25aa20152"
+    },
+    "src/Mapping/ArrayAccessImplementation.php": {
+      "upstream_sha256": "1b8262807a93480318f1a70082bd07443e784b39893b748175a6dd3c103f3bf3"
+    },
+    "src/Mapping/AssociationMapping.php": {
+      "upstream_sha256": "2ad7385a5e55ab3f4a37163bb579fe8f231c934ad98c1ce0aeec1d5d65da9c6b"
+    },
+    "src/Mapping/AssociationOverride.php": {
+      "upstream_sha256": "9e23490074e47c708601cbeacdfe2ce6fbf299cfc4761c3926a2092767c03780"
+    },
+    "src/Mapping/AssociationOverrides.php": {
+      "upstream_sha256": "c337c0cc751f4820abb4b8e13440e4094a17aa71719e9c5005bdfa1ffac7e2b7"
+    },
+    "src/Mapping/AttributeOverride.php": {
+      "upstream_sha256": "40a322a09c869393eabd8f291f6c53c8080abde7c2b9eb90ecbc54298ba50fde"
+    },
+    "src/Mapping/AttributeOverrides.php": {
+      "upstream_sha256": "94dc48075b06bac06f6b9d015f28dd92d583726819a4fca2563302d8186e0107"
+    },
+    "src/Mapping/Builder/AssociationBuilder.php": {
+      "upstream_sha256": "0405974ceeeeeb95fafd32edc817a93f0b94b87eea42ac4b84d0d0a3b48afccd"
+    },
+    "src/Mapping/Builder/ClassMetadataBuilder.php": {
+      "upstream_sha256": "7f63f714c8078694871a2a2d58860e935305eca7b28b57ded3ac9762b954788b"
+    },
+    "src/Mapping/Builder/EmbeddedBuilder.php": {
+      "upstream_sha256": "50bc891b0738a4d355e96d46e987e70fe6a431f59fff9c4db07c61e5d6cafcbe"
+    },
+    "src/Mapping/Builder/EntityListenerBuilder.php": {
+      "upstream_sha256": "3462de4cbdcc7eed1e69ade7c0e3bbe5a91477bc03cec4d264e12c1e633adb30"
+    },
+    "src/Mapping/Builder/FieldBuilder.php": {
+      "upstream_sha256": "98c2e72a2e83188cfe2f2a649cd6d9cad08594fa1a5073da9009ae2ec0573240"
+    },
+    "src/Mapping/Builder/ManyToManyAssociationBuilder.php": {
+      "upstream_sha256": "00429f089272d20be9847c7938be9ba9a63a2f1e8b068e32317e2172acf95a8e"
+    },
+    "src/Mapping/Builder/OneToManyAssociationBuilder.php": {
+      "upstream_sha256": "04604c367194d146900a88891c383821cf0c4833972a49e7d6ff0afe4ae028ed"
+    },
+    "src/Mapping/Cache.php": {
+      "upstream_sha256": "c3eaa3b436896ba3e21bd58b7ff97aab3c3f3fe217d542f7dcca820d99b9ca39"
+    },
+    "src/Mapping/ChainTypedFieldMapper.php": {
+      "upstream_sha256": "bca8e7753d002c880db862f0347cfd840515d476d42e9ec90ad3affc66887772"
+    },
+    "src/Mapping/ChangeTrackingPolicy.php": {
+      "upstream_sha256": "cf5168a8fb10b8c90a1e093150169957475f5a99e3dcd851773303fdc75befe8"
+    },
+    "src/Mapping/ClassMetadata.php": {
+      "upstream_sha256": "da2d0b507fa4d59f8c6e8d1704f757de71567c44196edc3ee36db47a22ca5374"
+    },
+    "src/Mapping/ClassMetadataFactory.php": {
+      "upstream_sha256": "118b74174244bfef2ef7e4a2c8032cfe7f17cf715d679176ffcee9e29e96077c"
+    },
+    "src/Mapping/Column.php": {
+      "upstream_sha256": "5238a1af92c0bcee614ffb31a0cd92c33f91b161d6a7d5f55298655e4128f8dc"
+    },
+    "src/Mapping/CustomIdGenerator.php": {
+      "upstream_sha256": "9c7d9cecdebab3603bdadc956cf8ae0b139829118c91813bf8188fdc8326de99"
+    },
+    "src/Mapping/DefaultEntityListenerResolver.php": {
+      "upstream_sha256": "10f4abf5c852290aa521cee506217d1235cb9e031cbfb41859cc6f8b54e79f30"
+    },
+    "src/Mapping/DefaultNamingStrategy.php": {
+      "upstream_sha256": "feaa1059f70d722e0c59ffdd25288cc7f28d27ac45ea2079b406f6c98cba0525"
+    },
+    "src/Mapping/DefaultQuoteStrategy.php": {
+      "upstream_sha256": "7d820848978b9c1bf0650253e66cfcb800df7a0ae25af730b7b231ba50284d67"
+    },
+    "src/Mapping/DefaultTypedFieldMapper.php": {
+      "upstream_sha256": "1266b78b10908f6aa07ce01a9e8122bc13908367d5e009de7fecab61a5cca42d"
+    },
+    "src/Mapping/DiscriminatorColumn.php": {
+      "upstream_sha256": "1e2f5cce5e0bb409aa7b0acfc593a0732db6acffe4f32eeb96eb3f6c5a080212"
+    },
+    "src/Mapping/DiscriminatorColumnMapping.php": {
+      "upstream_sha256": "4e14e3d64f00216771372cd36f93c5cfa953658900437073795d38186137723c"
+    },
+    "src/Mapping/DiscriminatorMap.php": {
+      "upstream_sha256": "131ad9489b9792ad3d0793b46a35a5ff363c3955248d03b9bc8550b9839026c1"
+    },
+    "src/Mapping/Driver/AttributeDriver.php": {
+      "upstream_sha256": "a863e010e531094afd800a6be57a2f6353570eb428f6e03c3e08e7df3fb770a0"
+    },
+    "src/Mapping/Driver/AttributeReader.php": {
+      "upstream_sha256": "7dc41c27430ca2728d09ff41c9acced84aa80146b294028a72e1389d184ba552"
+    },
+    "src/Mapping/Driver/DatabaseDriver.php": {
+      "upstream_sha256": "aa015d0349558f4ba881bcd46e647ed8a586e129738e0089377c28bb3a9b0092"
+    },
+    "src/Mapping/Driver/LoadMappingFileImplementation.php": {
+      "upstream_sha256": "851f23c2f9242287d54e4b634be1cdfd39b6c655cc97d371be13ddadb7aba9a9"
+    },
+    "src/Mapping/Driver/ReflectionBasedDriver.php": {
+      "upstream_sha256": "8a5658f0429ede87c3c8845e2dcd7184b4d9d72a4ddcb37481f876583319a765"
+    },
+    "src/Mapping/Driver/RepeatableAttributeCollection.php": {
+      "upstream_sha256": "e37a4a6958cc8347bddad9270c5f2e06043a377e639b5aec20efbfdeb6c42914"
+    },
+    "src/Mapping/Driver/SimplifiedXmlDriver.php": {
+      "upstream_sha256": "696baf7f62b03d897a1028403a34a86b00d7990a4654dc8f90520d9260643b0c"
+    },
+    "src/Mapping/Driver/XmlDriver.php": {
+      "upstream_sha256": "06db7d1e8b019d44b4535b657068739924ca14aa036f0791104eb1fff5300d04"
+    },
+    "src/Mapping/Embeddable.php": {
+      "upstream_sha256": "fcd59d1b1db025bbd99e6009013d0fa976521e145a00cc2cfb379479a233b4a4"
+    },
+    "src/Mapping/Embedded.php": {
+      "upstream_sha256": "e2b1d0963df3eb2c68d19eafe51c3ee5c545f36a286fa671ef211d7b99226d07"
+    },
+    "src/Mapping/EmbeddedClassMapping.php": {
+      "upstream_sha256": "b06a88a4a7ae19c2cfbb49fc78b216092e0524ecc1ca240c7da6c4ccc245e5ee"
+    },
+    "src/Mapping/Entity.php": {
+      "upstream_sha256": "7cdfffad6d86d4772db39cd69d8cf7a29c91152c043e644be0365b4afe85cdf6"
+    },
+    "src/Mapping/EntityListenerResolver.php": {
+      "upstream_sha256": "713a11ff746a37e26347a983b5a22484f6c45cbb81ca9c657093584f7798e42c"
+    },
+    "src/Mapping/EntityListeners.php": {
+      "upstream_sha256": "5beb4e0c5de8b6884f337fe1ad249cfe94e8b8bb07d5b4224ffd14e91c3d494d"
+    },
+    "src/Mapping/Exception/InvalidCustomGenerator.php": {
+      "upstream_sha256": "5fb492fc76203188f4692990a5ec0c1a9bc76c1260d3ba3dbb678e9593680324"
+    },
+    "src/Mapping/Exception/UnknownGeneratorType.php": {
+      "upstream_sha256": "11e5e58d89eab464399ce0d526f85899f84d823d2b0cd8c6cfcb47f2b70cce27"
+    },
+    "src/Mapping/FieldMapping.php": {
+      "upstream_sha256": "7c11ae3d3f89b74493e267abbc296a310bc57bf1bc14027c436e1d8f9f8f5bd6"
+    },
+    "src/Mapping/GeneratedValue.php": {
+      "upstream_sha256": "679d20a21d968803b87997beb62161eb06051998e33416efe223dc337375bff9"
+    },
+    "src/Mapping/GetReflectionClassImplementation.php": {
+      "upstream_sha256": "99769a1ecf7b98054a7909b4dcc0caf0d80fbbb80c99c704d7d03fc2c1b00192"
+    },
+    "src/Mapping/HasLifecycleCallbacks.php": {
+      "upstream_sha256": "72fc8e348d39677b82474fb3464a7a162ac798a05edcc8652b0e5471a01f8146"
+    },
+    "src/Mapping/Id.php": {
+      "upstream_sha256": "afc52b56c1b6a289370c8cd8fc8f8916aaf89f834f475f03ff501a438ef88c8f"
+    },
+    "src/Mapping/Index.php": {
+      "upstream_sha256": "ff5af2ac9e6c457cb2584cfe202732459359b92d914b0a3e1fe56ab0f1ee5da6"
+    },
+    "src/Mapping/InheritanceType.php": {
+      "upstream_sha256": "f3a03966c5b389c2dff73d5fd7c37ad4260aad94e8bb0c5a8c38952f5c9c490d"
+    },
+    "src/Mapping/InverseJoinColumn.php": {
+      "upstream_sha256": "d1b7878948b88cd7eb5ab684d63093d34bd35773ec43e2f6bd41bb87c523bdd3"
+    },
+    "src/Mapping/InverseSideMapping.php": {
+      "upstream_sha256": "59467ddeb3725da38b5efc9c413bcadd58a5648dcc8336b3f5f3d3cd73561204"
+    },
+    "src/Mapping/JoinColumn.php": {
+      "upstream_sha256": "2ce0b4e318dcdd039103bd0d0c6596c5d9ee839e5bc5e740cf47e70b22055b7f"
+    },
+    "src/Mapping/JoinColumnMapping.php": {
+      "upstream_sha256": "84ebfd042f6c6dcb063bc2a02af79f50cb38596afda8ab659c279e74758cec55"
+    },
+    "src/Mapping/JoinColumnProperties.php": {
+      "upstream_sha256": "eff1988aa07abf2d73d6c44df9b6c30460748e9f1f9228f8d736415eb033462f"
+    },
+    "src/Mapping/JoinColumns.php": {
+      "upstream_sha256": "58b62a6b783c0dd9127a3d794e62f7e17380b9726422b416d8e3cabb225d4482"
+    },
+    "src/Mapping/JoinTable.php": {
+      "upstream_sha256": "60363356503f46b64ec261be4cab859c75112dbf989f6a48d4ca9054f6698236"
+    },
+    "src/Mapping/JoinTableMapping.php": {
+      "upstream_sha256": "9695228568c64f9e3d2f185627ec20add1b01551a0b6b644bb016ff233f5529b"
+    },
+    "src/Mapping/LegacyReflectionFields.php": {
+      "upstream_sha256": "e051dc9c476fcd34d56ec66462c249f2042a7af1e4609d9bdaa887be08114e88"
+    },
+    "src/Mapping/ManyToMany.php": {
+      "upstream_sha256": "c45235e10eab6ac3548dcb40dae40d6a5a1cf9b1f11d6dcc3684450bb1510749"
+    },
+    "src/Mapping/ManyToManyAssociationMapping.php": {
+      "upstream_sha256": "a0bcd984179e4b125ea2bfbdee6a214c2d429fd75b82e038d5a6332b53ee5754"
+    },
+    "src/Mapping/ManyToManyInverseSideMapping.php": {
+      "upstream_sha256": "aea3a7a11fd5e55cdcea55dd3710e5a9aab8af3d3fade6362372d2d1fd565ebc"
+    },
+    "src/Mapping/ManyToManyOwningSideMapping.php": {
+      "upstream_sha256": "654a99d9c88e345956f2a718be5c85383e0b2cdc222b68c7b87798ca4fc8296b"
+    },
+    "src/Mapping/ManyToOne.php": {
+      "upstream_sha256": "252ead3ec5bb498ed1a2d91f4d4b9ecab146cd7f11ed9dad6961e10914828d36"
+    },
+    "src/Mapping/ManyToOneAssociationMapping.php": {
+      "upstream_sha256": "457306a0a29104a52916aaa74771e316839769710f109e8337df657b27d03ee0"
+    },
+    "src/Mapping/MappedSuperclass.php": {
+      "upstream_sha256": "aef273f33ca96a44c0fc50791d38eb05d6d57502d4ab37f2ddffa7727b3ec449"
+    },
+    "src/Mapping/MappingAttribute.php": {
+      "upstream_sha256": "cf11a34748062490556f77eb695b8a766129abc8c62798a8c488a818a67a1da5"
+    },
+    "src/Mapping/MappingException.php": {
+      "upstream_sha256": "7fd34500357f44ca9c48727563fd0004cd1290924ab27c69ead5180123c77f3c"
+    },
+    "src/Mapping/NamingStrategy.php": {
+      "upstream_sha256": "942ec66314f02176b90706491b222e13a71f259a5253ee65a995b93a5f72c07d"
+    },
+    "src/Mapping/OneToMany.php": {
+      "upstream_sha256": "9e68659a37828b9277d9ba15afbdd61cd370ca5d28b586d8f073f0911cf1aaf4"
+    },
+    "src/Mapping/OneToManyAssociationMapping.php": {
+      "upstream_sha256": "45ea58ef32605aac33f89c4c1d6012bb95d22dfd46baf03948714fb440ed7fad"
+    },
+    "src/Mapping/OneToOne.php": {
+      "upstream_sha256": "bd1f93d4d9b09cb6c6f625e57a2bc61992ee48b52c570f6ba77a4d5481f65814"
+    },
+    "src/Mapping/OneToOneAssociationMapping.php": {
+      "upstream_sha256": "819d8129eb6732853fecb3a3d00c2dbb293cab720d02cd81d4c9705498b07bd9"
+    },
+    "src/Mapping/OneToOneInverseSideMapping.php": {
+      "upstream_sha256": "0566e1c2fa0f5c9e5309f2bea51f5a92cb5b652c8713e89e8b799464b5ea5f69"
+    },
+    "src/Mapping/OneToOneOwningSideMapping.php": {
+      "upstream_sha256": "1d1241b284e2c30362103d90c75b00e7391fbc00ab538234688d552dde1a9564"
+    },
+    "src/Mapping/OrderBy.php": {
+      "upstream_sha256": "7dea0d24f8a78e805c3fc6e86ec0ba7f86114759acb272f1919751c6f8cf0f45"
+    },
+    "src/Mapping/OwningSideMapping.php": {
+      "upstream_sha256": "1090ff2809a0a3a371dcb75521cbc4581ded7f780b76cc8510a89b904ccc83ed"
+    },
+    "src/Mapping/PostLoad.php": {
+      "upstream_sha256": "0a65083fe46293cadfa6e099b9085812554c9b38115b41dbb65522ab28f7d9d3"
+    },
+    "src/Mapping/PostPersist.php": {
+      "upstream_sha256": "21692df9defff73be57f5b0a04f97356f6c6a89aec697969b78e82d2d56c02f2"
+    },
+    "src/Mapping/PostRemove.php": {
+      "upstream_sha256": "824afb4803a7a32b963a044575774a0e98b3f0d8bbce18392e6cd91876999c87"
+    },
+    "src/Mapping/PostUpdate.php": {
+      "upstream_sha256": "22d0f446c02ab84c773b3445fca14ebfba1ea790840a3e35a9b0497f352ad50b"
+    },
+    "src/Mapping/PreFlush.php": {
+      "upstream_sha256": "57eb35ae37dd9025f643eb615c69028fbdc981030153483ee70a3eee9c00cf72"
+    },
+    "src/Mapping/PrePersist.php": {
+      "upstream_sha256": "4dc8e5e43240323bd7ce7c7df97b5daea438a6f780eec41e414d46997278fdc0"
+    },
+    "src/Mapping/PreRemove.php": {
+      "upstream_sha256": "cbb76059db73f9e8c8464765b55c8b4206c6887a7ea39bf7bbf90717b948acbd"
+    },
+    "src/Mapping/PreUpdate.php": {
+      "upstream_sha256": "83e5ae6394789c1e81b95ec9b78d20f4fe5b3e1f4e882be1145a401a1bb1a407"
+    },
+    "src/Mapping/PropertyAccessors/EmbeddablePropertyAccessor.php": {
+      "upstream_sha256": "cc3e0461709060e42288388ac4ba5396cae90ebda8e28c8cf1be37d33f1ce90b"
+    },
+    "src/Mapping/PropertyAccessors/EnumPropertyAccessor.php": {
+      "upstream_sha256": "92f67bcf2dbb7467c6644d53f2ba7cf7c56c809845f8cee8128a1dac7ddb75dd"
+    },
+    "src/Mapping/PropertyAccessors/ObjectCastPropertyAccessor.php": {
+      "upstream_sha256": "faa7177e4f218c0e885fece66d11dd33df76d52095d7d402f3b46e0729c5e74d"
+    },
+    "src/Mapping/PropertyAccessors/PropertyAccessor.php": {
+      "upstream_sha256": "e1a76506c5ec08c3e6bbdb6469df92a5f9804f47148f8ef268010e1dbb99be90"
+    },
+    "src/Mapping/PropertyAccessors/PropertyAccessorFactory.php": {
+      "upstream_sha256": "6b8507ddc2a5b29ac14c5aafa44acb8f7a347160b552b071602aa56cb1ebd094"
+    },
+    "src/Mapping/PropertyAccessors/RawValuePropertyAccessor.php": {
+      "upstream_sha256": "e9c2052e9282b842c9fd0cf22204e2de63ffa3015ca123a5009bf9ad15468822"
+    },
+    "src/Mapping/PropertyAccessors/ReadonlyAccessor.php": {
+      "upstream_sha256": "e7a601b3484eb428e4d0815c555e614855a68e0dbfa9ce93e6ae8eddb24a3941"
+    },
+    "src/Mapping/PropertyAccessors/TypedNoDefaultPropertyAccessor.php": {
+      "upstream_sha256": "45668e9dcb4e1e325a22c692aa543e24128cf745c8d15c0bd95652f7d322f187"
+    },
+    "src/Mapping/QuoteStrategy.php": {
+      "upstream_sha256": "9e452e0c24f34a68ee7073acb1adc0120e711cccc7edf8cbe153283947fc2995"
+    },
+    "src/Mapping/ReflectionEmbeddedProperty.php": {
+      "upstream_sha256": "3caa2b89d725e69bb7cbf172511a140261d7b03eece6bf1c0a2c3a7baf51fc05"
+    },
+    "src/Mapping/ReflectionEnumProperty.php": {
+      "upstream_sha256": "9c5946db74e205d6676d0490c0ada6fe8955ce757b3421e36691253eab205070"
+    },
+    "src/Mapping/ReflectionReadonlyProperty.php": {
+      "upstream_sha256": "549be7d974ab1c7aff7ff5c590152d1dc1c178858a9efefd5f6563cac5ff6f56"
+    },
+    "src/Mapping/SequenceGenerator.php": {
+      "upstream_sha256": "2ad1c7b1eaad4022fea18621d9b146142009e8247bd8075a8de61a4e7ad53b9f"
+    },
+    "src/Mapping/Table.php": {
+      "upstream_sha256": "029a03f01fa672ec36fe6d958badc2e530b3a0879fd11e1edb5e19d02aef12d8"
+    },
+    "src/Mapping/ToManyAssociationMapping.php": {
+      "upstream_sha256": "63819089cb64bc3c8ae6fe0527943451ba8c40cf45eac2d587389ac6dfcedaec"
+    },
+    "src/Mapping/ToManyAssociationMappingImplementation.php": {
+      "upstream_sha256": "01db873e7d2046bd446b973d298785767d16b0accee56a53c355c11d3d90dbc2"
+    },
+    "src/Mapping/ToManyInverseSideMapping.php": {
+      "upstream_sha256": "175ca827ffb4860dfed3bbb85c3189fbb02ebb80bb24428df962511b7593164f"
+    },
+    "src/Mapping/ToManyOwningSideMapping.php": {
+      "upstream_sha256": "eefbb55250473d67dd3bcb4b9bb650b7d9aee9d737e2d86b82b3f406e1b9d45d"
+    },
+    "src/Mapping/ToOneAssociationMapping.php": {
+      "upstream_sha256": "5db85a28baac95ec6953de662b82e8d2f094080ec656a88e32996fd2bdc2fa89"
+    },
+    "src/Mapping/ToOneInverseSideMapping.php": {
+      "upstream_sha256": "e9c54cfe2e72c8543ae08ebc600b29c543614d01806d3329eac38a021dc13571"
+    },
+    "src/Mapping/ToOneOwningSideMapping.php": {
+      "upstream_sha256": "71894172bafb6a620fd6f7b01f21c388cd11d937775667386ce663cac5f55688"
+    },
+    "src/Mapping/TypedFieldMapper.php": {
+      "upstream_sha256": "1e0aaaa8e6c3d25ee729e386361275f665b0ce41e0335205fdbd5978b8b0a958"
+    },
+    "src/Mapping/UnderscoreNamingStrategy.php": {
+      "upstream_sha256": "0a8f4cd7add32421effcc6accf4e6b563242129ad8e3ad0e8cfea62355c92441"
+    },
+    "src/Mapping/UniqueConstraint.php": {
+      "upstream_sha256": "7d20e2022f0fa0fe55b01e66919339a861f8cf71fa4d4a8d5a4fe1e82913ff0e"
+    },
+    "src/Mapping/Version.php": {
+      "upstream_sha256": "894183d7521bdd7ef17433de942e0062d721e3e90765f0862f1863363a425015"
+    },
+    "src/NativeQuery.php": {
+      "upstream_sha256": "79ad1caca26e1bf23994d90d526cd37cc3f6d2311cb91d115a72565fc1374fe8"
+    },
+    "src/NoResultException.php": {
+      "upstream_sha256": "6f3c59e27f1ad2e15cb56483c539a6c57589a36d353178a956c55c9ada83044f"
+    },
+    "src/NonUniqueResultException.php": {
+      "upstream_sha256": "acc96cd8177b8d064f8940ab138e15afaa49ebf9e0bbc0392992ab558c11f260"
+    },
+    "src/ORMInvalidArgumentException.php": {
+      "upstream_sha256": "62d6a1adf2c59d2042a934a67cabd5811474b91a8faa9fd6b69e1c1da278a137"
+    },
+    "src/ORMSetup.php": {
+      "upstream_sha256": "0120c37892bbff1a4e9d67f91ac43a40ddca81e774e8cc2603c0e513bb3cb163"
+    },
+    "src/OptimisticLockException.php": {
+      "upstream_sha256": "1762c9186ffceeb3b77eb2a414c0c7b3c4028fbb2625f7ed9e0de487cb1b27e2"
+    },
+    "src/PersistentCollection.php": {
+      "upstream_sha256": "42b92e2c8c964b599479f77ec3bb92ad46e783dabb5afc6c58f156e2e4a580d2"
+    },
+    "src/PersistentCollectionImplementation.php": {
+      "upstream_sha256": "e18ede4cc6a7e903db74a1b2e9335630a73d48cb4d625dbe62df72045c2a9d2b"
+    },
+    "src/Persisters/Collection/AbstractCollectionPersister.php": {
+      "upstream_sha256": "6c52bb296944832f0e571e0d49986965fe8b3d00ce480b2e33bb4413e568c810"
+    },
+    "src/Persisters/Collection/CollectionPersister.php": {
+      "upstream_sha256": "4ee6e5698987db7f7cb55d8e6d6a2311bfe406eab44baadb81287b77caf30996"
+    },
+    "src/Persisters/Collection/ManyToManyPersister.php": {
+      "upstream_sha256": "742f6586ca940f66419d311f6d80e94e51c01733139d86cc206b0f89f598f507"
+    },
+    "src/Persisters/Collection/OneToManyPersister.php": {
+      "upstream_sha256": "863cfd58e85b66d978c3e6cb89a3500335f8f82c0579c4e82ddc28cd856a7258"
+    },
+    "src/Persisters/Entity/AbstractEntityInheritancePersister.php": {
+      "upstream_sha256": "c59e8c9cd72e3b16c4107aabbec655e0522b5eafbe08b2e4c5e0957ed28dff1b"
+    },
+    "src/Persisters/Entity/BasicEntityPersister.php": {
+      "upstream_sha256": "05655ca5411a7613724ffc5bb8a35d2184d825715235f5cb8fbedef95824fa85"
+    },
+    "src/Persisters/Entity/CachedPersisterContext.php": {
+      "upstream_sha256": "0aef21dfcdc7360ad19500ab555609b4c72d0727a2e4d5742d8b4ad39e83e683"
+    },
+    "src/Persisters/Entity/EntityPersister.php": {
+      "upstream_sha256": "3af952f8ba786dc19f10711d6dd5cefefa35b9146349610c0b75f0ac0ff401f9"
+    },
+    "src/Persisters/Entity/JoinedSubclassPersister.php": {
+      "upstream_sha256": "3ce6550999adc23f76a7503fbe5f7e3c22ad5ec22b6d418789ba8470af8a591a"
+    },
+    "src/Persisters/Entity/SingleTablePersister.php": {
+      "upstream_sha256": "e314ebb94eca89257dc45e23385e87a7cfeb1ae7821f77aec9b69616ea66d6c3"
+    },
+    "src/Persisters/Exception/CantUseInOperatorOnCompositeKeys.php": {
+      "upstream_sha256": "e2fb649c6afe1738e4b192459801aeb5fd5bb2ac1ade3e825eb9308d5435b22b"
+    },
+    "src/Persisters/Exception/InvalidOrientation.php": {
+      "upstream_sha256": "5aa1fb6f2cd4f019c7792206c9f8c29d0c32f04d393fa198a151217b47a840b7"
+    },
+    "src/Persisters/Exception/UnrecognizedField.php": {
+      "upstream_sha256": "db8b02b632791a8d8baa5554a587314a060a51ea0d38827e3673e5d78c2808d4"
+    },
+    "src/Persisters/MatchingAssociationFieldRequiresObject.php": {
+      "upstream_sha256": "32082a2b35fff611ef0b7c00acf505bd0226970275fc99c9e9e971e1c4fcc887"
+    },
+    "src/Persisters/PersisterException.php": {
+      "upstream_sha256": "e4a4e1041b710379796e1ab2c1ac153b11e86e9222d8b2f55c36cbfea0d29070"
+    },
+    "src/Persisters/SqlExpressionVisitor.php": {
+      "upstream_sha256": "66526646290b7ecf866624fe8590099152f95428c34b76c90f48a0f9fd12704e"
+    },
+    "src/Persisters/SqlValueVisitor.php": {
+      "upstream_sha256": "ff87679ee9a4eed40e2539ae04c318972634f146f3fa39ec774ac11745779343"
+    },
+    "src/Persisters/SqlValueVisitorImplementation.php": {
+      "upstream_sha256": "3f46ad8d66e2fbdcb64545e3305e9dc40a46092ce53a442c6de4953948429806"
+    },
+    "src/PessimisticLockException.php": {
+      "upstream_sha256": "d4caf1ce4980bfc9840a5d3e7f8165f72aaebf4a522ce25d01d60ba21be0c831"
+    },
+    "src/Proxy/Autoloader.php": {
+      "upstream_sha256": "9fe8ec0aebbd5caf2361fbbed36512344c0265d617fa5c5788ea28ba041cd023"
+    },
+    "src/Proxy/DefaultProxyClassNameResolver.php": {
+      "upstream_sha256": "5c4d2cfdf846b31783df580af7cac00e2a9d8cd43fed2756e93a6ef36e519a33"
+    },
+    "src/Proxy/InternalProxy.php": {
+      "upstream_sha256": "f177c830e16d4196abb485c75426f02184496c4ee97d3e44e3eda53f1f592aa2"
+    },
+    "src/Proxy/NotAProxyClass.php": {
+      "upstream_sha256": "4d108f7612293edb66edd739ca484d988d583dc138301c4330621d605a3efbb0"
+    },
+    "src/Proxy/ProxyFactory.php": {
+      "upstream_sha256": "d12cb7b27cffacc1182d6cdbff4064410c25c6c9e69f2ac8f0198096c9609e67"
+    },
+    "src/Query/AST/ASTException.php": {
+      "upstream_sha256": "d4c3e191f8083c85bd96140f6052caaac3e0a4c5a6593058507b0d335103c924"
+    },
+    "src/Query/AST/AggregateExpression.php": {
+      "upstream_sha256": "eb96f21487b8fe3f6a944ebc9f37c4087b9e3d574170650e66fd18bf74268758"
+    },
+    "src/Query/AST/ArithmeticExpression.php": {
+      "upstream_sha256": "44cd4aee59c6f83152e3d503c553c4b4fb5dff082a12423d76ec66ab9fafa630"
+    },
+    "src/Query/AST/ArithmeticFactor.php": {
+      "upstream_sha256": "b24583140b22e12a68c9e6ee3e1f671996dfa48fc91d7d2e721cb21f1aa8270f"
+    },
+    "src/Query/AST/ArithmeticTerm.php": {
+      "upstream_sha256": "85ffb0994fc9fcac3db6f0a023df98e931ca168a413d220ec50c9804ef2415ba"
+    },
+    "src/Query/AST/BetweenExpression.php": {
+      "upstream_sha256": "83837fc7e75ea5fec9e94a4ccf5941811e22c44dbec72bd13722a9d1ad286384"
+    },
+    "src/Query/AST/CoalesceExpression.php": {
+      "upstream_sha256": "608221b1e536037b1793bddfed0fb2b172c6eb7d6eab767dd55b4d5c96ff8413"
+    },
+    "src/Query/AST/CollectionMemberExpression.php": {
+      "upstream_sha256": "315b5897d632e95d7f1e80feeb2ed126db485babc1bff812c97d35d9c7b15362"
+    },
+    "src/Query/AST/ComparisonExpression.php": {
+      "upstream_sha256": "221a030a6c19ffc8aa991900fae85b0e05bf4a7695e92a1f486ecd061678e108"
+    },
+    "src/Query/AST/ConditionalExpression.php": {
+      "upstream_sha256": "3ff3f6402c90bcb7737b5f41251f294de176be8809289193de46ba200e9def7f"
+    },
+    "src/Query/AST/ConditionalFactor.php": {
+      "upstream_sha256": "207ca0df03e59f785dc5697b956dac08828986822c42b72a7648564f88dceaaf"
+    },
+    "src/Query/AST/ConditionalPrimary.php": {
+      "upstream_sha256": "b50875a6e741778de16000d1202733ea8443e3e062d3b0fa2ad785377a215e04"
+    },
+    "src/Query/AST/ConditionalTerm.php": {
+      "upstream_sha256": "cd213c09711696a41edf6b4346af85c60bf179735a88dc285353d4e2f336f303"
+    },
+    "src/Query/AST/DeleteClause.php": {
+      "upstream_sha256": "fd2999b86c12c8b8ad03d61f486614db5de11b8db4a0f3116084c9d2cee7bc81"
+    },
+    "src/Query/AST/DeleteStatement.php": {
+      "upstream_sha256": "a3396b8988c78d5b4b5d9ac774d90ac6e53241fbb1161c525f98436a1a5634b6"
+    },
+    "src/Query/AST/EmptyCollectionComparisonExpression.php": {
+      "upstream_sha256": "448131d3fc5c7466b0284e218f9b9ef2ee97c740274986d31672c703e26f31c4"
+    },
+    "src/Query/AST/EntityAsDtoArgumentExpression.php": {
+      "upstream_sha256": "d1d78ef7262f1371a449d924c2a0addf8a777e2d7a4124b0be166aed3dbb61cc"
+    },
+    "src/Query/AST/ExistsExpression.php": {
+      "upstream_sha256": "a0d2951bcd83812b6b35c68ef53ed72754cd2a57e145618ad8ec2ad051e7d7bd"
+    },
+    "src/Query/AST/ExpressionWithReturnType.php": {
+      "upstream_sha256": "dcbbd67e929de9e57ca918cc1c2b1d2b788977c920e66f6b6ac7302396e852ba"
+    },
+    "src/Query/AST/FromClause.php": {
+      "upstream_sha256": "e55de94ee337d8d2b514ed217d640b0069e94fc7e0195e3f9565391d4af65f9c"
+    },
+    "src/Query/AST/Functions/AbsFunction.php": {
+      "upstream_sha256": "2fd91370848cae8fe8828805bd232788c441e7f6168026638b79ee66387ae538"
+    },
+    "src/Query/AST/Functions/AvgFunction.php": {
+      "upstream_sha256": "43077d8b33152eaa43f8f33bd5c3cc8b71d204f6676cd3ee9969ffcaa4b85ab7"
+    },
+    "src/Query/AST/Functions/BitAndFunction.php": {
+      "upstream_sha256": "b635e238343a65c645bd699675a0af24bd939ca834885c30f72a05b99e71b70a"
+    },
+    "src/Query/AST/Functions/BitOrFunction.php": {
+      "upstream_sha256": "d319075a4e7aa111f5c7d0efc0745f461be8ce6d4af41b3fbd1dca2749a43a75"
+    },
+    "src/Query/AST/Functions/ConcatFunction.php": {
+      "upstream_sha256": "c2431c28bf828846ab3fbe49ef14cab9c387a80183ee06c308cfef5976745152"
+    },
+    "src/Query/AST/Functions/CountFunction.php": {
+      "upstream_sha256": "fc72ce5e04ed4decb001fdc941e9b83a38aa3c1bac7e5f18f63aee49ff458673"
+    },
+    "src/Query/AST/Functions/CurrentDateFunction.php": {
+      "upstream_sha256": "1a1afde3d31b1aec43c30eff089df2381d2580be19cb6bb781f9c8bbb0758d66"
+    },
+    "src/Query/AST/Functions/CurrentTimeFunction.php": {
+      "upstream_sha256": "47adad155c8d75c1cb3682dbd9d3531a5180865553e807959c9577859352c160"
+    },
+    "src/Query/AST/Functions/CurrentTimestampFunction.php": {
+      "upstream_sha256": "da0412fc3fea23ec1ec0f35e280d7fa3db2db21ac10e8e1280e1325588ef3eea"
+    },
+    "src/Query/AST/Functions/DateAddFunction.php": {
+      "upstream_sha256": "9f1b06cd67bb13aa7fb592518de336587b95b726c33f0ca8e3899a1d883d5882"
+    },
+    "src/Query/AST/Functions/DateDiffFunction.php": {
+      "upstream_sha256": "24fb7fc36732c81be0ad2793b563db4e248654cecaace108d18df12cccfcd4a3"
+    },
+    "src/Query/AST/Functions/DateSubFunction.php": {
+      "upstream_sha256": "e3409def47f3c5841813338ece18650bbe0f3e7db1d96f287d1685b6bc5da0e0"
+    },
+    "src/Query/AST/Functions/FunctionNode.php": {
+      "upstream_sha256": "a9d2fe97eb4717c0b2a091911de7a2ce602c9cb386b3c3883ec86c9ac30d9b53"
+    },
+    "src/Query/AST/Functions/IdentityFunction.php": {
+      "upstream_sha256": "60a55ed86fd2c103c1d987cbf5b4b4dce38b0829c7b8292a2213be43fe454a17"
+    },
+    "src/Query/AST/Functions/LengthFunction.php": {
+      "upstream_sha256": "22ea97fd34384b3d8b09652c40bb41d043f695d8af018e0b8ae3c81ddfda3233"
+    },
+    "src/Query/AST/Functions/LocateFunction.php": {
+      "upstream_sha256": "4ec9268dd44426393edbb6c81a6dfce803dde9983a3db8a592ea25d47efbe2e3"
+    },
+    "src/Query/AST/Functions/LowerFunction.php": {
+      "upstream_sha256": "8eba8b90c7a3fbd192081107569efaa90d1c435cb0abb3d2d1eb80e66a694ca8"
+    },
+    "src/Query/AST/Functions/MaxFunction.php": {
+      "upstream_sha256": "ace64c5134235c874a39b27899cc8567cfd9e78d2b3cae7e17e1b90eb3203646"
+    },
+    "src/Query/AST/Functions/MinFunction.php": {
+      "upstream_sha256": "5625aa9e753a22c75f465c92d84780213669c05b8eaa39d7a86e213cb5775cf1"
+    },
+    "src/Query/AST/Functions/ModFunction.php": {
+      "upstream_sha256": "69f7a35aa4fb4bc0379946f39b4706fc6bb21adaf591f5ab2d0951a3bdb8391b"
+    },
+    "src/Query/AST/Functions/SizeFunction.php": {
+      "upstream_sha256": "e1a4143c2891ef38ee145fa4f406d5707d515de1b3eebb91ee2aa8aa6f357f08"
+    },
+    "src/Query/AST/Functions/SqrtFunction.php": {
+      "upstream_sha256": "849e574372b823bee60c5cc899d0e0656dd09fd1d720cf83917c59e4a09e6934"
+    },
+    "src/Query/AST/Functions/SubstringFunction.php": {
+      "upstream_sha256": "6c4a2d2c8f1a86b479d29a11ca673bea64e2085317f6ddc1229c264cf15081bb"
+    },
+    "src/Query/AST/Functions/SumFunction.php": {
+      "upstream_sha256": "6547465150aa7192e598f1030c2549a393a67f0bf38979973dac4c3aa524ae66"
+    },
+    "src/Query/AST/Functions/TrimFunction.php": {
+      "upstream_sha256": "d29796573485124e225717360bb063b19b20854b61767898028cb1e4dd765cca"
+    },
+    "src/Query/AST/Functions/UpperFunction.php": {
+      "upstream_sha256": "700f70d86b080d0d4c576c09d7cd43eea7e8883013277dfd370b63c3f3555894"
+    },
+    "src/Query/AST/GeneralCaseExpression.php": {
+      "upstream_sha256": "9fe8e603051714bf1a91ec9cd472e3394f78aad23776b469b6289e1922f22ec6"
+    },
+    "src/Query/AST/GroupByClause.php": {
+      "upstream_sha256": "62d1531b7fa2f6baf7d65a4575fea9eddf4ca329e79568013a3d75d627e461a3"
+    },
+    "src/Query/AST/HavingClause.php": {
+      "upstream_sha256": "e9a1e89688e3f67d0b3a17ab0243c3cd18e2820ab6dcf47e67b44eed355f02a7"
+    },
+    "src/Query/AST/IdentificationVariableDeclaration.php": {
+      "upstream_sha256": "7e6fc139b1111caf5b1169643292e8863975018b5d6e1136faf1faa457804ec7"
+    },
+    "src/Query/AST/InListExpression.php": {
+      "upstream_sha256": "8264f8edfd79bbab1463c40d42a1dbe727bc46a2047f0b63d9bc2c088c8772ad"
+    },
+    "src/Query/AST/InSubselectExpression.php": {
+      "upstream_sha256": "d2776f917c8b136e77d4ef5ca63084f636df88869aba4ec2ddee283e87d4988d"
+    },
+    "src/Query/AST/IndexBy.php": {
+      "upstream_sha256": "0dc37ce422905a7a30a21a3e3aeed6e490f75fcf7fe8351ca5b4a537057fce7d"
+    },
+    "src/Query/AST/InputParameter.php": {
+      "upstream_sha256": "2513c06807dee8ef1aaad0d6822f3851f5798a292e0ff7ad48869b294ec86e21"
+    },
+    "src/Query/AST/InstanceOfExpression.php": {
+      "upstream_sha256": "9e281eb6332be554427cbaa40dc01cb2c2815c2e186faa1ebf645160337bb0c3"
+    },
+    "src/Query/AST/Join.php": {
+      "upstream_sha256": "4c4185c19442b28e4c1d71bc8bafc71142bd5851378a8d46899d8c9b790caec0"
+    },
+    "src/Query/AST/JoinAssociationDeclaration.php": {
+      "upstream_sha256": "1f0de5d17a11e0969bafa105b3e20c26110e7bda25893a852ba4d818a040e28c"
+    },
+    "src/Query/AST/JoinAssociationPathExpression.php": {
+      "upstream_sha256": "45030fdc733970076989bf9ec8ec2c9849eb02f1387b900813277eab2d847a5c"
+    },
+    "src/Query/AST/JoinClassPathExpression.php": {
+      "upstream_sha256": "845e2b811186c1873bdddec3b84cf46577cfdd085d07874011b3923266338f9b"
+    },
+    "src/Query/AST/JoinVariableDeclaration.php": {
+      "upstream_sha256": "d477221204eca6838f92fc7df79279f428d0e6eee75920158ce43167a386d05e"
+    },
+    "src/Query/AST/LikeExpression.php": {
+      "upstream_sha256": "69354a9b88b6a3405b11de05bd5447cc4355f9aa5287d80dafe2e435ee9ee7e3"
+    },
+    "src/Query/AST/Literal.php": {
+      "upstream_sha256": "422129bc2f5799be16207662587be7e24fad8dc13b1bdeb652377293e71a3f69"
+    },
+    "src/Query/AST/NewObjectExpression.php": {
+      "upstream_sha256": "2bb17e46ed61aa059feca22a8e76a6b1d94d9af49b2962fa1644231e0f721422"
+    },
+    "src/Query/AST/Node.php": {
+      "upstream_sha256": "6766e8ba27589d16356781b2539602e3e0e9dbb7846189171b01722623f48fd0"
+    },
+    "src/Query/AST/NullComparisonExpression.php": {
+      "upstream_sha256": "675bd6b87147664662f6efff73188ff1829fa2e4272b2a47f9c36a1912ab0255"
+    },
+    "src/Query/AST/NullIfExpression.php": {
+      "upstream_sha256": "ae294a32ee299205d0154a378de2a6b0666f4ae4cc7e304a21baf1f77f10f4b6"
+    },
+    "src/Query/AST/OrderByClause.php": {
+      "upstream_sha256": "862ad4981ad1cbff004954ca3595e874e98a9dcae46c687b33dc7770c39bc035"
+    },
+    "src/Query/AST/OrderByItem.php": {
+      "upstream_sha256": "0523c3c79671ab1d3debc578cad13a6b73b1c7919abaaea61d207c31bf5340df"
+    },
+    "src/Query/AST/ParenthesisExpression.php": {
+      "upstream_sha256": "dce8639dc5d77aa30db34a9ce8e940fff5631582e230b261ffa583a6322bd2fa"
+    },
+    "src/Query/AST/PartialObjectExpression.php": {
+      "upstream_sha256": "600eb1bc502d7d1b6e93c3968ff72b5854ab202d6ff13ff883780400d223a057"
+    },
+    "src/Query/AST/PathExpression.php": {
+      "upstream_sha256": "42228a4254d8051d804b03aa38e980411ec9763032de269fd17cfab3d5a1e1c5"
+    },
+    "src/Query/AST/Phase2OptimizableConditional.php": {
+      "upstream_sha256": "7138f7a35ab0cfaca2e2d44dbb48c20353426af6a111427557ad6ed8e76011e1"
+    },
+    "src/Query/AST/QuantifiedExpression.php": {
+      "upstream_sha256": "7fb14d305eab489b9a50554b96f989bdb7d3d18d759a9e6e106405a3905db281"
+    },
+    "src/Query/AST/RangeVariableDeclaration.php": {
+      "upstream_sha256": "ecffe5c7478a5b38d551012fdaeec1fbfdb47b0ac6b19dd50390fdb70b8f08a3"
+    },
+    "src/Query/AST/SelectClause.php": {
+      "upstream_sha256": "4867e58b548348c230de5641fcec5eab674c2329f07f7adfb906e25f19cd90d5"
+    },
+    "src/Query/AST/SelectExpression.php": {
+      "upstream_sha256": "183a6efa24a7a01b17e4349b9e1c6d47e8dd1e0a6ae5062ccd7be4f6ed12855e"
+    },
+    "src/Query/AST/SelectStatement.php": {
+      "upstream_sha256": "7c878a8ede4d924be6514ea14bc595caf4382c04a3b68808b617180c3e49d751"
+    },
+    "src/Query/AST/SimpleArithmeticExpression.php": {
+      "upstream_sha256": "fc8f8ad531062c873a071e529aa17bb3b18106858587121bad70df25fd756924"
+    },
+    "src/Query/AST/SimpleCaseExpression.php": {
+      "upstream_sha256": "12dad0cce0755072ab9142484b7d531d4286967a66ca693e44da3a027adeb3fe"
+    },
+    "src/Query/AST/SimpleSelectClause.php": {
+      "upstream_sha256": "d9649c60e6a2ccac0f52af080ff1fd4a0eaa32ec6215cc35275102429cbedf0f"
+    },
+    "src/Query/AST/SimpleSelectExpression.php": {
+      "upstream_sha256": "815ed4133b63418767474e62343165cedf3ef26b238651393e38873a96b7c160"
+    },
+    "src/Query/AST/SimpleWhenClause.php": {
+      "upstream_sha256": "d8cb37444f9cbf02641f2af7bb96a09c32123c5d6c72f21c9cc6728adfa20d0d"
+    },
+    "src/Query/AST/Subselect.php": {
+      "upstream_sha256": "df34d1891bbf88e808592b33151f57acd32b2893611075234983f5f884e8ca9f"
+    },
+    "src/Query/AST/SubselectFromClause.php": {
+      "upstream_sha256": "2818b31b09a7b392f90b673e1adc2f0ec8e4ed729f5c2121fef81f9d8bc9bd86"
+    },
+    "src/Query/AST/SubselectIdentificationVariableDeclaration.php": {
+      "upstream_sha256": "ce33c574d48d75ef92628e3e530d912f63956b9b3546649c252cafb8f0421f41"
+    },
+    "src/Query/AST/TypedExpression.php": {
+      "upstream_sha256": "c24b84f7a79c79d93f0a78ca1f6a39606c71c2a65dadca3691769e07e3d0df59"
+    },
+    "src/Query/AST/UpdateClause.php": {
+      "upstream_sha256": "e5413d7022a696309a9e15c2b1074901b03b6baa8acffc0be2c041039d00fc65"
+    },
+    "src/Query/AST/UpdateItem.php": {
+      "upstream_sha256": "5ba72552083f43cb6f58a9c743762598a8494af720af5ca4ef22ed996542cfff"
+    },
+    "src/Query/AST/UpdateStatement.php": {
+      "upstream_sha256": "dbc3493292108d54eeed6a2247ebe5b1eac7520e24174235c84a479217f5da45"
+    },
+    "src/Query/AST/WhenClause.php": {
+      "upstream_sha256": "c9ac5b2f7a3b379981615205d1915a8b7bffc0d9df33280e39224e4ddc467619"
+    },
+    "src/Query/AST/WhereClause.php": {
+      "upstream_sha256": "f5bf6647c362da694bca09b5d9a31ed394ec1f84e79b00bde30ff821f31aed57"
+    },
+    "src/Query/Exec/AbstractSqlExecutor.php": {
+      "upstream_sha256": "ed55ee5276db65836e8c1d02297e8448b636fde3bd48c0292d6d32b5b9ca391d"
+    },
+    "src/Query/Exec/FinalizedSelectExecutor.php": {
+      "upstream_sha256": "8c0d73a92d3b6dadba2340c1515f68d38574c22c901a544ea69d64591f206a8b"
+    },
+    "src/Query/Exec/MultiTableDeleteExecutor.php": {
+      "upstream_sha256": "7dbd4ac0d0df9a37036110ca0735f05b76192a431686405fb23c03daaf52ff5f"
+    },
+    "src/Query/Exec/MultiTableUpdateExecutor.php": {
+      "upstream_sha256": "0ea08c89a5624ebd10977718f5f49639c2b551487d74e1a0c6b845d843a1ec85"
+    },
+    "src/Query/Exec/PreparedExecutorFinalizer.php": {
+      "upstream_sha256": "8b00c6ff2f56ca0ceaaf81989cd08a358e46a65a1ad2ecce97f0cd302e83f757"
+    },
+    "src/Query/Exec/SingleSelectExecutor.php": {
+      "upstream_sha256": "5a4423e9628e6a42f15a4b61108e41115f7bab81bd4e98578ba2ea047fa5320e"
+    },
+    "src/Query/Exec/SingleSelectSqlFinalizer.php": {
+      "upstream_sha256": "2ea7788124836c533219561d57e8806333919b7b9829c277c58e4f6a300e89e9"
+    },
+    "src/Query/Exec/SingleTableDeleteUpdateExecutor.php": {
+      "upstream_sha256": "4c1f1a8d8266a7defc72297203cd9a27c95c16db0995a6a5884d24da508e8674"
+    },
+    "src/Query/Exec/SqlFinalizer.php": {
+      "upstream_sha256": "856809bd5ff9523e834d7e02cf815aa3f966a240c05ca5ff8a1c5aa8348f941b"
+    },
+    "src/Query/Expr/Andx.php": {
+      "upstream_sha256": "9ff0d7e1b81b28f3717358764d991b6b0fa5abd966d23b2576375254e28bcae2"
+    },
+    "src/Query/Expr/Base.php": {
+      "upstream_sha256": "a0fb2c9759ab4ff381521672dcd71fb0e3cdb356d67e22499631c1fd8b4c033d"
+    },
+    "src/Query/Expr/Comparison.php": {
+      "upstream_sha256": "ddbe74f84027d42f9d9caea43e6cf58136dcab0cc836f7b74d915d0e70976491"
+    },
+    "src/Query/Expr/Composite.php": {
+      "upstream_sha256": "2f9b38887f1d6e6bbd9ac3af2042c30d6fbdab80725320b73444b9b01725f15a"
+    },
+    "src/Query/Expr/From.php": {
+      "upstream_sha256": "d58d0fc638f0122e314801a76a984bb83658520d747b4d1e6069758fcca4e527"
+    },
+    "src/Query/Expr/Func.php": {
+      "upstream_sha256": "afdf7f459ac30f62cf372ac9a27e5b353a001e930f7585ee9969325ee7990463"
+    },
+    "src/Query/Expr/GroupBy.php": {
+      "upstream_sha256": "247717a74da554330378e324f097275d89fe38a756e6012544f8a2c7fc3d66d7"
+    },
+    "src/Query/Expr/Join.php": {
+      "upstream_sha256": "0c916149f73e96b632404b184524a04c5074eb8d88d203845052f70276795a2c"
+    },
+    "src/Query/Expr/Literal.php": {
+      "upstream_sha256": "2d06995c53072aea9ed1e5cfad824f505c25efe469e8560c90eec43a145e75e4"
+    },
+    "src/Query/Expr/Math.php": {
+      "upstream_sha256": "b3648a27e2a1321424574e8f662efdc088eddfc93cbcb0cd294a7b61ca1ec15f"
+    },
+    "src/Query/Expr/OrderBy.php": {
+      "upstream_sha256": "22df6348ee280257dd0118c37fbaf7ca4c1355cc07d3bd91cfca2288091f4566"
+    },
+    "src/Query/Expr/Orx.php": {
+      "upstream_sha256": "a0ad884cc848f49b8a80eae8e3f8ea31e21bf0ff3a98182f9ced89b562788435"
+    },
+    "src/Query/Expr/Select.php": {
+      "upstream_sha256": "b128430d427a3f303c3b8eafc3083726f847c0cf62217e50da74430947826d32"
+    },
+    "src/Query/Expr.php": {
+      "upstream_sha256": "d8ddd595afe21fd9a199a8ad5ed719926693ecc4317ec336288bb846fd328415"
+    },
+    "src/Query/Filter/FilterException.php": {
+      "upstream_sha256": "99a8bfd844b69f922d7fe8adeda082750e9f67ddc0c6227f2812d63b940b6fec"
+    },
+    "src/Query/Filter/Parameter.php": {
+      "upstream_sha256": "250a6449497422a27b6f36620fe21ac69b71909405682d8ca27af9c5af864d6f"
+    },
+    "src/Query/Filter/SQLFilter.php": {
+      "upstream_sha256": "8668e8e2cb9038e5906282cc4d54043859ab7caaa223e6af97e89f1368eb905a"
+    },
+    "src/Query/FilterCollection.php": {
+      "upstream_sha256": "818329c0e229b713d8665e1fcebc4f81f8edb1050b9aa360f5200e37739aad45"
+    },
+    "src/Query/Lexer.php": {
+      "upstream_sha256": "92dab8fb5fbd722fae446e1907f4ac9fa300fc94a87f528bef33d905b5de34d8"
+    },
+    "src/Query/OutputWalker.php": {
+      "upstream_sha256": "2a0fb6bdf7845b5315d36a254d4f1fb2ee2eaacc0b14bdb31b7602a1ec0016c2"
+    },
+    "src/Query/Parameter.php": {
+      "upstream_sha256": "29e0d2c1e0dd78b4f4e7c945621da35f4e9f28bbc519912c5cb5914199d2b85d"
+    },
+    "src/Query/ParameterTypeInferer.php": {
+      "upstream_sha256": "f12d45c38ac4ac02dac0155331ccd2b97041f95d08978562c7ffbd36097eab86"
+    },
+    "src/Query/Parser.php": {
+      "upstream_sha256": "37221edcd390a83c0bfc3b3b4c0b559321718c6f9c21df707e0a506a38f45124"
+    },
+    "src/Query/ParserResult.php": {
+      "upstream_sha256": "def31406c8006785529357170711a64e4f17edf69b842cd5dd1b72f932e5bedc"
+    },
+    "src/Query/Printer.php": {
+      "upstream_sha256": "492a89afc6bd81dec843a88a3dffab1aa4c9967550c2bea23e0de80b67f4cc4f"
+    },
+    "src/Query/QueryException.php": {
+      "upstream_sha256": "3a880f4b9594677e50d1d3aa25d25ab87f5b0e8e9a79049eaa53e5b3543d6902"
+    },
+    "src/Query/QueryExpressionVisitor.php": {
+      "upstream_sha256": "622a5cafbae95e29e51f79c9211fd1c2a08e1de9ab5066b2dcf9d783134efffe"
+    },
+    "src/Query/ResultSetMapping.php": {
+      "upstream_sha256": "fbdf21bf19920ea392642f4ef8b81b2d7926ea5a49395ddf77b3887520d6389a"
+    },
+    "src/Query/ResultSetMappingBuilder.php": {
+      "upstream_sha256": "5c6bbabbdf3f9fa078259acdfb49baf1277a06523e669804b92529dd02c175fe"
+    },
+    "src/Query/SqlOutputWalker.php": {
+      "upstream_sha256": "69b875f5be9a61279cbad3026bc855f8b667dabb14f42e44139364b58495cc95"
+    },
+    "src/Query/SqlWalker.php": {
+      "upstream_sha256": "743d8e988f969bc4c126fcc877e95125f45a67497cc193ec465c3d0e4ed8159f"
+    },
+    "src/Query/TokenType.php": {
+      "upstream_sha256": "8bff98c520f380203269ca9c5060dde8d24fc5ee4278bf735b145921bf7510df"
+    },
+    "src/Query/TreeWalker.php": {
+      "upstream_sha256": "900d7005c024eb7b48957bdf35ad0af7dfb45a1e2d171cef71c492cf151475a6"
+    },
+    "src/Query/TreeWalkerAdapter.php": {
+      "upstream_sha256": "f4fcbce769aee7c95543a2628e695dbe71459eaec66872a27cd7b64ee427adad"
+    },
+    "src/Query/TreeWalkerChain.php": {
+      "upstream_sha256": "493d82ab48c28ec18598f7d8af46b80e77f7cbe85c7e8110dad5aab6bd6bbcf7"
+    },
+    "src/Query.php": {
+      "upstream_sha256": "973100b17a4757b95421949814dff6b645ef5193e09e3e5ecc4c3df1cd7dff75"
+    },
+    "src/QueryBuilder.php": {
+      "upstream_sha256": "599e50ec7719e4c4f51352b634678435589cf035a4a11eb48b0c7ebdea920a37"
+    },
+    "src/QueryType.php": {
+      "upstream_sha256": "1e90545459da3498e1adb415160c0099e80d3b46e8e0dc71eb93e6f71a5cc244"
+    },
+    "src/Repository/DefaultRepositoryFactory.php": {
+      "upstream_sha256": "661eb2e2d64c7a3ca4cdb1c17605ef09ac28223e243244bfa32962a65164b825"
+    },
+    "src/Repository/Exception/InvalidFindByCall.php": {
+      "upstream_sha256": "3078b1c1b720558782815828fed7b0f3295f656308a872a24da2fa69931d870d"
+    },
+    "src/Repository/Exception/InvalidMagicMethodCall.php": {
+      "upstream_sha256": "dc4e6d7d02fc4ed2a7a337340dc54ddb1e67e8f074cd464a9f34d34c42098440"
+    },
+    "src/Repository/RepositoryFactory.php": {
+      "upstream_sha256": "33492f8af75a13e6b3f0844c613fb80e1b546d868481d9a4f9c8f79df96e5d0e"
+    },
+    "src/Tools/AttachEntityListenersListener.php": {
+      "upstream_sha256": "d7b04d320889f05735689dee781a044ccb8319f25f8985b7f311865cbf923176"
+    },
+    "src/Tools/Console/ApplicationCompatibility.php": {
+      "upstream_sha256": "529d0529e540c3bafe9e6646e27e7de7317322d229088cfb54effc42a1212074"
+    },
+    "src/Tools/Console/Command/AbstractEntityManagerCommand.php": {
+      "upstream_sha256": "d43115e96c4ded83bb92e3933bd4c26267aa913156771ec3bb8b4b6dae9b9e72"
+    },
+    "src/Tools/Console/Command/ClearCache/CollectionRegionCommand.php": {
+      "upstream_sha256": "e9362c98e1bef6f156d3c77577e249e27de919e43b09dd871bf47f3575974e3d"
+    },
+    "src/Tools/Console/Command/ClearCache/EntityRegionCommand.php": {
+      "upstream_sha256": "a76878fb8f2870a886e2a31b6fce42395540c5c908456c035bf563d589e45cea"
+    },
+    "src/Tools/Console/Command/ClearCache/MetadataCommand.php": {
+      "upstream_sha256": "e8d52e594175daa509b0bb21b1749afef28ff2fc57953528d2f7912ad9975778"
+    },
+    "src/Tools/Console/Command/ClearCache/QueryCommand.php": {
+      "upstream_sha256": "d81b39d2cbd40ddca54c45bfa13c96d13685c62a837b06087de16add2ff59a86"
+    },
+    "src/Tools/Console/Command/ClearCache/QueryRegionCommand.php": {
+      "upstream_sha256": "b9ccd47614c5b8e3a938c69dcc7e835a88bdb4540121305c0fdcbe8abd66101c"
+    },
+    "src/Tools/Console/Command/ClearCache/ResultCommand.php": {
+      "upstream_sha256": "5e372a3566d0427989c7af248b16702700cf280361a0dfa98f7648589aae060d"
+    },
+    "src/Tools/Console/Command/Debug/AbstractCommand.php": {
+      "upstream_sha256": "82137d6a9c9a25c7a578bf580feec7da350ae0c39f18b6f9c83251fca1930ecf"
+    },
+    "src/Tools/Console/Command/Debug/DebugEntityListenersDoctrineCommand.php": {
+      "upstream_sha256": "0ce688e806939693a3ffe5deb2c030e29812635d910544ca5c1232d48c5b8178"
+    },
+    "src/Tools/Console/Command/Debug/DebugEventManagerDoctrineCommand.php": {
+      "upstream_sha256": "c83db2548ed59d17edb12766c0b76eb4317e89763ddd75f4a90f126742c8ce25"
+    },
+    "src/Tools/Console/Command/GenerateProxiesCommand.php": {
+      "upstream_sha256": "f31783698658667d0a9ca38e9834526a412450642a5f46837356b8264bce0a5f"
+    },
+    "src/Tools/Console/Command/InfoCommand.php": {
+      "upstream_sha256": "420a64db7ce070d9e2ddb52d0328872456d113889af69625088f223060b966a1"
+    },
+    "src/Tools/Console/Command/MappingDescribeCommand.php": {
+      "upstream_sha256": "89be8566d507adf9d569f9bc92b1f36d3e6a7b71c25a5cd4f46eadfc770b4304"
+    },
+    "src/Tools/Console/Command/MappingDescribeCommandFormat.php": {
+      "upstream_sha256": "394c8b5179e664d657f2b9ed92c3662aa752fb0a528ee6c7adbcc76bfaf529c0"
+    },
+    "src/Tools/Console/Command/RunDqlCommand.php": {
+      "upstream_sha256": "471e9529f966cd7346073163bd400ccca062af482e47e09388e61b5a51afa8d7"
+    },
+    "src/Tools/Console/Command/SchemaTool/AbstractCommand.php": {
+      "upstream_sha256": "7d5c4e046543efdbfb4b6f72dbfc1f989fcfe4a3b3d18cf9f63555c799ea0777"
+    },
+    "src/Tools/Console/Command/SchemaTool/CreateCommand.php": {
+      "upstream_sha256": "cc84dfcd8e91af51ea675a444dfef39de00206ac9b09511db5320dc8a8734bc4"
+    },
+    "src/Tools/Console/Command/SchemaTool/DropCommand.php": {
+      "upstream_sha256": "2c835fbe404818404156594cd8fd3761347ca1f498fae6a4287c9a6914693ec2"
+    },
+    "src/Tools/Console/Command/SchemaTool/UpdateCommand.php": {
+      "upstream_sha256": "f90ff7a5f9166bc4c58c2d12621d0fb6a97717b1a57c07c200e5a04bee80b97d"
+    },
+    "src/Tools/Console/Command/ValidateSchemaCommand.php": {
+      "upstream_sha256": "c3255246c2b8db2eb4435c2bf68544b5bbff420fabd4044ada9c2e21e60e730d"
+    },
+    "src/Tools/Console/ConsoleRunner.php": {
+      "upstream_sha256": "f411015eeaa0e32fccd6d7a894fe73a55029189e798c837073d5b43eec4f7c64"
+    },
+    "src/Tools/Console/EntityManagerProvider/ConnectionFromManagerProvider.php": {
+      "upstream_sha256": "472c74fcd81690a454d24eb6e61a6424ec9cfa801d3afb3158fd29b2a4dd3324"
+    },
+    "src/Tools/Console/EntityManagerProvider/SingleManagerProvider.php": {
+      "upstream_sha256": "c45c7c4c13c15e12c8fd168351f0acd66a880c6d3ffa3ab2d2dcb0b214858a8b"
+    },
+    "src/Tools/Console/EntityManagerProvider/UnknownManagerException.php": {
+      "upstream_sha256": "50cea7e6db2484797747776377d1a4e6d57c7aaae5088714241054c4d380f86a"
+    },
+    "src/Tools/Console/EntityManagerProvider.php": {
+      "upstream_sha256": "ffc4d3978fce2aa31418c2319a321deeb55f13b524b4d8c099c0ecf6533760b0"
+    },
+    "src/Tools/Console/MetadataFilter.php": {
+      "upstream_sha256": "7096358cfb731e727de66f35cb410266bff4d54091e0a546e33e039f96d4219a"
+    },
+    "src/Tools/Debug.php": {
+      "upstream_sha256": "ca1743d487e42313b6737df9c1368f7c7ea320a2af07f1b0ef0255f1a451492e"
+    },
+    "src/Tools/DebugUnitOfWorkListener.php": {
+      "upstream_sha256": "00432a1c5bb444e7da8219ddc7fa843689e07d9d06a10c0cd97166e6edcf10f0"
+    },
+    "src/Tools/Event/GenerateSchemaEventArgs.php": {
+      "upstream_sha256": "94839c991d36bdd3597f9fcbf7f26e16fecce4cbd2586214b441770d8d2ffb35"
+    },
+    "src/Tools/Event/GenerateSchemaTableEventArgs.php": {
+      "upstream_sha256": "b288866c5e363d6baf9d0080405a6ca17fbce7d7e2c775fb9a8d4fc73869833a"
+    },
+    "src/Tools/Exception/MissingColumnException.php": {
+      "upstream_sha256": "7f3aef20ca67668de8212d048e0e2e7cf462cd55cc283ff8350e024196d21e10"
+    },
+    "src/Tools/Exception/NotSupported.php": {
+      "upstream_sha256": "e01e1ea65118bc4a8d37a56cfba922a069e51f511e0f1ebf05755fa8476119b7"
+    },
+    "src/Tools/Pagination/CountOutputWalker.php": {
+      "upstream_sha256": "353eb07d95794487705978c3ab8a63d4b2983575b0d159627f3e9d26b4d1eaf7"
+    },
+    "src/Tools/Pagination/CountWalker.php": {
+      "upstream_sha256": "b8decd06ff9d2a4aa44bf50e150088b02b79a98ad90b5caf6d05de0760e7ebfe"
+    },
+    "src/Tools/Pagination/Cursor.php": {
+      "upstream_sha256": "1a0d7eb88ca6e5a596faddfea061f5ce0c8d1a41606e859877aae846d8c176ca"
+    },
+    "src/Tools/Pagination/CursorItem.php": {
+      "upstream_sha256": "d6922c4e85cbde05ee9e2f398a63a18144c6147fb866cf418b3a2689af548624"
+    },
+    "src/Tools/Pagination/CursorOrderByItem.php": {
+      "upstream_sha256": "ff13f60acdd79fd36be43994af8ba825e7db25861fc26d68575bf8aea8a4fd7e"
+    },
+    "src/Tools/Pagination/CursorPage.php": {
+      "upstream_sha256": "195e04f51b8c733856a64a43c4a76dcf0428c370b3674a815af8bb24ead8d76a"
+    },
+    "src/Tools/Pagination/CursorPaginator.php": {
+      "upstream_sha256": "b030b67a2d69351e05ae6ed6854702c3a1d99e43bb41b890ecda73841075075c"
+    },
+    "src/Tools/Pagination/CursorWalker.php": {
+      "upstream_sha256": "45fca97e0052d012da0d685a64467e9381ec6ba63cd2fb3756ec6a3a362d9708"
+    },
+    "src/Tools/Pagination/Exception/InvalidCursor.php": {
+      "upstream_sha256": "89a17864665122a7e596afab33269b78063cd473e38bfbd93cb3664b8ea003fa"
+    },
+    "src/Tools/Pagination/Exception/RowNumberOverFunctionNotEnabled.php": {
+      "upstream_sha256": "d307c7efc951d042db49da6b534209f839a147840dfbfcab4e9d7ed5813c5474"
+    },
+    "src/Tools/Pagination/LimitSubqueryOutputWalker.php": {
+      "upstream_sha256": "10f49236f411c41564638bdea51023df339f66951330b7f16c599da5b804481f"
+    },
+    "src/Tools/Pagination/LimitSubqueryWalker.php": {
+      "upstream_sha256": "5eb419f0e26de03c4b1c15050886f501758d69b7951cc33993351e94c5c0f835"
+    },
+    "src/Tools/Pagination/OffsetPaginator.php": {
+      "upstream_sha256": "7c4c3e2df0c32e05fe9fc2e01b58896348c0e90ab47e562195cd3598867dfdb5"
+    },
+    "src/Tools/Pagination/OrderDirection.php": {
+      "upstream_sha256": "3131ff8fcb3734dc974ed025e001d09c3fcc3167e17f5ba9de8426e3b63fc4da"
+    },
+    "src/Tools/Pagination/Page.php": {
+      "upstream_sha256": "b048d72cbcdebc7c66db057c2f43072721269f8a377dcc2abeb8c05edd80f71c"
+    },
+    "src/Tools/Pagination/Paginator.php": {
+      "upstream_sha256": "8b2b59a369ea811906fb12d2248fd8133d15ba94dbaeaa09b1a59e05959803e0"
+    },
+    "src/Tools/Pagination/PaginatorInterface.php": {
+      "upstream_sha256": "60fe449994f7c980ae12e9d759f1e8b3346e38345bc996e26a674d6d860004b4"
+    },
+    "src/Tools/Pagination/PaginatorQuery.php": {
+      "upstream_sha256": "ecf13755adc0d5b428ce92c0c45e982026dae271dadc9f0d3bf75c92ef55a5c1"
+    },
+    "src/Tools/Pagination/RootTypeWalker.php": {
+      "upstream_sha256": "eee0ab090b9114027ae30770e8b1fb9bc703e7410eb32c8ca5f0e2bfa8ade9b7"
+    },
+    "src/Tools/Pagination/RowNumberOverFunction.php": {
+      "upstream_sha256": "23467721964a160a5ad941f8cb4de35c82b0b423f07fe3650265283579002233"
+    },
+    "src/Tools/Pagination/WhereInWalker.php": {
+      "upstream_sha256": "b14d8b35171ad36b31fd3e868acd4afa16362670fedfed32c159fca2c67ee5a9"
+    },
+    "src/Tools/Pagination/Window.php": {
+      "upstream_sha256": "89321bf25cc5b29efdaecbde6f23d70aae743573d6e895c05c5cd889619d8691"
+    },
+    "src/Tools/Pagination/WindowPage.php": {
+      "upstream_sha256": "bc00e3cc76a42f25acc52d062503c976ecd79f7f5928288f7db5c3eb896c11bb"
+    },
+    "src/Tools/ResolveTargetEntityListener.php": {
+      "upstream_sha256": "58f5d5aa45e0395ce4963114322e66d6db40be6901e1fdd3c4bf0e8e1604c6fd"
+    },
+    "src/Tools/SchemaTool.php": {
+      "upstream_sha256": "91dfdc5587e9485961268241b515291618653e38d222e9f5b5f07e83085bb0c3"
+    },
+    "src/Tools/SchemaValidator.php": {
+      "upstream_sha256": "166cacb3a594c7e786a47c6e173abe72ecedff6a1de643d971f61e526f2a2f14"
+    },
+    "src/Tools/ToolEvents.php": {
+      "upstream_sha256": "3ddc17c310cbd1b8f66adb06a027b29dde9560b58d6b864ada4af01494c051a9"
+    },
+    "src/Tools/ToolsException.php": {
+      "upstream_sha256": "603d6d62d0b301b93b55f3d2014be1dd4f7adf30282ed9f1c20faf4a20bf2c91"
+    },
+    "src/TransactionRequiredException.php": {
+      "upstream_sha256": "20e216e07681a165335120cdc1bdc829691b8f4046f42bfc5671c5e0d1181493"
+    },
+    "src/UnexpectedResultException.php": {
+      "upstream_sha256": "0b1c6fe2840825bea64a15b3cb7ba19bfb2b7d70e924bbd81e8c65dc7d2b6297"
+    },
+    "src/UnitOfWork.php": {
+      "upstream_sha256": "16c25088755ec2519c63e6cfb7ca80f062a2fe625c2655f415229817363c5806"
+    },
+    "src/Utility/HierarchyDiscriminatorResolver.php": {
+      "upstream_sha256": "61e1308e7ad6fd45721241c50f4ecb18298661ef6f3ab76e919eb833b94c3b78"
+    },
+    "src/Utility/IdentifierFlattener.php": {
+      "upstream_sha256": "9448c65c87b4999fef6ac92666ad98ae848c9eb68af404413795331358c99970"
+    },
+    "src/Utility/LockSqlHelper.php": {
+      "upstream_sha256": "f65d82cb37ca7ed6ce0f1a1178bb4a800c1e201329334f03d56bdc5b16da0f62"
+    },
+    "src/Utility/PersisterHelper.php": {
+      "upstream_sha256": "1a103d4aca83b4e20f76c05890c9a1db26306ff2e257f3a04e143fec47087949"
+    }
+  }
+}

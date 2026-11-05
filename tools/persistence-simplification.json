@@ -1,0 +1,67 @@
+{
+  "scope": [
+    "single scalar entity PK",
+    "remove Criteria SQL API and ORM Filters",
+    "PostgreSQL persister and identifier strategy cleanup",
+    "native lazy objects without proxy generation configuration"
+  ],
+  "removed": [
+    "src/Cache/Persister/CompatOrderings.php",
+    "src/LazyCriteriaCollection.php",
+    "src/Persisters/SqlExpressionVisitor.php",
+    "src/Persisters/SqlValueVisitor.php",
+    "src/Persisters/SqlValueVisitorImplementation.php",
+    "src/Query/Filter/FilterException.php",
+    "src/Query/Filter/Parameter.php",
+    "src/Query/Filter/SQLFilter.php",
+    "src/Query/FilterCollection.php",
+    "src/Utility/LockSqlHelper.php"
+  ],
+  "adapted": [
+    "src/Cache/CollectionCacheKey.php",
+    "src/Cache/DefaultEntityHydrator.php",
+    "src/Cache/Persister/Collection/AbstractCollectionPersister.php",
+    "src/Cache/Persister/Collection/NonStrictReadWriteCachedCollectionPersister.php",
+    "src/Cache/Persister/Collection/ReadWriteCachedCollectionPersister.php",
+    "src/Cache/Persister/Entity/AbstractEntityPersister.php",
+    "src/Configuration.php",
+    "src/Decorator/EntityManagerDecorator.php",
+    "src/EntityManager.php",
+    "src/EntityManagerInterface.php",
+    "src/EntityRepository.php",
+    "src/Mapping/ClassMetadata.php",
+    "src/Mapping/ClassMetadataFactory.php",
+    "src/ORMSetup.php",
+    "src/PersistentCollection.php",
+    "src/PersistentCollectionImplementation.php",
+    "src/Persisters/Collection/CollectionPersister.php",
+    "src/Persisters/Collection/ManyToManyPersister.php",
+    "src/Persisters/Collection/OneToManyPersister.php",
+    "src/Persisters/Entity/BasicEntityPersister.php",
+    "src/Persisters/Entity/EntityPersister.php",
+    "src/Proxy/ProxyFactory.php",
+    "src/Query/EntityResultPlan.php",
+    "src/QueryBuilder.php",
+    "src/Tools/Console/Command/MappingDescribeCommand.php",
+    "src/UnitOfWork.php",
+    "src/Utility/IdentifierFlattener.php"
+  ],
+  "cache_versions": {
+    "metadata": "__MODERNORM_ATTRIBUTES_SINGLE_PK_V2__",
+    "projection": "sql_entity_v3_"
+  },
+  "tests": {
+    "added": [
+      "tests/Unit/IdentifierScopeTest.php"
+    ],
+    "removed": [
+      "tests/Integration/NativeConfigurationTest.php"
+    ],
+    "adapted": [
+      "tests/Upstream/UnitOfWorkTest.php",
+      "tests/Unit/AdvancedMetadataTest.php",
+      "tests/Unit/Psr6CacheTest.php",
+      "tests/Integration/AdvancedMappingTest.php"
+    ]
+  }
+}

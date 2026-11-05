@@ -1,0 +1,72 @@
+{
+    "name": "andreybolonin/modernorm",
+    "description": "PostgreSQL-only ORM for PHP, derived from Doctrine ORM with a focus on fetching, caching and observability.",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.4",
+        "ext-pdo": "*",
+        "ext-pdo_pgsql": "*",
+        "ext-ctype": "*",
+        "doctrine/dbal": "^4.3",
+        "doctrine/collections": "^3.1",
+        "doctrine/persistence": "^4",
+        "doctrine/event-manager": "^2.1.1",
+        "doctrine/instantiator": "^2",
+        "doctrine/deprecations": "^0.5.3 || ^1",
+        "doctrine/inflector": "^1.4 || ^2.0",
+        "symfony/polyfill-php86": "^1.37",
+        "psr/cache": "^3"
+    },
+    "suggest": {
+        "symfony/cache": "PSR-6 adapters for filesystem, Redis and other cache backends",
+        "symfony/console": "^7.4 || ^8.0: enables optional CLI tools"
+    },
+    "autoload": {
+        "psr-4": {
+            "ModernORM\\": "src/"
+        }
+    },
+    "config": {
+        "sort-packages": true,
+        "platform": {
+            "php": "8.4.0"
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5",
+        "symfony/cache": "^7.4",
+        "psr/log": "^3"
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "ModernORM\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "test": "phpunit"
+    },
+    "archive": {
+        "exclude": [
+            "/.git",
+            "/.github",
+            "/.idea",
+            "/.phpunit.cache",
+            "/vendor",
+            "/.env",
+            "/.env.*"
+        ]
+    },
+    "homepage": "https://github.com/andreybolonin/modernorm",
+    "support": {
+        "issues": "https://github.com/andreybolonin/modernorm/issues",
+        "source": "https://github.com/andreybolonin/modernorm"
+    },
+    "keywords": [
+        "orm",
+        "postgresql",
+        "batch-fetching",
+        "cache",
+        "statistics"
+    ]
+}
