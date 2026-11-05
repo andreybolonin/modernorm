@@ -130,7 +130,7 @@ final class RedisL2EnduranceTest extends RedisL2DisposableTestCase
                 $client->setEx('pressure_'.$i, 30, str_repeat('p', 65536));
                 $lostMetadata = !$client->exists($metadata[0]) || !$client->exists($metadata[1]);
                 $payloadExists = (bool) $client->exists($payload);
-                if (($policy === 'volatile-lru' && !$payloadExists) || ($policy === 'allkeys-lru' && $lostMetadata && $payloadExists)) {
+                if (($policy === 'volatile-lru' && !$payloadExists) || ($policy === 'allkeys-lru' && $lostMetadata)) {
                     $observed = true; break;
                 }
             }
@@ -140,10 +140,11 @@ final class RedisL2EnduranceTest extends RedisL2DisposableTestCase
             if ($policy === 'volatile-lru') {
                 foreach ($metadata as $physical) { self::assertSame(1, $client->exists($physical)); }
             } else {
-                self::assertSame(1, $client->exists($payload));
-                // The old value is physically present, but a new random generation makes it unreachable.
+                // Redis may evict payload and metadata in the same command. Both are safe misses.
+                // Recreate the old payload as a delayed SELECT fill after the actual metadata loss.
                 self::assertNull($region->get($key));
                 $region->putAt($ticket, new EntityCacheEntry('Record', ['name' => 'late']));
+                self::assertSame(1, $client->exists($payload));
             }
             self::assertNull($region->get($key));
             $region->put($key, new EntityCacheEntry('Record', ['name' => 'fresh']));
@@ -154,7 +155,7 @@ final class RedisL2EnduranceTest extends RedisL2DisposableTestCase
     public static function evictionPolicies(): iterable
     {
         yield 'payload evicted, persistent generations retained' => ['volatile-lru'];
-        yield 'generation evicted, hot payload retained' => ['allkeys-lru'];
+        yield 'generation evicted, late old payload stays unreachable' => ['allkeys-lru'];
     }
 
     private function cycle(int $number, int $writer, array $readers): void

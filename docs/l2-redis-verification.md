@@ -4,7 +4,7 @@
 
 On 2026-11-05, the focused L2/bulk suites passed on PHP 8.4.27, PostgreSQL 17.11, Symfony Cache 7.4.22, ext-redis 6.2.0 and a standalone Redis 8.10.3 on macOS. Result: **140 tests, 10,924 assertions**, including **1,000 UPDATE/read/warm-hit cycles** in separate long-lived PHP processes. This is a finite correctness run, not a duration-based soak, memory-growth measurement, failover certification or throughput benchmark.
 
-GitHub Actions is configured to run the concurrency suite against a Redis 7.4 service and recovery tests against disposable instances of a host-installed `redis-server` in all existing PHP 8.4/8.5 and dependency jobs. The host server version is printed in the job log. The default repeated-update scenario uses 25 cycles. Configuration is not evidence that the new CI revision has passed; record its run after publication.
+GitHub Actions pins Redis 8.10.3 for both the service and disposable recovery/endurance servers in all PHP 8.4/8.5 and dependency jobs. The disposable binary is built from the official tag archive with a pinned SHA-256 and cached; its version is printed in the job log. The default repeated-update scenario uses 25 cycles. Configuration is not evidence that the new CI revision has passed; record its run after publication.
 
 The Redis process suite checks:
 
@@ -53,7 +53,7 @@ A snapshot restore or uncertain backend recovery must be coordinated across all 
 - Zero payload TTL with a zero pool default lifetime creates a nonexpiring payload, but eviction still makes its old fill ticket unreachable.
 - A nonzero pool default lifetime can expire generation keys while a longer-lived payload survives. Recreated generations and delayed old-ticket publication must remain safe misses. Production configuration should still use a zero pool default lifetime to avoid unnecessary metadata expiry.
 - Under `volatile-lru`, real Redis maxmemory pressure evicts an expiring payload while retaining persistent generation keys.
-- Under `allkeys-lru`, real pressure evicts generation metadata while a hot old payload survives. That payload and a subsequent old-ticket publication must remain unreachable. The tests verify Redis's eviction counter increased; they do not simulate eviction with DEL.
+- Under `allkeys-lru`, real pressure evicts generation metadata. Redis may also evict the payload in the same command; both outcomes are allowed. A surviving or subsequently republished old-ticket payload must remain unreachable. The tests verify Redis's eviction counter increased; they do not simulate eviction with DEL.
 
 A separate timed workload uses one writer and four independent reader processes. It overlaps reads with each UPDATE, allowing either the preceding committed version or the newly committed version for those in-flight reads. A second read group starts only after commit/invalidation acknowledgement and must return the new row and version. Every worker samples PHP heap after GC and its managed-entity count; Redis key count, persistent-key count and used memory are sampled too.
 

@@ -32,7 +32,7 @@ jobs:
       MODERNORM_TEST_REDIS_SERVER: redis-server
     services:
       redis:
-        image: redis:7.4
+        image: redis:8.10.3
         ports: ['6379:6379']
         options: >-
           --health-cmd "redis-cli ping"
@@ -63,11 +63,27 @@ jobs:
           coverage: none
       - name: Validate checked-in manifest and lock
         run: composer validate --strict
-      - name: Install disposable Redis server for recovery checks
+      - name: Cache Redis 8.10.3 test binary
+        id: redis-binary
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.temp }}/modernorm-redis/bin
+          key: redis-8.10.3-${{ runner.os }}-${{ runner.arch }}-libc-v1
+      - name: Build pinned Redis 8.10.3 for recovery checks
+        if: steps.redis-binary.outputs.cache-hit != 'true'
         run: |
-          sudo systemctl mask redis-server.service
-          sudo apt-get update -qq
-          sudo apt-get install -y redis-server
+          mkdir -p "$RUNNER_TEMP/modernorm-redis/bin"
+          curl --fail --location --retry 3 https://codeload.github.com/redis/redis/tar.gz/refs/tags/8.10.3 -o "$RUNNER_TEMP/modernorm-redis/source.tar.gz"
+          echo "85ae62e175cc76f638015fa18cb384b549b6808a765425d9e9d47466f69532ea  $RUNNER_TEMP/modernorm-redis/source.tar.gz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/modernorm-redis/source.tar.gz" -C "$RUNNER_TEMP/modernorm-redis"
+          make -C "$RUNNER_TEMP/modernorm-redis/redis-8.10.3" -j2 MALLOC=libc BUILD_TLS=no redis-server
+          cp "$RUNNER_TEMP/modernorm-redis/redis-8.10.3/src/redis-server" "$RUNNER_TEMP/modernorm-redis/bin/redis-server"
+      - name: Use pinned Redis test binary
+        run: |
+          echo "$RUNNER_TEMP/modernorm-redis/bin" >> "$GITHUB_PATH"
+          "$RUNNER_TEMP/modernorm-redis/bin/redis-server" --version
+      - name: Verify Redis version from PATH
+        run: |
           redis-server --version
       - name: Install locked dependencies
         if: matrix.dependencies == 'locked'

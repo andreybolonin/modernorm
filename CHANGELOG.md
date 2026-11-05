@@ -9,7 +9,7 @@ Harden the bounded entity L2 contract and add Redis verification and performance
 - Exercise actual Redis socket loss, unresponsiveness, restart/RDB rollback and PHP writer death after physical COMMIT, with explicit recovery outcomes.
 - Verify payload/generation TTL and real maxmemory eviction; record a 60-second one-writer/four-reader workload with sampled heap and Redis key retention.
 - Add reproducible bulk and L2 benchmarks with SQL/cache counters, raw samples and documented measurement boundaries. Local batched SQL can outperform warm Redis L2; fewer SELECTs are not a blanket speed claim.
-- Extend PHP/dependency CI with Redis, disposable-server checks, short endurance and measurement artifacts; update the clean-consumer candidate version.
+- Extend PHP/dependency CI with pinned Redis 8.10.3, disposable-server checks, short endurance and measurement artifacts; update the clean-consumer candidate version.
 
 Existing valid cache generations and public APIs remain compatible. No collection/query cache, outbox, external cached-write transaction support or automatic failover is added. The commit/invalidation crash window, coordinated snapshot recovery and generation-metadata retention remain explicit limits; see [Redis verification](docs/l2-redis-verification.md).
 
