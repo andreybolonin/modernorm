@@ -136,7 +136,7 @@ composer require 'andreybolonin/modernorm:^0.1@beta'
 
 Start with the [executable persistence example](examples/migration/README.md), or use [ModernORMBundle](https://github.com/andreybolonin/modernormbundle) for Symfony, migrations, fixtures and Profiler integration. Code excerpts above assume configured services and mapped entities.
 
-**Current release: 0.1.0-beta.3.** The package remains beta; read the [supported contract and limits](docs/beta-release.md) before adopting it.
+**Current release: 0.1.0-beta.4.** The package remains beta; read the [supported contract and limits](docs/beta-release.md) before adopting it.
 
 [Documentation](docs/README.md) · [Benchmarks](benchmarks/README.md) · [Roadmap](roadmap.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md).
 

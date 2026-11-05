@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+## 0.1.0-beta.4 — 2026-11-05
+
+- Add optional TimestampableTrait with immutable creation/update dates, import-value preservation on INSERT and lifecycle-based updates.
+- Add BlameableTrait, actor-provider and entity contracts, and an opt-in listener for INSERT/UPDATE attribution without a Symfony dependency. Association mapping remains application-owned; actors must be managed by the receiving EntityManager.
+
 - Prepare compact scalar hydration column plans once per result, preserving mapped type conversion, raw scalar values, streaming cleanup and Statistics. Adapted from Doctrine ORM PR #12699.
 - Reduce parameter-processing allocations: append persister values/types, avoid recursive array merges and unchanged scalar-array writes, and stop parameter lookup at the first match without a temporary collection. Adapted from Doctrine ORM PRs #12691, #12693, #12701 and #12702; SQL and conversion semantics are preserved.
 - Remove mapping-object ArrayAccess and its converting setters; use typed properties and mapping factories.
