@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace ModernORM\Behavior;
 
 /**
- * Implement BlameableInterface and redeclare these properties with application-owned association mapping.
- * Keep their visibility, native type and default value identical to these declarations.
+ * Implement BlameableInterface and use #[Mapping\Blameable(actorClass: User::class)] on the entity,
+ * or redeclare these properties with application-owned association mapping.
  */
 trait BlameableTrait
 {

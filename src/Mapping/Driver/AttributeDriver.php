@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ModernORM\Mapping\Driver;
 
 use ModernORM\Events;
+use ModernORM\Behavior\BlameableInterface;
 use ModernORM\Mapping;
 use ModernORM\Mapping\Builder\EntityListenerBuilder;
 use ModernORM\Mapping\ClassMetadata;
@@ -431,6 +432,10 @@ class AttributeDriver implements MappingDriver
             }
         }
 
+        if (isset($classAttributes[Mapping\Blameable::class])) {
+            $this->mapBlameable($metadata, $reflectionClass, $classAttributes[Mapping\Blameable::class]);
+        }
+
         // Evaluate AssociationOverrides attribute
         if (isset($classAttributes[Mapping\AssociationOverrides::class])) {
             if ($metadata->isEmbeddedClass) {
@@ -671,6 +676,54 @@ class AttributeDriver implements MappingDriver
         }
 
         return $mapping;
+    }
+
+    /**
+     * @param ClassMetadata<T> $metadata
+     * @param ReflectionClass<covariant T> $reflectionClass
+     * @template T of object
+     */
+    private function mapBlameable(ClassMetadata $metadata, ReflectionClass $reflectionClass, Mapping\Blameable $attribute): void
+    {
+        if ($metadata->isMappedSuperclass || $metadata->isEmbeddedClass) {
+            throw new MappingException('Blameable must be applied to a concrete Entity: ' . $metadata->name);
+        }
+        if (! $reflectionClass->implementsInterface(BlameableInterface::class)) {
+            throw new MappingException('Blameable requires BlameableInterface: ' . $metadata->name);
+        }
+        if (! class_exists($attribute->actorClass)) {
+            throw new MappingException('Blameable actorClass must be a concrete Entity: ' . $attribute->actorClass);
+        }
+        $actor = new ReflectionClass($attribute->actorClass);
+        $actorAttributes = $this->reader->getClassAttributes($actor);
+        if ($actor->isAbstract() || ! isset($actorAttributes[Mapping\Entity::class])) {
+            throw new MappingException('Blameable actorClass must be a concrete Entity: ' . $attribute->actorClass);
+        }
+
+        foreach (['createdBy', 'updatedBy'] as $field) {
+            if (! $reflectionClass->hasProperty($field)) {
+                throw new MappingException('Blameable requires an instance property: ' . $metadata->name . '::' . $field);
+            }
+            $property = $reflectionClass->getProperty($field);
+            if ($property->isStatic() || $property->isReadOnly()) {
+                throw new MappingException('Blameable requires a writable instance property: ' . $metadata->name . '::' . $field);
+            }
+            if (isset($metadata->fieldMappings[$field]) || isset($metadata->embeddedClasses[$field])) {
+                throw new MappingException('Blameable property must be a ManyToOne association: ' . $metadata->name . '::' . $field);
+            }
+            if (isset($metadata->associationMappings[$field])) {
+                $mapping = $metadata->associationMappings[$field];
+                if (! $mapping instanceof Mapping\ManyToOneAssociationMapping || $mapping->targetEntity !== $actor->getName()) {
+                    throw new MappingException('Blameable association must be ManyToOne targeting actorClass: ' . $metadata->name . '::' . $field);
+                }
+                continue;
+            }
+            $metadata->mapManyToOne([
+                'fieldName' => $field,
+                'targetEntity' => $actor->getName(),
+                'joinColumns' => [['nullable' => true, 'onDelete' => 'SET NULL']],
+            ]);
+        }
     }
 
     /**

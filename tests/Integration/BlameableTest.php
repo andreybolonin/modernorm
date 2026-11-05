@@ -31,6 +31,7 @@ final class BlameableActor
 }
 
 #[ORM\Entity, ORM\Table(name: 'modernorm_test_blameable_records'), ORM\HasLifecycleCallbacks]
+#[ORM\Blameable(actorClass: BlameableActor::class)]
 final class BlameableRecord implements BlameableInterface
 {
     use BlameableTrait;
@@ -42,13 +43,7 @@ final class BlameableRecord implements BlameableInterface
     #[ORM\Column]
     public string $name = 'original';
 
-    #[ORM\ManyToOne(targetEntity: BlameableActor::class)]
-    #[ORM\JoinColumn(name: 'created_by_id', nullable: true, onDelete: 'SET NULL')]
-    protected ?object $createdBy = null;
 
-    #[ORM\ManyToOne(targetEntity: BlameableActor::class)]
-    #[ORM\JoinColumn(name: 'updated_by_id', nullable: true, onDelete: 'SET NULL')]
-    protected ?object $updatedBy = null;
 }
 
 final class TestActorProvider implements ActorProviderInterface

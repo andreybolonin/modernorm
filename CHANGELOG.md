@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add `#[Blameable(actorClass: User::class)]` to generate nullable actor associations for BlameableTrait without redeclaring properties. Compatible explicit ManyToOne mappings remain supported.
+
 ## 0.1.0-beta.4 — 2026-11-05
 
 - Add optional TimestampableTrait with immutable creation/update dates, import-value preservation on INSERT and lifecycle-based updates.

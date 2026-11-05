@@ -4,7 +4,7 @@
 
 ## Entity mapping
 
-Implement `BlameableInterface` to opt into the listener. Declare the association mapping in the entity, where the concrete user class is known:
+Implement `BlameableInterface` and declare the actor class on the entity:
 
 ```php
 use ModernORM\Behavior\BlameableInterface;
@@ -12,6 +12,7 @@ use ModernORM\Behavior\BlameableTrait;
 use ModernORM\Mapping as ORM;
 
 #[ORM\Entity]
+#[ORM\Blameable(actorClass: User::class)]
 class Document implements BlameableInterface
 {
     use BlameableTrait;
@@ -21,18 +22,24 @@ class Document implements BlameableInterface
 
     #[ORM\Column]
     public string $title;
-
-    #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(name: 'created_by_id', nullable: true, onDelete: 'SET NULL')]
-    protected ?object $createdBy = null;
-
-    #[ORM\ManyToOne(targetEntity: User::class)]
-    #[ORM\JoinColumn(name: 'updated_by_id', nullable: true, onDelete: 'SET NULL')]
-    protected ?object $updatedBy = null;
 }
 ```
 
-The trait's properties intentionally have no mapping attributes. Redeclare them with exactly the same visibility, native type (`?object`) and default (`null`); PHP requires compatible property declarations when composing traits. The `targetEntity` defines the concrete association type. Both getters return `?object`; both setters accept `?object` and return `static`. The supplied object must match the mapped target entity.
+`#[Blameable]` creates owning, lazy ManyToOne associations for `createdBy` and `updatedBy`. Both are nullable, have no persistence/remove cascade, and default to `ON DELETE SET NULL`. Join-column names and referenced-column names follow the configured naming strategy: with DefaultNamingStrategy these are `createdBy_id`, `updatedBy_id` and referenced column `id`; with UnderscoreNamingStrategy the join columns are `created_by_id` and `updated_by_id`.
+
+The attribute requires a concrete entity implementing `BlameableInterface` with writable instance properties `createdBy` and `updatedBy`, as supplied by the trait. The actor class must also be a concrete attribute-mapped entity. Invalid targets and conflicting scalar/association mappings fail during metadata loading. Clear the metadata cache when changing entity attributes.
+
+### Explicit mapping and overrides
+
+Explicit property mapping remains supported, with or without `#[Blameable]`. When the attribute is present, an existing ManyToOne targeting the same actor class is preserved; the attribute fills only missing associations. For example, an application can keep its existing column names and batch settings:
+
+```php
+#[ORM\ManyToOne(targetEntity: User::class, batchSize: 32)]
+#[ORM\JoinColumn(name: 'author_id', nullable: true, onDelete: 'RESTRICT')]
+protected ?object $createdBy = null;
+```
+
+Redeclare trait properties with the same visibility, native type (`?object`) and default (`null`); PHP requires compatible property declarations. Both getters return `?object`; both setters accept `?object` and return `static`. The supplied object must match the mapped target entity. Standard `#[AssociationOverrides]` can also customize generated join columns without redeclaring properties, including the referenced column when the actor's primary-key column differs from the naming strategy's default.
 
 `#[HasLifecycleCallbacks]` is not needed for this global listener. If the entity also uses `TimestampableTrait`, enable lifecycle callbacks for that trait.
 
