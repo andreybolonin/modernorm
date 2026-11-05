@@ -37,6 +37,6 @@ Statistics SELECT-1 microbenchmark (200 queries per round, 7 rounds, including f
 
 ## Pending external release gates
 
-Linux GitHub Actions subsequently passed all six PHP/dependency jobs for public commit `a46dbb7`: [run 41999592523](https://github.com/andreybolonin/modernorm/actions/runs/41999592523). GitHub private vulnerability reporting is enabled. A real Packagist consumer installation remains a separate publication gate. These are explicit release gates in [the beta contract](beta-release.md).
+Linux GitHub Actions subsequently passed all six PHP/dependency jobs for public commit `a46dbb7`: [run 41999592523](https://github.com/andreybolonin/modernorm/actions/runs/41999592523). GitHub private vulnerability reporting is enabled. Both packages were subsequently registered in Packagist as `v0.1.0-beta.1`. A fresh consumer with no custom repositories installed both published dist packages, without symlinks or dev dependencies, and passed the Symfony production runtime smoke on PHP 8.4 against PostgreSQL 17. These are explicit release gates in [the beta contract](beta-release.md).
 
 The maintenance model is independent community issues/PRs; there is no automatic/scheduled porting of Doctrine fixes. Existing provenance and license notices remain.

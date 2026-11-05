@@ -42,7 +42,7 @@ Benchmarks report the environment, iteration count, wall time and PHP memory, wi
 - [ ] Locked/latest/lowest dependency jobs green with no hidden integration skips.
 - [ ] Review final commit/index contents, artifacts, licenses, screenshots and secrets. A mixed staged/unstaged worktree is not a release snapshot.
 - [x] Enable a working private security reporting channel (GitHub private vulnerability reporting).
-- [ ] Publish the core repository/package, choose the tag, verify a real Packagist consumer install, then align the bundle's version constraint.
+- [x] Core and bundle `v0.1.0-beta.1` are published on GitHub and Packagist; a clean Packagist-only consumer installed both with `^0.1@beta` and passed the Symfony production runtime smoke. The bundle uses the matching beta constraint.
 - [ ] Record results and remaining limitations in the release notes.
 
 Community issues/PRs are the maintenance model. There is no scheduled or automatic upstream porting of Doctrine fixes. Independent contributors may propose equivalent fixes, which are reviewed and tested against ModernORM.
