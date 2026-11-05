@@ -1,6 +1,6 @@
 # Local beta verification — 2026-11-05
 
-This is evidence for a local candidate, **not a published beta or a production-stable release**. No commit, Git tag, push or Packagist publication was performed.
+This is evidence for a local candidate, **not a published beta or a production-stable release**. The local measurements below precede public publication; the tested ZIP hash remains a local artifact identifier.
 
 | Check | Environment | Result |
 | --- | --- | --- |
@@ -37,6 +37,6 @@ Statistics SELECT-1 microbenchmark (200 queries per round, 7 rounds, including f
 
 ## Pending external release gates
 
-Linux GitHub Actions has **not run**: the local Docker daemon is unavailable and publication/push is not authorized. Private security reporting, the final commit/tag review and a real Packagist consumer installation also remain pending. These are explicit release gates in [the beta contract](beta-release.md).
+Linux GitHub Actions subsequently passed all six PHP/dependency jobs for public commit `a46dbb7`: [run 41999592523](https://github.com/andreybolonin/modernorm/actions/runs/41999592523). GitHub private vulnerability reporting is enabled. A real Packagist consumer installation remains a separate publication gate. These are explicit release gates in [the beta contract](beta-release.md).
 
 The maintenance model is independent community issues/PRs; there is no automatic/scheduled porting of Doctrine fixes. Existing provenance and license notices remain.

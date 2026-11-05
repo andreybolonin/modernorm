@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased — preparing 0.1.0-beta.1
+## 0.1.0-beta.1 — 2026-11-05
 
-This is a local release candidate, not a published tag or stable release.
+First public beta. The supported contract is bounded; this is not a production-stable release.
 
 - PostgreSQL-only persistence with PHP 8.4 native lazy objects, attributes, scalar entity identifiers, Identity Map and UnitOfWork.
 - SQL-first QueryBuilder/entity hydration; DQL, inheritance mappings, composite entity IDs and ORM Filters are excluded.

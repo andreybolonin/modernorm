@@ -1,6 +1,6 @@
 # ModernORM beta contract and release checklist
 
-Target: **0.1.0-beta.1**, not yet tagged or published. [Local verification results](beta-verification.md). This document records a bounded beta contract; it does not announce production-stable 1.0.
+Release line: **0.1 beta**, beginning with **0.1.0-beta.1**. [Local verification results](beta-verification.md). This document records a bounded beta contract; it does not announce production-stable 1.0.
 
 ## Supported beta scope
 
@@ -37,7 +37,7 @@ Benchmarks report the environment, iteration count, wall time and PHP memory, wi
 
 ## Release gates
 
-- [ ] Linux GitHub Actions green on PHP 8.4/8.5 for the final commit; local macOS checks do not substitute for this.
+- [x] Linux GitHub Actions passed all six PHP 8.4/8.5 × locked/latest/lowest jobs for the published candidate: [run](https://github.com/andreybolonin/modernorm/actions/runs/41999592523). Release tags must point to tested code.
 - [ ] Archive and clean-consumer checks green for exactly the release candidate.
 - [ ] Locked/latest/lowest dependency jobs green with no hidden integration skips.
 - [ ] Review final commit/index contents, artifacts, licenses, screenshots and secrets. A mixed staged/unstaged worktree is not a release snapshot.
@@ -47,4 +47,4 @@ Benchmarks report the environment, iteration count, wall time and PHP memory, wi
 
 Community issues/PRs are the maintenance model. There is no scheduled or automatic upstream porting of Doctrine fixes. Independent contributors may propose equivalent fixes, which are reviewed and tested against ModernORM.
 
-Publication, tagging and repository/security settings changes require separate authorization. This preparation does not perform them.
+Publication and tagging use reviewed commits with passing CI. Private reporting is enabled; public Composer availability is checked separately from GitHub publication.

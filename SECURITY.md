@@ -1,6 +1,6 @@
 # Security policy
 
-ModernORM is preparing its first beta. No stable release or security maintenance window has been announced. Do not treat local test results as production certification.
+ModernORM 0.1 is a beta release line. No stable release or security maintenance window has been announced. Do not treat local test results as production certification.
 
 Report vulnerabilities privately through [GitHub vulnerability reporting](https://github.com/andreybolonin/modernorm/security/advisories/new). Include the affected version/commit, a minimal reproducer, relevant PostgreSQL/PHP versions and the impact. Do not include live credentials or user data.
 

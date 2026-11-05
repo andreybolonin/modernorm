@@ -1,5 +1,11 @@
 name: Tests
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+    branches: ['main']
+    paths-ignore: ['**/*.md', 'LICENSE', 'licenses/**', '*.png']
+  pull_request:
+    paths-ignore: ['**/*.md', 'LICENSE', 'licenses/**', '*.png']
+  workflow_dispatch:
 permissions:
   contents: read
 concurrency:

@@ -299,15 +299,15 @@ Migrating from Doctrine ORM requires adapting queries and unsupported mappings. 
 
 Start with the [documentation index](docs/README.md) for architecture, API contracts and release information.
 
-## Beta preparation
+## Beta status
 
-The first beta is being prepared locally; no beta tag or Packagist release is announced here. The intended scope, compatibility rules, tested cache backends and pending publication gates are in the [beta contract](docs/beta-release.md). See [CONTRIBUTING](CONTRIBUTING.md), [SECURITY](SECURITY.md) and [CHANGELOG](CHANGELOG.md).
+ModernORM 0.1 is a beta line with a bounded PostgreSQL/PHP contract; it is not a production-stable 1.0 release. The intended scope, compatibility rules, tested cache backends and pending publication gates are in the [beta contract](docs/beta-release.md). See [CONTRIBUTING](CONTRIBUTING.md), [SECURITY](SECURITY.md) and [CHANGELOG](CHANGELOG.md).
 
 ModernORM is maintained independently through community issues and PRs. There is no automatic or scheduled porting of Doctrine fixes.
 
-## Install the beta (after publication)
+## Install the beta
 
-The package/tag is not published by this preparation step. Once the first beta is available:
+Use an explicit beta stability flag when installing the published Composer package:
 
 ```sh
 composer require 'andreybolonin/modernorm:^0.1@beta'
