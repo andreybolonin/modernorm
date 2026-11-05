@@ -19,6 +19,7 @@ class ScalarHydrator extends AbstractHydrator
         $result = [];
 
         while ($data = $this->statement()->fetchAssociative()) {
+            $this->hydrationRows();
             $this->hydrateRowData($data, $result);
         }
 

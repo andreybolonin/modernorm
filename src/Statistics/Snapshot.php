@@ -16,6 +16,9 @@ final readonly class Snapshot
         public int $flushErrors,
         public BatchSnapshot $batch = new BatchSnapshot(),
         public int $observerErrors = 0,
+        public BulkSnapshot $bulk = new BulkSnapshot(),
+        public HydrationSnapshot $hydration = new HydrationSnapshot(),
+        public UnitOfWorkSnapshot $unitOfWork = new UnitOfWorkSnapshot(),
     ) {
     }
 

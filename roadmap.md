@@ -10,7 +10,7 @@ ModernORM develops independently as a PostgreSQL-first ORM for PHP 8.4+. The cur
 - Lazy ManyToOne, OneToMany and ManyToMany batching with attribute-level sizes.
 - Independent Immutable semantics, metadata/query-plan PSR-6 caches, entity L2 with READ_ONLY and INVALIDATE policies.
 - PostgreSQL bulk INSERT/UPSERT/UPDATE/DELETE with RETURNING and explicit BYPASS/CLEAR policies.
-- Connection-scoped Statistics and immutable completion events.
+- Connection-scoped Statistics with SQL/flush/batch/bulk/hydration and UnitOfWork phase snapshots and immutable completion events.
 - Separate ModernORMBundle: Symfony services/reset, Profiler/SQL history, optional migration and fixture adapters.
 
 ## First beta
@@ -26,7 +26,7 @@ Remaining external release gates include Linux CI for the final commit, a privat
 | Bulk SYNC | Restricted scalar UPDATE with candidate IDs, dirty-state preflight and RETURNING reconciliation | Preserve object identity and snapshots; define commit/rollback outcomes before exposing an API |
 | Bulk imports | COPY, UPDATE FROM and chunked operations | Explicit transaction boundaries, partial outcomes and affected-entity declarations |
 | L2 infrastructure | Redis and multi-process/failure measurements | Verify generation metadata, eviction, late fills and recovery; PSR-6 compatibility alone is insufficient |
-| Observability | Entity/collection/DML counters and hydration measurements | Stable definitions, bounded labels/state and measured overhead |
+| Observability | Prometheus/OpenTelemetry adapters, richer entity/collection lifecycle counters and trace context | Stable definitions, bounded labels/state and measured overhead |
 | Exporters | Prometheus/Grafana and OpenTelemetry adapters | Optional dependencies, worker reset and an explicit tracing-context model |
 | Diagnostics | PostgreSQL EXPLAIN/plan inspection and performance advice | Opt-in execution, data handling and overhead limits |
 | Fetch planning | Entity graphs/fetch plans and N+1 diagnostics | Specify hydration/completeness semantics and interaction with batching |

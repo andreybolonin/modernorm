@@ -80,11 +80,15 @@ abstract class AbstractHydrator
      */
     protected array $hints = [];
 
+    private readonly ?\ModernORM\Statistics $statistics;
+    private ?\ModernORM\Statistics\HydrationMeasurement $hydrationMeasurement = null;
+
     /**
      * Initializes a new instance of a class derived from <tt>AbstractHydrator</tt>.
      */
     public function __construct(protected EntityManagerInterface $em)
     {
+        $this->statistics = $em->getStatistics();
         $this->platform = $em->getConnection()->getDatabasePlatform();
         $this->uow      = $em->getUnitOfWork();
     }
@@ -101,43 +105,66 @@ abstract class AbstractHydrator
     final public function toIterable(Result $stmt, ResultSetMapping $resultSetMapping, array $hints = []): Generator
     {
         $resultSetMapping->assertSupportedMapping();
-        $this->stmt  = $stmt;
-        $this->rsm   = $resultSetMapping;
+        $this->stmt = $stmt;
+        $this->rsm = $resultSetMapping;
         $this->hints = $hints;
-
-        $evm = $this->em->getEventManager();
-
-        $evm->addEventListener([Events::onClear], $this);
-
-        $this->prepare();
-
+        $measurement = $this->statistics?->startHydration(static::class, true);
+        $this->hydrationMeasurement = $measurement;
+        $failed = false;
+        $completed = false;
         try {
-            while (true) {
-                $row = $this->statement()->fetchAssociative();
-
-                if ($row === false) {
-                    break;
-                }
-
+            $this->em->getEventManager()->addEventListener([Events::onClear], $this);
+            $this->prepare();
+            while (($row = $this->statement()->fetchAssociative()) !== false) {
+                $this->hydrationRows();
                 $result = [];
-
                 $this->hydrateRowData($row, $result);
-
                 $this->cleanupAfterRowIteration();
-                if (count($result) === 1) {
-                    if (count($resultSetMapping->indexByMap) === 0) {
-                        yield end($result);
+                if ($measurement !== null) {
+                    $this->statistics->pauseHydration($measurement);
+                }
+                try {
+                    if (count($result) === 1) {
+                        if (count($resultSetMapping->indexByMap) === 0) {
+                            yield end($result);
+                        } else {
+                            yield from $result;
+                        }
+                    } elseif (is_object(current($result))) {
+                        yield $result;
                     } else {
-                        yield from $result;
+                        yield array_merge(...$result);
                     }
-                } elseif (is_object(current($result))) {
-                    yield $result;
-                } else {
-                    yield array_merge(...$result);
+                } finally {
+                    if ($measurement !== null) {
+                        $this->statistics->resumeHydration($measurement);
+                    }
                 }
             }
+            $completed = true;
+        } catch (\Throwable $error) {
+            $failed = true;
+            throw $error;
         } finally {
-            $this->cleanup();
+            try {
+                $this->cleanup();
+            } catch (\Throwable $error) {
+                $failed = true;
+                throw $error;
+            } finally {
+                $this->hydrationMeasurement = null;
+                if ($measurement !== null) {
+                    $this->statistics->recordHydration($measurement, $failed, $completed);
+                }
+            }
+        }
+    }
+
+    /** Built-in/custom hydrators count consumed driver rows, not deduplicated result objects. */
+    final protected function hydrationRows(int $count = 1): void
+    {
+        if ($this->hydrationMeasurement !== null) {
+            $this->hydrationMeasurement->rows += $count;
         }
     }
 
@@ -167,20 +194,31 @@ abstract class AbstractHydrator
     public function hydrateAll(Result $stmt, ResultSetMapping $resultSetMapping, array $hints = []): mixed
     {
         $resultSetMapping->assertSupportedMapping();
-        $this->stmt  = $stmt;
-        $this->rsm   = $resultSetMapping;
+        $this->stmt = $stmt;
+        $this->rsm = $resultSetMapping;
         $this->hints = $hints;
-
-        $this->em->getEventManager()->addEventListener([Events::onClear], $this);
-        $this->prepare();
-
+        $measurement = $this->statistics?->startHydration(static::class);
+        $this->hydrationMeasurement = $measurement;
+        $failed = true;
         try {
+            $this->em->getEventManager()->addEventListener([Events::onClear], $this);
+            $this->prepare();
             $result = $this->hydrateAllData();
+            $failed = false;
+            return $result;
         } finally {
-            $this->cleanup();
+            try {
+                $this->cleanup();
+            } catch (\Throwable $error) {
+                $failed = true;
+                throw $error;
+            } finally {
+                $this->hydrationMeasurement = null;
+                if ($measurement !== null) {
+                    $this->statistics->recordHydration($measurement, $failed, !$failed);
+                }
+            }
         }
-
-        return $result;
     }
 
     /**

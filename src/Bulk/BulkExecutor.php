@@ -11,6 +11,8 @@ use ModernORM\EntityManagerInterface;
 use ModernORM\Exception\BulkOperationException;
 use ModernORM\Mapping\ClassMetadata;
 use Throwable;
+use ModernORM\Statistics\BulkOperation;
+use ModernORM\Statistics\BulkDetails;
 
 /** Single-statement PostgreSQL writes. Values use mapped field names; predicates are trusted SQL. */
 final class BulkExecutor
@@ -26,11 +28,28 @@ final class BulkExecutor
      */
     public function insert(string $entity, array $rows, BulkPolicy $policy, array $returning = [], array $affectedEntities = []): BulkResult
     {
-        return $this->insertRows($entity, $rows, $policy, $returning, $affectedEntities, null, []);
+        return $this->observe(
+            BulkOperation::INSERT,
+            $entity,
+            $policy,
+            count($rows),
+            fn (): BulkResult => $this->insertRows($entity, $rows, $policy, $returning, $affectedEntities, null, [])
+        );
     }
 
     /** Empty updateFields means ON CONFLICT DO NOTHING. Conflict fields require a matching DB constraint. */
     public function upsert(string $entity, array $rows, array $conflictFields, array $updateFields, BulkPolicy $policy, array $returning = [], array $affectedEntities = []): BulkResult
+    {
+        return $this->observe(
+            BulkOperation::UPSERT,
+            $entity,
+            $policy,
+            count($rows),
+            fn (): BulkResult => $this->upsertRows($entity, $rows, $conflictFields, $updateFields, $policy, $returning, $affectedEntities)
+        );
+    }
+
+    private function upsertRows(string $entity, array $rows, array $conflictFields, array $updateFields, BulkPolicy $policy, array $returning = [], array $affectedEntities = []): BulkResult
     {
         if ($conflictFields === []) {
             throw new \InvalidArgumentException('UPSERT requires explicit conflict fields.');
@@ -40,6 +59,17 @@ final class BulkExecutor
 
     /** Predicate parameters must be named, without a leading colon; explicit TRUE allows all rows. */
     public function update(string $entity, array $values, string $where, BulkPolicy $policy, array $parameters = [], array $types = [], array $returning = [], array $affectedEntities = []): BulkResult
+    {
+        return $this->observe(
+            BulkOperation::UPDATE,
+            $entity,
+            $policy,
+            0,
+            fn (): BulkResult => $this->updateRows($entity, $values, $where, $policy, $parameters, $types, $returning, $affectedEntities)
+        );
+    }
+
+    private function updateRows(string $entity, array $values, string $where, BulkPolicy $policy, array $parameters = [], array $types = [], array $returning = [], array $affectedEntities = []): BulkResult
     {
         $metadata = $this->metadata($entity);
         $this->predicate($where, $parameters, $types);
@@ -57,6 +87,17 @@ final class BulkExecutor
     }
 
     public function delete(string $entity, string $where, BulkPolicy $policy, array $parameters = [], array $types = [], array $returning = [], array $affectedEntities = []): BulkResult
+    {
+        return $this->observe(
+            BulkOperation::DELETE,
+            $entity,
+            $policy,
+            0,
+            fn (): BulkResult => $this->deleteRows($entity, $where, $policy, $parameters, $types, $returning, $affectedEntities)
+        );
+    }
+
+    private function deleteRows(string $entity, string $where, BulkPolicy $policy, array $parameters = [], array $types = [], array $returning = [], array $affectedEntities = []): BulkResult
     {
         $metadata = $this->metadata($entity);
         $this->predicate($where, $parameters, $types);
@@ -251,6 +292,37 @@ final class BulkExecutor
             throw new BulkOperationException($owned ? true : null, $error);
         }
         return new BulkResult($count, $rows, $owned);
+    }
+
+    private function observe(BulkOperation $operation, string $entity, BulkPolicy $policy, int $inputRows, \Closure $execute): BulkResult
+    {
+        $statistics = $this->em->getStatistics();
+        $measurement = $statistics?->start();
+        if ($measurement === null) {
+            return $execute();
+        }
+        $result = null;
+        $failed = true;
+        $committed = null;
+        try {
+            $result = $execute();
+            $committed = $result->databaseCommitted;
+            $failed = false;
+            return $result;
+        } catch (BulkOperationException $error) {
+            $committed = $error->databaseCommitted;
+            throw $error;
+        } finally {
+            $statistics->recordBulk($measurement, $failed, new BulkDetails(
+                $operation,
+                $entity,
+                $policy,
+                $inputRows,
+                $result?->affectedRows,
+                $result === null ? null : count($result->returnedRows),
+                $committed
+            ));
+        }
     }
 
     private function closeAfterFailure(): void

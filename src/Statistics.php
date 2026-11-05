@@ -13,6 +13,14 @@ use ModernORM\Statistics\OperationEvent;
 use ModernORM\Statistics\OperationKind;
 use ModernORM\Statistics\OperationObserver;
 use ModernORM\Statistics\Snapshot;
+use ModernORM\Statistics\BulkDetails;
+use ModernORM\Statistics\BulkSnapshot;
+use ModernORM\Statistics\HydrationDetails;
+use ModernORM\Statistics\HydrationMeasurement;
+use ModernORM\Statistics\HydrationSnapshot;
+use ModernORM\Statistics\UnitOfWorkDetails;
+use ModernORM\Statistics\UnitOfWorkPhaseSnapshot;
+use ModernORM\Statistics\UnitOfWorkSnapshot;
 
 /** Aggregate completed operation attempts for one instrumented DBAL connection. */
 final class Statistics
@@ -29,9 +37,16 @@ final class Statistics
     private array $batches = [];
     private int $observerErrors = 0;
     private bool $notifying = false;
+    private BulkSnapshot $bulk;
+    private HydrationSnapshot $hydration;
+    /** @var array<string, UnitOfWorkPhaseSnapshot> */
+    private array $phases = [];
+    private ?HydrationMeasurement $hydrationScope = null;
 
     public function __construct(private bool $enabled = false, private readonly ?OperationObserver $observer = null)
     {
+        $this->bulk = new BulkSnapshot();
+        $this->hydration = new HydrationSnapshot();
     }
 
     public function isEnabled(): bool
@@ -53,6 +68,7 @@ final class Statistics
         if ($this->enabled) {
             ++$this->generation;
             $this->enabled = false;
+            $this->hydrationScope = null;
         }
     }
 
@@ -64,6 +80,10 @@ final class Statistics
         $this->flushCount = $this->flushTimeNanoseconds = $this->flushErrors = 0;
         $this->batches = [];
         $this->observerErrors = 0;
+        $this->bulk = new BulkSnapshot();
+        $this->hydration = new HydrationSnapshot();
+        $this->phases = [];
+        $this->hydrationScope = null;
     }
 
     public function snapshot(): Snapshot
@@ -77,6 +97,9 @@ final class Statistics
             $this->flushErrors,
             $this->batchSnapshot(),
             $this->observerErrors,
+            $this->bulk,
+            $this->hydration,
+            new UnitOfWorkSnapshot($this->phases),
         );
     }
 
@@ -195,6 +218,133 @@ final class Statistics
                 fallbackReason: $reason,
             ), $this->generation);
         }
+    }
+
+    /** @internal One complete public Bulk API attempt, including validation and post-write handling. */
+    public function recordBulk(Measurement $measurement, bool $failed, BulkDetails $details): void
+    {
+        if (!$this->accepts($measurement)) {
+            return;
+        }
+        $duration = hrtime(true) - $measurement->startedAt;
+        $old = $this->bulk;
+        $this->bulk = new BulkSnapshot(
+            $old->count + 1,
+            $old->errors + (int) $failed,
+            $old->timeNanoseconds + $duration,
+            $old->inputRows + $details->inputRows,
+            $old->affectedRows + ($details->affectedRows ?? 0),
+            $old->returnedRows + ($details->returnedRows ?? 0)
+        );
+        if ($this->observer !== null) {
+            $this->emit(new OperationEvent(OperationKind::BULK, $measurement->startedAtUnixNanoseconds, $duration, $failed, entityClass: $details->entityClass, bulk: $details), $measurement->generation);
+        }
+    }
+
+    /** @internal Start an active scope. Suspended iterators must pause it before yielding. */
+    public function startHydration(string $hydrator, bool $streamed = false): ?HydrationMeasurement
+    {
+        $start = $this->start();
+        if ($start === null) {
+            return null;
+        }
+        $measurement = new HydrationMeasurement($start, $hydrator, $streamed);
+        $measurement->previous = $this->hydrationScope;
+        $this->hydrationScope = $measurement;
+        return $measurement;
+    }
+
+    /** @internal Exclude consumer code between generator yields from duration and object attribution. */
+    public function pauseHydration(HydrationMeasurement $measurement): void
+    {
+        if ($this->hydrationScope !== $measurement) {
+            return;
+        }
+        if ($measurement->activeStartedAt !== null) {
+            $measurement->activeNanoseconds += hrtime(true) - $measurement->activeStartedAt;
+        }
+        $measurement->activeStartedAt = null;
+        $this->hydrationScope = $measurement->previous;
+        $measurement->previous = null;
+    }
+
+    /** @internal */
+    public function resumeHydration(HydrationMeasurement $measurement): void
+    {
+        if (!$this->accepts($measurement->measurement) || $this->hydrationScope === $measurement) {
+            return;
+        }
+        $measurement->previous = $this->hydrationScope;
+        $measurement->activeStartedAt = hrtime(true);
+        $this->hydrationScope = $measurement;
+    }
+
+    /** @internal Count new reconstituted entity instances, not Identity Map hits or lazy references. */
+    public function entityCreatedDuringHydration(): void
+    {
+        if ($this->hydrationScope !== null && !$this->notifying && $this->accepts($this->hydrationScope->measurement)) {
+            ++$this->hydrationScope->entitiesCreated;
+        }
+    }
+
+    /** @internal Cleanup and PostLoad belong to active hydration; incomplete streams need not be errors. */
+    public function recordHydration(HydrationMeasurement $measurement, bool $failed, bool $completed): void
+    {
+        $this->pauseHydration($measurement);
+        if (!$this->accepts($measurement->measurement)) {
+            return;
+        }
+        $old = $this->hydration;
+        $this->hydration = new HydrationSnapshot(
+            $old->count + 1,
+            $old->errors + (int) $failed,
+            $old->timeNanoseconds + $measurement->activeNanoseconds,
+            $old->rows + $measurement->rows,
+            $old->entitiesCreated + $measurement->entitiesCreated,
+            $old->incomplete + (int) !$completed
+        );
+        if ($this->observer !== null) {
+            $details = new HydrationDetails($measurement->hydrator, $measurement->streamed, $measurement->rows, $measurement->entitiesCreated, $completed);
+            $start = $measurement->measurement;
+            $this->emit(new OperationEvent(
+                OperationKind::HYDRATION,
+                $start->startedAtUnixNanoseconds,
+                $measurement->activeNanoseconds,
+                $failed,
+                hydration: $details,
+                finishedAtUnixNanoseconds: $measurement->streamed ? (int) (microtime(true) * 1_000_000_000) : null
+            ), $start->generation);
+        }
+    }
+
+    /** @internal Counts at a phase boundary are scheduled work, not SQL affected rows. */
+    public function recordUnitOfWork(Measurement $measurement, bool $failed, UnitOfWorkDetails $details): void
+    {
+        if (!$this->accepts($measurement)) {
+            return;
+        }
+        $duration = hrtime(true) - $measurement->startedAt;
+        $old = $this->phases[$details->phase->value] ?? new UnitOfWorkPhaseSnapshot();
+        $this->phases[$details->phase->value] = new UnitOfWorkPhaseSnapshot(
+            $old->count + 1,
+            $old->errors + (int) $failed,
+            $old->timeNanoseconds + $duration,
+            $details
+        );
+        if ($this->observer !== null) {
+            $this->emit(new OperationEvent(
+                OperationKind::UNIT_OF_WORK,
+                $measurement->startedAtUnixNanoseconds,
+                $duration,
+                $failed,
+                unitOfWork: $details
+            ), $measurement->generation);
+        }
+    }
+
+    private function accepts(Measurement $measurement): bool
+    {
+        return $this->enabled && $measurement->generation === $this->generation;
     }
 
     private function emptyBatch(): array

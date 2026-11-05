@@ -822,13 +822,14 @@ final class L2BatchFetchingTest extends TestCase
         self::assertSame('USD', $documents[0]->currency->name);
         self::assertSame(1, $this->statistics->snapshot()->sqlCount);
         self::assertSame(1, $this->statistics->snapshot()->batch->count);
-        self::assertSame(2, $this->statistics->snapshot()->observerErrors);
+        // SQL, cached hydration and batch completion each notify the failing exporter.
+        self::assertSame(3, $this->statistics->snapshot()->observerErrors);
         try {
             $this->em->getConnection()->executeQuery('SELECT nonexistent_column FROM modernorm_test_l2_batch_currencies');
             self::fail('Expected database error');
         } catch (\Doctrine\DBAL\Exception\InvalidFieldNameException) {
         }
         self::assertSame(1, $this->statistics->snapshot()->sqlErrors);
-        self::assertSame(3, $this->statistics->snapshot()->observerErrors);
+        self::assertSame(4, $this->statistics->snapshot()->observerErrors);
     }
 }

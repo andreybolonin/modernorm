@@ -250,13 +250,26 @@ final class CachedEntityPersister extends AbstractEntityPersister
         $entities = [];
         $hints = [\ModernORM\Batch\LazyReferenceQueue::HINT_TRIGGER => $trigger];
         $uow = $this->manager->getUnitOfWork();
-        foreach ($keys as $hash => $key) {
-            if (isset($data[$hash])) {
-                $entities[] = $uow->createEntity($this->class->name, $data[$hash], $hints);
+        $statistics = $this->manager->getStatistics();
+        $hydration = $statistics?->startHydration(ReadOnlyEntityHydrator::class . '::batch');
+        $failed = true;
+        try {
+            foreach ($keys as $hash => $key) {
+                if (isset($data[$hash])) {
+                    if ($hydration !== null) {
+                        ++$hydration->rows;
+                    }
+                    $entities[] = $uow->createEntity($this->class->name, $data[$hash], $hints);
+                }
+            }
+            $uow->hydrationComplete();
+            $failed = false;
+            return $entities;
+        } finally {
+            if ($hydration !== null) {
+                $statistics->recordHydration($hydration, $failed, !$failed);
             }
         }
-        $uow->hydrationComplete();
-        return $entities;
     }
     private function assertCacheReadTransaction(): void
     {

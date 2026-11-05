@@ -1,6 +1,6 @@
 # Statistics API
 
-The core measures SQL/flush/batch counts, duration and errors, selected group sizes, batch L2 hits/misses/puts and bounded fallback reasons. Snapshots are immutable; enable/disable/reset are explicit. An optional OperationObserver receives neutral completion events. Standalone entity/DML/hydration counters, percentiles, active tracing and exporters are separate features. See [batch aggregates/events](batch-statistics.md).
+The core measures SQL/flush/batch/bulk/hydration counts, duration and errors, UnitOfWork phase work, selected group sizes, batch L2 hits/misses/puts and bounded fallback reasons. Snapshots are immutable; enable/disable/reset are explicit. An optional OperationObserver receives neutral completion events. Percentiles, active tracing and exporters remain separate features. See [batch aggregates/events](batch-statistics.md) and the [bulk/hydration/UnitOfWork event contract](operation-events.md).
 
 ## Setup
 
@@ -61,10 +61,13 @@ EntityManager clear/close and database rollback do not reset statistics. `reset(
 | `flushTimeNanoseconds` | Total flush time, from manager-state checks to return/exception |
 | `batch` | BatchSnapshot: count/errors/time, selected references/collections, cache progress, fallbackCounts and byKind |
 | `observerErrors` | Suppressed observer exceptions, separate from SQL/ORM errors |
+| `bulk` | BulkSnapshot: attempts/errors/time, input rows and known affected/returned rows |
+| `hydration` | HydrationSnapshot: attempts/errors/active time, rows, newly reconstituted entities and incomplete attempts |
+| `unitOfWork` | Per-phase attempts/errors/time and last scheduled-work snapshot |
 
 `sqlTimeMilliseconds()` and `flushTimeMilliseconds()` convert totals to milliseconds. SQL inside flush contributes to both durations; they must not be added as independent end-to-end latency components. A snapshot is not live: later operations or reset never mutate it.
 
-SQL timing stops when the driver returns Result or throws. Fetching, ORM hydration and application row processing are not separately wrapped. Driver buffering/transfer performed before Result is returned is included. This is not pure PostgreSQL server execution time.
+SQL timing stops when the driver returns Result or throws. ORM hydration/result fetching are covered by separate hydration scopes; arbitrary direct DBAL fetching and application row processing are not. Driver buffering/transfer performed before Result is returned is included. This is not pure PostgreSQL server execution time.
 
 Successful prepare/bind do not increment sqlCount; each prepared execute counts once. Failed prepare counts once because execution cannot follow. Bind, connect and driver transaction-API failures are not SQL execution errors, although they may produce flushErrors if they escape flush. Internal PDO operations that do not pass through query/exec/execute are not observed separately.
 
@@ -84,11 +87,11 @@ $statistics->enable();  // Resume without resetting totals.
 $statistics->reset();   // Clear totals; preserve the enabled flag.
 ```
 
-Disabled collection allocates no measurement/event objects and reads no SQL/flush/batch clocks. Installed wrappers still delegate to the driver; this is not a zero-overhead guarantee. Without middleware those wrappers are absent. [Local measurements](../README.md#local-benchmark-results) are diagnostic observations, not production overhead guarantees.
+Disabled collection allocates no measurement/event objects and reads no operation clocks. Installed wrappers still delegate to the driver; this is not a zero-overhead guarantee. Without middleware those wrappers are absent. [Local measurements](../README.md#local-benchmark-results) are diagnostic observations, not production overhead guarantees.
 
-Only operations starting and finishing within the same enabled generation are included. Reset/disable discard in-flight measurements, including a flush reset from a listener; their completion cannot pollute the new interval. SQL and flush are measured independently.
+Only operations starting and finishing within the same enabled generation are included. Reset/disable discard in-flight measurements, including a flush reset from a listener; their completion cannot pollute the new interval. Operation kinds are measured independently.
 
-Core retains no SQL history, bindings, exception objects or results. Its state is bounded by counters, three batch kinds and a fixed fallback enum. Observers receive immutable values and define their own storage policy. Other installed logging middleware have independent retention rules.
+Core retains no SQL history, bindings, exception objects or results. Its state is bounded by counters, three batch kinds, three UnitOfWork phases, fixed fallback enums and transient hydration scopes. Observers receive immutable values and define their own storage policy. Other installed logging middleware have independent retention rules.
 
 ## Integration and verification
 

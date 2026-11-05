@@ -55,23 +55,37 @@ final class ReadOnlyEntityHydrator
     }
     public function loadCacheEntry(ClassMetadata $metadata, EntityCacheKey $key, CacheEntry $entry, ?object $entity = null): ?object
     {
-        $data = $this->getData($metadata, $key, $entry);
-        if ($data === null) {
-            return null;
-        }
-        $hints = [];
-        $uow = $this->em->getUnitOfWork();
-        if ($entity !== null) {
-            // Detached ghosts keep their ordinary single-loader behavior after
-            // clear/detach. Hydrate the supplied object, not a replacement instance.
-            if ($uow->tryGetById($key->identifier, $metadata->name) !== $entity) {
-                $uow->registerManaged($entity, $key->identifier, []);
+        $statistics = $this->em->getStatistics();
+        $measurement = $statistics?->startHydration(self::class);
+        $failed = true;
+        try {
+            $data = $this->getData($metadata, $key, $entry);
+            if ($data === null) {
+                $failed = false;
+                return null;
             }
-            $hints[Query::HINT_REFRESH] = true;
-            $hints[Query::HINT_REFRESH_ENTITY] = $entity;
+            if ($measurement !== null) {
+                ++$measurement->rows;
+            }
+            $hints = [];
+            $uow = $this->em->getUnitOfWork();
+            if ($entity !== null) {
+                // Detached ghosts keep their ordinary single-loader behavior after
+                // clear/detach. Hydrate the supplied object, not a replacement instance.
+                if ($uow->tryGetById($key->identifier, $metadata->name) !== $entity) {
+                    $uow->registerManaged($entity, $key->identifier, []);
+                }
+                $hints[Query::HINT_REFRESH] = true;
+                $hints[Query::HINT_REFRESH_ENTITY] = $entity;
+            }
+            $result = $uow->createEntity($metadata->name, $data, $hints);
+            $uow->hydrationComplete();
+            $failed = false;
+            return $result;
+        } finally {
+            if ($measurement !== null) {
+                $statistics->recordHydration($measurement, $failed, !$failed);
+            }
         }
-        $result = $uow->createEntity($metadata->name, $data, $hints);
-        $uow->hydrationComplete();
-        return $result;
     }
 }

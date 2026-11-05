@@ -22,11 +22,15 @@ final readonly class OperationEvent
         public int $cacheMisses = 0,
         public int $cachePuts = 0,
         public ?BatchFallbackReason $fallbackReason = null,
+        public ?BulkDetails $bulk = null,
+        public ?HydrationDetails $hydration = null,
+        public ?UnitOfWorkDetails $unitOfWork = null,
+        public ?int $finishedAtUnixNanoseconds = null,
     ) {
     }
 
     public function endedAtUnixNanoseconds(): int
     {
-        return $this->startedAtUnixNanoseconds + $this->durationNanoseconds;
+        return $this->finishedAtUnixNanoseconds ?? $this->startedAtUnixNanoseconds + $this->durationNanoseconds;
     }
 }

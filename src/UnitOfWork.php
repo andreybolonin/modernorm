@@ -339,6 +339,8 @@ class UnitOfWork implements PropertyChangedListener
         return $this->lazyCollectionQueue;
     }
 
+    private readonly ?Statistics $statistics;
+
     /**
      * Initializes a new UnitOfWork instance, bound to the given EntityManager.
      *
@@ -347,6 +349,7 @@ class UnitOfWork implements PropertyChangedListener
     public function __construct(
         private readonly EntityManagerInterface $em,
     ) {
+        $this->statistics = $em->getStatistics();
         $this->lazyCollectionQueue = new LazyCollectionQueue($em);
         $this->eventDispatcher          = $em->getEventManager();
         $this->listenersInvoker         = new ListenersInvoker($em);
@@ -381,7 +384,7 @@ class UnitOfWork implements PropertyChangedListener
         $this->dispatchPreFlushEvent();
 
         // Compute changes done since last commit.
-        $this->computeChangeSets();
+        $this->measurePhase(\ModernORM\Statistics\UnitOfWorkPhase::CHANGE_SETS, fn () => $this->computeChangeSets(), after: true);
 
         if (
             ! ($this->entityInsertions ||
@@ -415,69 +418,73 @@ class UnitOfWork implements PropertyChangedListener
         $commitFailure = null;
 
         try {
-            // Collection deletions (deletions of complete collections)
-            foreach ($this->collectionDeletions as $collectionToDelete) {
-                // Deferred explicit tracked collections can be removed only when owning relation was persisted
-                $owner = $collectionToDelete->getOwner();
+            $this->measurePhase(\ModernORM\Statistics\UnitOfWorkPhase::WRITES, function (): void {
+                // Collection deletions (deletions of complete collections)
+                foreach ($this->collectionDeletions as $collectionToDelete) {
+                    // Deferred explicit tracked collections can be removed only when owning relation was persisted
+                    $owner = $collectionToDelete->getOwner();
 
-                if ($this->em->getClassMetadata($owner::class)->isChangeTrackingDeferredImplicit() || $this->isScheduledForDirtyCheck($owner)) {
-                    $this->getCollectionPersister($collectionToDelete->getMapping())->delete($collectionToDelete);
+                    if ($this->em->getClassMetadata($owner::class)->isChangeTrackingDeferredImplicit() || $this->isScheduledForDirtyCheck($owner)) {
+                        $this->getCollectionPersister($collectionToDelete->getMapping())->delete($collectionToDelete);
+                    }
                 }
-            }
 
-            if ($this->entityInsertions) {
-                // Perform entity insertions first, so that all new entities have their rows in the database
-                // and can be referred to by foreign keys. The commit order only needs to take new entities
-                // into account (new entities referring to other new entities), since all other types (entities
-                // with updates or scheduled deletions) are currently not a problem, since they are already
-                // in the database.
-                $this->executeInserts();
-            }
+                if ($this->entityInsertions) {
+                    // Perform entity insertions first, so that all new entities have their rows in the database
+                    // and can be referred to by foreign keys. The commit order only needs to take new entities
+                    // into account (new entities referring to other new entities), since all other types (entities
+                    // with updates or scheduled deletions) are currently not a problem, since they are already
+                    // in the database.
+                    $this->executeInserts();
+                }
 
-            if ($this->entityUpdates) {
-                // Updates are executed in a consistent order (class name, then entity ID (hash)) to eliminate deadlock
-                // risk in concurrent update transactions ("Process X waits for ShareLock on transaction Y; blocked
-                // by process Z").
-                $this->executeUpdates();
-            }
+                if ($this->entityUpdates) {
+                    // Updates are executed in a consistent order (class name, then entity ID (hash)) to eliminate deadlock
+                    // risk in concurrent update transactions ("Process X waits for ShareLock on transaction Y; blocked
+                    // by process Z").
+                    $this->executeUpdates();
+                }
 
-            // Extra updates that were requested by persisters.
-            // This may include foreign keys that could not be set when an entity was inserted,
-            // which may happen in the case of circular foreign key relationships.
-            if ($this->extraUpdates) {
-                $this->executeExtraUpdates();
-            }
+                // Extra updates that were requested by persisters.
+                // This may include foreign keys that could not be set when an entity was inserted,
+                // which may happen in the case of circular foreign key relationships.
+                if ($this->extraUpdates) {
+                    $this->executeExtraUpdates();
+                }
 
-            // Collection updates (deleteRows, updateRows, insertRows)
-            // No particular order is necessary, since all entities themselves are already
-            // in the database
-            foreach ($this->collectionUpdates as $collectionToUpdate) {
-                $this->getCollectionPersister($collectionToUpdate->getMapping())->update($collectionToUpdate);
-            }
+                // Collection updates (deleteRows, updateRows, insertRows)
+                // No particular order is necessary, since all entities themselves are already
+                // in the database
+                foreach ($this->collectionUpdates as $collectionToUpdate) {
+                    $this->getCollectionPersister($collectionToUpdate->getMapping())->update($collectionToUpdate);
+                }
 
-            // Entity deletions come last. Their order only needs to take care of other deletions
-            // (first delete entities depending upon others, before deleting depended-upon entities).
-            if ($this->entityDeletions) {
-                $this->executeDeletions();
-            }
+                // Entity deletions come last. Their order only needs to take care of other deletions
+                // (first delete entities depending upon others, before deleting depended-upon entities).
+                if ($this->entityDeletions) {
+                    $this->executeDeletions();
+                }
+            });
 
-            $commitFailed = false;
-            try {
-                if ($connection->commit() === false) {
+            $this->measurePhase(\ModernORM\Statistics\UnitOfWorkPhase::COMMIT, function () use ($connection, &$commitFailure): void {
+                $commitFailed = false;
+                try {
+                    if ($connection->commit() === false) {
+                        $commitFailed = true;
+                        $commitFailure = new \RuntimeException('Database commit returned false.');
+                    }
+                } catch (DBAL\Exception $e) {
                     $commitFailed = true;
-                    $commitFailure = new \RuntimeException('Database commit returned false.');
+                    $commitFailure = $e;
+                } catch (\Throwable $e) {
+                    $commitFailure = $e;
+                    throw $e;
                 }
-            } catch (DBAL\Exception $e) {
-                $commitFailed = true;
-                $commitFailure = $e;
-            } catch (\Throwable $e) {
-                $commitFailure = $e;
-                throw $e;
-            }
 
-            if ($commitFailed) {
-                throw new OptimisticLockException('Commit failed', null, $e ?? null);
-            }
+                if ($commitFailed) {
+                    throw new OptimisticLockException('Commit failed', null, $e ?? null);
+                }
+            });
 
             $successful = true;
         } finally {
@@ -517,6 +524,37 @@ class UnitOfWork implements PropertyChangedListener
         $this->dispatchPostFlushEvent();
 
         $this->postCommitCleanup();
+    }
+
+    private function measurePhase(\ModernORM\Statistics\UnitOfWorkPhase $phase, \Closure $work, bool $after = false): void
+    {
+        $measurement = $this->statistics?->start();
+        if ($measurement === null) {
+            $work();
+            return;
+        }
+        $details = $after ? null : $this->phaseDetails($phase);
+        $failed = true;
+        try {
+            $work();
+            $failed = false;
+        } finally {
+            $this->statistics->recordUnitOfWork($measurement, $failed, $details ?? $this->phaseDetails($phase));
+        }
+    }
+
+    private function phaseDetails(\ModernORM\Statistics\UnitOfWorkPhase $phase): \ModernORM\Statistics\UnitOfWorkDetails
+    {
+        return new \ModernORM\Statistics\UnitOfWorkDetails(
+            $phase,
+            $this->size(),
+            count($this->entityInsertions),
+            count($this->entityUpdates),
+            count($this->entityDeletions),
+            count($this->collectionUpdates),
+            count($this->collectionDeletions),
+            count($this->extraUpdates)
+        );
     }
 
     private function postCommitCleanup(): void
@@ -2653,6 +2691,7 @@ class UnitOfWork implements PropertyChangedListener
                 $entity = $class->newInstance();
             }
 
+            $this->statistics?->entityCreatedDuringHydration();
             $oid = spl_object_id($entity);
             $this->registerManaged($entity, $id, $data);
 

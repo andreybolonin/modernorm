@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.0-beta.3 — 2026-11-05
+
+- Extend connection Statistics with bulk, hydration and UnitOfWork phase snapshots and immutable completion details for Profiler/metrics adapters.
+- Measure bulk policies, known row counts and commit outcomes; hydration rows/new instances and active streaming time; change-set, write and commit phases with scheduled-work counts.
+- Preserve reset/disable generations and observer isolation. New operation kinds require exhaustive custom observers to handle additional enum cases; persisted Profiler snapshot schemas should be versioned or cleared.
+
+- Replace profiler mockups with captured Symfony panels and document the opt-in bundle OTLP prototype.
+- Include PHPStan and PSR-12 CI gates introduced after beta.2.
+
 ## 0.1.0-beta.2 — 2026-11-05
 
 Harden the bounded entity L2 contract and add Redis verification and performance evidence. The package remains beta.

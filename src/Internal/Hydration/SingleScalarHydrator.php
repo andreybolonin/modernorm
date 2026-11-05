@@ -20,6 +20,7 @@ class SingleScalarHydrator extends AbstractHydrator
     {
         $data    = $this->statement()->fetchAllAssociative();
         $numRows = count($data);
+        $this->hydrationRows($numRows);
 
         if ($numRows === 0) {
             throw new NoResultException();

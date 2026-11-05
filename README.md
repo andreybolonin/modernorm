@@ -18,25 +18,13 @@ Write domain logic with entities. Load related objects in batches. Use PostgreSQ
 
 ## Symfony Debug Toolbar & Profiler
 
-A preview of the ModernORM profiler interface: query activity, persistence diagnostics, and PostgreSQL execution plans in one place. The screens show the intended Symfony integration, including panels for upcoming metrics and features.
+See what your persistence layer does in each request with [ModernORMBundle](https://github.com/andreybolonin/modernormbundle#profiler-gallery): SQL activity, association batches, entity L2 cache, hydration, UnitOfWork phases and PostgreSQL bulk writes. The Performance Advisor links evidence-based recommendations to the relevant query or panel.
 
-### Query overview
+![ModernORM Symfony Profiler dashboard with SQL, batch fetching, L2 cache, bulk metrics and a repeated-query recommendation](docs/screenshots/symfony-profiler/overview.png)
 
-SQL queries, request totals, and performance findings.
+Captured from the local implementation using a PostgreSQL demonstration workload, including bulk writes and deliberate repeated lookups. These figures illustrate the interface, not benchmark performance. Extended metrics require the core operation-event API; older core versions show unavailable metrics explicitly. EXPLAIN plans and buffer statistics are not collected.
 
-![ModernORM Symfony Profiler overview with SQL queries and performance findings](symfony_bundle.png)
-
-### Persistence and batch fetching
-
-UnitOfWork operations, hydration breakdowns, batch loads, and bulk operations.
-
-![ModernORM Symfony Profiler panels for UnitOfWork, hydration, batch fetching, and bulk operations](symfony_bundle_panel.png)
-
-### PostgreSQL diagnostics
-
-Expensive queries, execution plans, scan statistics, and optimization recommendations.
-
-![ModernORM PostgreSQL diagnostics with execution plans and optimization recommendations](symfony_bundle_postgresql.png)
+See the [bundle's profiler gallery](https://github.com/andreybolonin/modernormbundle#profiler-gallery) for batch fetching, L2 cache, bulk operations and the dark theme.
 
 ## ModernORM vs. Doctrine ORM
 
@@ -271,9 +259,9 @@ The collector is scoped to **one DBAL Connection**. Direct SQL and all EntityMan
 
 Collection is disabled by default. Snapshots are immutable; reset and enable/disable are supported, including discarding old in-flight measurements at worker boundaries. SQL text, parameter values and entity references are not stored. Counts include failed attempts; rollback does not subtract completed work. SQL timing excludes result fetching and hydration; batch timing includes hydration/PostLoad. SQL, flush and batch durations overlap and must not be added together.
 
-Pass an optional `OperationObserver` to `new Statistics(enabled: true, observer: $observer)` to consume immutable SQL/flush/batch completion events and fallback decisions. Events include timestamps, durations, outcomes and batch sizes; core retains no history. Observer failures are isolated and counted. This is the foundation for separate Symfony Profiler, Prometheus and OpenTelemetry adapters; exporters, active trace spans and Grafana dashboards are not bundled.
+Pass an optional `OperationObserver` to `new Statistics(enabled: true, observer: $observer)` to consume immutable SQL/flush/batch/bulk/hydration and UnitOfWork phase completion events and fallback decisions. Events include timestamps, durations, outcomes and batch sizes; core retains no history. Observer failures are isolated and counted. This is the foundation for separate Symfony Profiler, Prometheus and OpenTelemetry adapters; exporters, active trace spans and Grafana dashboards are not bundled. A separate [OpenTelemetry prototype in ModernORMBundle](https://github.com/andreybolonin/modernormbundle/tree/main/examples/observability) demonstrates OTLP metrics, Collector accumulation, VictoriaMetrics and a provisioned Grafana dashboard without adding monitoring dependencies to the core.
 
-[Statistics API contract](docs/statistics.md) · [Batch statistics and event contract](docs/batch-statistics.md)
+[Statistics API contract](docs/statistics.md) · [Batch statistics](docs/batch-statistics.md) · [Bulk, hydration and UnitOfWork events](docs/operation-events.md)
 
 ## Cache reference data with an explicit lifecycle
 

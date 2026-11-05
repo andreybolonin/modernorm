@@ -39,7 +39,7 @@ jobs:
         php: ['8.4', '8.5']
         dependencies: ['locked', 'latest', 'lowest']
     env:
-      COMPOSER_ROOT_VERSION: 0.1.0-beta.2
+      COMPOSER_ROOT_VERSION: 0.1.0-beta.3
       PGHOST: 127.0.0.1
       PGPORT: 5432
       PGDATABASE: modernorm_test

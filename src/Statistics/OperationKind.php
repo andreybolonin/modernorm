@@ -10,4 +10,7 @@ enum OperationKind: string
     case FLUSH = 'flush';
     case BATCH = 'batch';
     case BATCH_FALLBACK = 'batch_fallback';
+    case BULK = 'bulk';
+    case HYDRATION = 'hydration';
+    case UNIT_OF_WORK = 'unit_of_work';
 }

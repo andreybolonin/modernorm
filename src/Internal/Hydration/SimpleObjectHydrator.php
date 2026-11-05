@@ -59,6 +59,7 @@ class SimpleObjectHydrator extends AbstractHydrator
         $result = [];
 
         while ($row = $this->statement()->fetchAssociative()) {
+            $this->hydrationRows();
             $this->hydrateRowData($row, $result);
         }
 

@@ -44,7 +44,7 @@ Generation tickets prevent late fills from surviving key/class eviction. Cached 
 
 ## Statistics and integrations
 
-Statistics belongs to one DBAL connection and measures SQL, flush and batch attempts, duration, errors, selected group sizes and bounded fallback reasons. Optional immutable completion events provide a backend-neutral export boundary. Core keeps no event/SQL history and creates no active tracing spans. Overlapping SQL/flush/batch durations must not be added together.
+Statistics belongs to one DBAL connection and measures SQL, flush, batch, bulk and hydration attempts plus UnitOfWork phases, duration, errors, selected group sizes and bounded fallback reasons. Optional immutable completion events provide a backend-neutral export boundary. Core keeps no event/SQL history and creates no active tracing spans. Overlapping SQL/flush/batch durations must not be added together.
 
 ModernORMBundle owns Symfony services, lifecycle reset, Profiler and optional SQL history. Doctrine Migrations and Data Fixtures are integrated there through adapters; they are not required by the ORM core. Prometheus/OpenTelemetry exporters, PostgreSQL diagnostics and Grafana dashboards remain separate work. See [Statistics](statistics.md).
 

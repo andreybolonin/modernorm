@@ -26,6 +26,8 @@ final class ScalarColumnHydrator extends AbstractHydrator
             throw MultipleSelectorsFoundException::create($this->resultSetMapping()->fieldMappings);
         }
 
-        return $this->statement()->fetchFirstColumn();
+        $rows = $this->statement()->fetchFirstColumn();
+        $this->hydrationRows(count($rows));
+        return $rows;
     }
 }

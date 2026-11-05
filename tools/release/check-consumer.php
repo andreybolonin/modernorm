@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 $source = dirname(__DIR__, 2);
-$releaseVersion = getenv('MODERNORM_RELEASE_VERSION') ?: '0.1.0-beta.2';
+$releaseVersion = getenv('MODERNORM_RELEASE_VERSION') ?: '0.1.0-beta.3';
 $directory = getenv('MODERNORM_RELEASE_DIR') ?: sys_get_temp_dir().'/modernorm-release-'.bin2hex(random_bytes(6));
 if (file_exists($directory)) {
     throw new RuntimeException('Release output directory must not exist: '.$directory);

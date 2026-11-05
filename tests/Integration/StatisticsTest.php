@@ -104,7 +104,7 @@ final class StatisticsTest extends TestCase
         self::assertSame($snapshot->sqlTimeNanoseconds / 1_000_000, $snapshot->sqlTimeMilliseconds());
         self::assertSame(0.0, $snapshot->flushTimeMilliseconds());
         self::assertSame([
-            'sqlCount', 'sqlTimeNanoseconds', 'sqlErrors', 'flushCount', 'flushTimeNanoseconds', 'flushErrors', 'batch', 'observerErrors',
+            'sqlCount', 'sqlTimeNanoseconds', 'sqlErrors', 'flushCount', 'flushTimeNanoseconds', 'flushErrors', 'batch', 'observerErrors', 'bulk', 'hydration', 'unitOfWork',
         ], array_keys(get_object_vars($snapshot)));
     }
 
