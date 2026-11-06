@@ -129,7 +129,7 @@ final class OperationEventsTest extends TestCase
         return $rsm;
     }
 
-    public function testAllBulkOperationsExposeCountsAndPoliciesWithoutQueryData(): void
+    public function testSqlBulkOperationsExposeCountsAndPoliciesWithoutQueryData(): void
     {
         $bulk = $this->em->bulk();
         $bulk->insert(OperationEventRecord::class, [['id' => 1, 'name' => 'secret-one'], ['id' => 2, 'name' => 'secret-two']], BulkPolicy::BYPASS, returning: ['id']);
@@ -137,7 +137,7 @@ final class OperationEventsTest extends TestCase
         $bulk->update(OperationEventRecord::class, ['amount' => 7], 'id = :id', BulkPolicy::CLEAR, ['id' => 1], returning: ['name']);
         $bulk->delete(OperationEventRecord::class, 'id = :id', BulkPolicy::BYPASS, ['id' => 2]);
         $events = $this->events(OperationKind::BULK);
-        self::assertSame(BulkOperation::cases(), array_map(static fn (OperationEvent $event): BulkOperation => $event->bulk->operation, $events));
+        self::assertSame([BulkOperation::INSERT, BulkOperation::UPSERT, BulkOperation::UPDATE, BulkOperation::DELETE], array_map(static fn (OperationEvent $event): BulkOperation => $event->bulk->operation, $events));
         self::assertSame([2, 1, 1, 1], array_map(static fn (OperationEvent $event): int => $event->bulk->affectedRows, $events));
         self::assertSame(BulkPolicy::CLEAR, $events[2]->bulk->policy);
         foreach ($events as $event) {

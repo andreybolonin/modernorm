@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add bulk `softDelete()` / `restore()` with guarded state transitions, typed scalar audit values, RETURNING, existing BYPASS/CLEAR and L2/transaction protocols, and distinct bulk Statistics events. Bulk operations do not run entity callbacks or automatically update versions/actors.
+
 - Add query-local `onlyDeleted()` for SoftDelete roots while preserving active association visibility; cover remove/restore symmetry across repositories, mapped queries, lazy/batch collections, Identity Map, shared L2 and rollback. Document the visibility/lifecycle matrix.
 
 - Add opt-in SoftDelete mapping and trait: logical `remove()`, explicit `restore()` / `hardDelete()`, query-local inclusion of deleted rows, repository/count/query-builder filtering and ordinary/batch collection visibility.

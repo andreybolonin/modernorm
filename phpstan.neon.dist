@@ -8,5 +8,6 @@ parameters:
         - tests/Integration/TimestampableTest.php
         - tests/Integration/BlameableTest.php
         - tests/Integration/SoftDeleteTest.php
+        - tests/Integration/BulkSoftDeleteTest.php
     tmpDir: .phpstan-cache
     treatPhpDocTypesAsCertain: false

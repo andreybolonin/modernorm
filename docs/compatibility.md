@@ -27,7 +27,7 @@ The local core suite passed **418 tests / 2170 assertions** on PHP **8.4.27 and 
 | Explicit association fetch | Bounded | To-one/to-many joins, root deduplication, empty collections and Identity Map; filtered collections must not be represented as complete automatically |
 | Collection pagination | Verified cases | Explicit root-ID builder, count/offset/empty page/bindings/full collections; one scalar ID and application-managed scope/order |
 | Native SQL/ResultSetMapping | Verified cases | Entity/join/scalar mappings and PostgreSQL integer/boolean conversion; no discriminator results |
-| Bulk BYPASS/CLEAR | Bounded | INSERT/UPSERT/UPDATE/DELETE, raw RETURNING/count, state/queues, rollback, external uncached writes, declared L2 write sets and commit failures; no SYNC/COPY/chunking/UPDATE FROM; [contract](bulk-api.md) |
+| Bulk BYPASS/CLEAR | Bounded | INSERT/UPSERT/UPDATE/DELETE and SoftDelete/restore, raw RETURNING/count, state/queues, rollback, external uncached writes, declared L2 write sets and commit failures; no SYNC/COPY/chunking/UPDATE FROM; [contract](bulk-api.md) |
 | Lifecycle | Bounded | Entity/global listeners and callbacks, preFlush/onFlush/preUpdate mutation, empty flush and preFlush/postPersist/postFlush errors; not every subscriber/onClear/external-transaction combination |
 | Integer optimistic locking | Verified cases | Stale writer, version increment and SQL guards |
 | PESSIMISTIC_WRITE | Verified cases | Separate PostgreSQL backends, timeout and release after commit; PESSIMISTIC_READ not separately certified |

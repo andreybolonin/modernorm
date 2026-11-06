@@ -22,16 +22,16 @@ All durations use monotonic nanoseconds. Snapshot values are immutable; later wo
 
 ## Bulk
 
-Every public INSERT/UPSERT/UPDATE/DELETE call produces one `BULK` completion when instrumentation is enabled, including validation/SQL failures. Timing includes SQL construction/type preparation, write-set checks, transaction handling, synchronous invalidation and CLEAR handling.
+Every public INSERT/UPSERT/UPDATE/DELETE/softDelete/restore call produces one `BULK` completion when instrumentation is enabled, including validation/SQL failures. Timing includes SQL construction/type preparation, write-set checks, transaction handling, synchronous invalidation and CLEAR handling.
 
 `BulkDetails` contains:
 
 | Field | Meaning |
 | --- | --- |
-| `operation` | INSERT, UPSERT, UPDATE or DELETE |
+| `operation` | INSERT, UPSERT, UPDATE, DELETE, SOFT_DELETE or RESTORE |
 | `entityClass` | The supplied entity class name |
 | `policy` | The selected BulkPolicy; JSON encodes its case name |
-| `inputRows` | Supplied INSERT/UPSERT row count; zero for predicate UPDATE/DELETE |
+| `inputRows` | Supplied INSERT/UPSERT row count; zero for predicate UPDATE/DELETE/softDelete/restore |
 | `affectedRows` | Row count from a successfully returned BulkResult; null when no result was returned |
 | `returnedRows` | Number of RETURNING rows in that result, not their contents; null on failure |
 | `databaseCommitted` | BulkResult's true/false on success, BulkOperationException's true/null on failure; otherwise null |

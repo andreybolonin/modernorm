@@ -118,7 +118,7 @@ READ_ONLY cache and Immutable are incompatible with the required UPDATE. Logical
 
 ## Bulk and unique constraints
 
-Bulk DELETE and direct SQL DELETE remain physical, including deleted rows. Bulk writes bypass lifecycle callbacks and retain the documented BYPASS/CLEAR state policies and cache invalidation. Use explicit bulk UPDATE of deleted_at for a mass logical deletion; timestamps/actors must also be supplied explicitly.
+Bulk DELETE and direct SQL DELETE remain physical, including deleted rows. Bulk writes bypass lifecycle callbacks and retain the documented BYPASS/CLEAR state policies and cache invalidation. Use `bulk()->softDelete()` / `bulk()->restore()` for state-restricted mass transitions with an explicit predicate, BYPASS/CLEAR policy and optional RETURNING. These methods reuse bulk UPDATE transaction/L2 handling; timestamps and version assignments are explicit, and actor associations are outside the scalar bulk API. See [bulk state transitions](bulk-api.md#bulk-softdelete-and-restore). Direct bulk UPDATE of deleted_at remains caller-controlled SQL without these state guards.
 
 A normal unique constraint still includes deleted rows. For uniqueness among active rows, declare a PostgreSQL partial unique index, for example:
 

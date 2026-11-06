@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace ModernORM\Bulk;
 
 use BackedEnum;
+use DateTimeImmutable;
 use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
 use Doctrine\DBAL\Types\Type;
 use ModernORM\EntityManagerInterface;
@@ -95,6 +96,48 @@ final class BulkExecutor
             0,
             fn (): BulkResult => $this->deleteRows($entity, $where, $policy, $parameters, $types, $returning, $affectedEntities)
         );
+    }
+
+    /** Extra scalar values may include an explicit DateTimeImmutable deletion time. No callbacks or automatic auditing. */
+    public function softDelete(string $entity, string $where, BulkPolicy $policy, array $parameters = [], array $types = [], array $returning = [], array $values = [], array $affectedEntities = []): BulkResult
+    {
+        return $this->observe(
+            BulkOperation::SOFT_DELETE,
+            $entity,
+            $policy,
+            0,
+            fn (): BulkResult => $this->changeDeletionState($entity, $where, $policy, $parameters, $types, $returning, $values, $affectedEntities, true)
+        );
+    }
+
+    /** Restore deleted rows only; values cannot override the deletion field. */
+    public function restore(string $entity, string $where, BulkPolicy $policy, array $parameters = [], array $types = [], array $returning = [], array $values = [], array $affectedEntities = []): BulkResult
+    {
+        return $this->observe(
+            BulkOperation::RESTORE,
+            $entity,
+            $policy,
+            0,
+            fn (): BulkResult => $this->changeDeletionState($entity, $where, $policy, $parameters, $types, $returning, $values, $affectedEntities, false)
+        );
+    }
+
+    private function changeDeletionState(string $entity, string $where, BulkPolicy $policy, array $parameters, array $types, array $returning, array $values, array $affectedEntities, bool $deleted): BulkResult
+    {
+        $metadata = $this->metadata($entity);
+        $this->predicate($where, $parameters, $types);
+        $field = $metadata->softDeleteField;
+        if ($field === null) {
+            throw new \InvalidArgumentException('Bulk softDelete()/restore() require a SoftDelete entity.');
+        }
+        if (array_key_exists($field, $values) && (!$deleted || !$values[$field] instanceof DateTimeImmutable)) {
+            throw new \InvalidArgumentException('Bulk softDelete() requires a DateTimeImmutable deletion value; restore() cannot override the deletion field.');
+        }
+        $values = [$field => $deleted ? ($values[$field] ?? new DateTimeImmutable()) : null] + $values;
+        $condition = $deleted
+            ? \ModernORM\Behavior\SoftDeletePolicy::activeCondition($this->em, $metadata)
+            : \ModernORM\Behavior\SoftDeletePolicy::deletedCondition($this->em, $metadata);
+        return $this->updateRows($entity, $values, '(' . $where . ') AND ' . $condition, $policy, $parameters, $types, $returning, $affectedEntities);
     }
 
     private function deleteRows(string $entity, string $where, BulkPolicy $policy, array $parameters = [], array $types = [], array $returning = [], array $affectedEntities = []): BulkResult

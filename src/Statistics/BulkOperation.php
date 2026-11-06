@@ -10,4 +10,6 @@ enum BulkOperation: string
     case UPSERT = 'upsert';
     case UPDATE = 'update';
     case DELETE = 'delete';
+    case SOFT_DELETE = 'soft_delete';
+    case RESTORE = 'restore';
 }

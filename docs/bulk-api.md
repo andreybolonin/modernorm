@@ -1,6 +1,6 @@
 # PostgreSQL-native bulk API
 
-**Implemented:** multi-row INSERT, PostgreSQL ON CONFLICT (UPSERT/DO NOTHING), UPDATE and DELETE, with optional RETURNING and explicit `BulkPolicy::BYPASS` / `BulkPolicy::CLEAR`. `SYNC`, COPY, UPDATE FROM, automatic chunking and graph reconciliation remain future work. Direct DBAL SQL retains its existing behavior and does not automatically use this API's invalidation protocol.
+**Implemented:** multi-row INSERT, PostgreSQL ON CONFLICT (UPSERT/DO NOTHING), UPDATE and DELETE plus SoftDelete state transitions, with optional RETURNING and explicit `BulkPolicy::BYPASS` / `BulkPolicy::CLEAR`. `SYNC`, COPY, UPDATE FROM, automatic chunking and graph reconciliation remain future work. Direct DBAL SQL retains its existing behavior and does not automatically use this API's invalidation protocol.
 
 ## Usage
 
@@ -32,6 +32,8 @@ insert($entity, $rows, $policy, $returning = [], $affectedEntities = []);
 upsert($entity, $rows, $conflictFields, $updateFields, $policy, $returning = [], $affectedEntities = []);
 update($entity, $values, $where, $policy, $parameters = [], $types = [], $returning = [], $affectedEntities = []);
 delete($entity, $where, $policy, $parameters = [], $types = [], $returning = [], $affectedEntities = []);
+softDelete($entity, $where, $policy, $parameters = [], $types = [], $returning = [], $values = [], $affectedEntities = []);
+restore($entity, $where, $policy, $parameters = [], $types = [], $returning = [], $values = [], $affectedEntities = []);
 ```
 
 `BulkExecutor` is available through EntityManager and its decorator. Values, conflict/update fields and RETURNING fields use **mapped scalar field names**, including flattened embeddables. Mapped DBAL types convert input values; backed enum values are supported. Table/schema/column quoting follows the configured quote strategy. Association/FK properties are outside this first structured API; direct DBAL SQL remains available.
@@ -45,6 +47,35 @@ INSERT requires a nonempty list of nonempty rows with identical field sets; fiel
 - `affectedRows`: affected rows, including inserted/updated rows in UPSERT; conflicts skipped by DO NOTHING are excluded.
 - `returnedRows`: raw associative DBAL rows, keyed by requested field names. No ORM hydration/type conversion on output, PostLoad callbacks or managed entities are created. Without RETURNING this is an empty list.
 - `databaseCommitted`: true after an API-owned commit; false means the caller-owned transaction is still pending. No managed entities are synchronized in either supported mode.
+
+## Bulk SoftDelete and restore
+
+Both methods require a concrete `#[SoftDelete]` entity and an explicit predicate/policy. Each runs one UPDATE using the existing transaction, write-set validation, class L2 invalidation, error-outcome and BYPASS/CLEAR protocol. No entity graph is traversed, no relationship or join-table membership is changed by the ORM, and no per-row lifecycle callbacks execute.
+
+```php
+$now = new \DateTimeImmutable();
+$deleted = $em->bulk()->softDelete(Document::class,
+    'id IN (:ids)', BulkPolicy::CLEAR,
+    parameters: ['ids' => [10, 20]],
+    types: ['ids' => \Doctrine\DBAL\ArrayParameterType::INTEGER],
+    returning: ['id', 'deletedAt'],
+    values: ['deletedAt' => $now, 'updatedAt' => $now]);
+
+$restored = $em->bulk()->restore(Document::class,
+    'deleted_at < :cutoff', BulkPolicy::CLEAR,
+    parameters: ['cutoff' => $now], types: ['cutoff' => 'datetime_immutable'],
+    returning: ['id'], values: ['updatedAt' => $now]);
+```
+
+The caller predicate is parenthesized before adding the state condition. `softDelete()` changes active rows only (`deletedAt IS NULL`); repeated calls preserve existing deletion dates and count only newly deleted rows. One PHP `DateTimeImmutable` is generated per call unless `values` supplies a non-null DateTimeImmutable for the mapped deletion field. `restore()` changes deleted rows only (`IS NOT NULL`), writes null and rejects any deletion-field override, even null. Active rows do not receive extra `values` during restore.
+
+`values` contains explicit extra mapped scalar assignments, converted through the same DBAL types as UPDATE. Timestampable callbacks do not run; supply `updatedAt` explicitly when required. Blameable actor associations are not supported by this scalar bulk API and are not updated automatically; actor/FK attribution needs an explicitly coordinated SQL workflow. No optimistic version check or increment is added: supply the version predicate and an explicit next scalar version in `values` when processing a known version. Per-row version expressions and automatic actor association mapping are outside this first contract.
+
+BYPASS deliberately leaves in-memory deletion fields, snapshots and initialized collections stale. This includes `find()` Identity Map hits; it is the documented bulk bypass, not an ordinary visibility-aware load. CLEAR detaches the entire context after success, including zero-row success; neither policy flushes pending ORM work. Reload after success for the new state. Raw RETURNING rows do not hydrate or synchronize managed entities.
+
+Cached state changes require an API-owned top-level transaction and invalidate before DML and after commit for either policy. A partial-unique-index conflict during restore rolls back the whole owned statement and does not apply CLEAR. SQL failure leaves the existing context untouched; assess pending state before continuing. Post-commit invalidation/CLEAR failures carry `databaseCommitted === true`; uncertain commit outcomes carry null. Do not blindly replay a committed or ambiguous operation.
+
+Statistics emit exactly one bulk completion event per call using `BulkOperation::SOFT_DELETE` (`soft_delete`) or `BulkOperation::RESTORE` (`restore`), including zero-row results and validation/SQL failures. They do not also emit an ordinary bulk UPDATE event. SQL instrumentation still observes the underlying UPDATE.
 
 ## UnitOfWork policies
 
@@ -126,5 +157,7 @@ The existing [entity L2 contract](read-only-l2-cache.md), including its visibili
 ## Coverage and future scope
 
 `BulkOperationsTest` covers INSERT/UPSERT/DO NOTHING, raw RETURNING/counts, mapped types/quoting, dirty snapshots/pending work, both lazy queues, zero-row CLEAR/onClear, rollback, outer transaction policies, explicit version guards, Immutable writes, trigger write sets, class isolation, late fills and pre/post-commit failures.
+
+`BulkSoftDeleteTest` additionally covers state predicates and OR grouping, timestamp preservation and explicit audit values, no callbacks/implicit version increments, BYPASS/CLEAR pending work, transaction rollback, partial unique conflicts, shared L2, precommit readers/late fills, and cache failures before SQL and after commit.
 
 SYNC, COPY, UPDATE FROM and chunking are not implemented. They require separate state, transaction and partial-outcome contracts; see the [roadmap](../roadmap.md).
