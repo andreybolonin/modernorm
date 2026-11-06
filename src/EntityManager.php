@@ -333,6 +333,10 @@ class EntityManager implements EntityManagerInterface
                 return null;
             }
 
+            if ($class->softDeleteField !== null && $class->getFieldValue($entity, $class->softDeleteField) !== null) {
+                return null;
+            }
+
             switch (true) {
                 case $lockMode === LockMode::OPTIMISTIC:
                     $this->lock($entity, $lockMode, $lockVersion);
@@ -397,6 +401,9 @@ class EntityManager implements EntityManagerInterface
     {
         $class = $this->metadataFactory->getMetadataFor(ltrim($entityName, '\\'));
 
+        if ($class->softDeleteField !== null) {
+            return $this->find($class->name, $id);
+        }
         $sortedId = $this->normalizeIdentifier($class, $id);
 
         $entity = $this->unitOfWork->tryGetById($sortedId, $class->rootEntityName);
@@ -450,15 +457,37 @@ class EntityManager implements EntityManagerInterface
         $this->unitOfWork->persist($object);
     }
 
-    /**
-     * Removes an entity instance.
-     *
-     * A removed entity will be removed from the database at or before transaction commit
-     * or as a result of the flush operation.
-     *
-     * @throws ORMInvalidArgumentException
-     * @throws ORMException
-     */
+    /** Explicit query-local visibility; raw SQL still follows its own predicates. */
+    public function findIncludingDeleted(string $className, mixed $id): ?object
+    {
+        $class = $this->getClassMetadata($className);
+        $identifier = $this->normalizeIdentifier($class, $id);
+        $query = $this->createQueryBuilder()->withDeleted()->fromEntity($class->name, 'r');
+        $field = $class->getSingleIdentifierFieldName();
+        return $query->where($query->column('r', $field) . ' = :id')->setParameter('id', $identifier[$field])->getQuery()->getOneOrNullResult();
+    }
+
+    public function restore(object $entity): void
+    {
+        $this->errorIfClosed();
+        $class = $this->getClassMetadata($entity::class);
+        if ($class->softDeleteField === null || ! $this->contains($entity)) {
+            throw new \InvalidArgumentException('restore() requires a managed SoftDelete entity.');
+        }
+        if ($this->unitOfWork->isReadOnly($entity)) {
+            throw new \LogicException('SoftDelete cannot restore an entity marked read-only in the UnitOfWork.');
+        }
+        $class->setFieldValue($entity, $class->softDeleteField, null);
+        $this->unitOfWork->scheduleForDirtyCheck($entity);
+    }
+
+    public function hardDelete(object $entity): void
+    {
+        $this->errorIfClosed();
+        $this->unitOfWork->hardRemove($entity);
+    }
+
+    /** Schedule logical deletion for SoftDelete entities, physical deletion otherwise. */
     public function remove(object $object): void
     {
         $this->errorIfClosed();

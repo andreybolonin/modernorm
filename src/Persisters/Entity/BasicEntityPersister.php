@@ -1231,6 +1231,10 @@ class BasicEntityPersister implements EntityPersister
 
             }
 
+            $active = \ModernORM\Behavior\SoftDeletePolicy::activeCondition($this->em, $eagerEntity, $joinTableAlias);
+            if ($active !== null) {
+                $joinCondition[] = $active;
+            }
             $this->currentPersisterContext->selectJoinSql .= ' ' . $joinTableName . ' ' . $joinTableAlias . ' ON ';
             $this->currentPersisterContext->selectJoinSql .= implode(' AND ', $joinCondition);
         }
@@ -1625,6 +1629,11 @@ class BasicEntityPersister implements EntityPersister
 
         foreach ($criteria as $field => $value) {
             $conditions[] = $this->getSelectConditionStatementSQL($field, $value, $assoc);
+        }
+
+        $active = \ModernORM\Behavior\SoftDeletePolicy::activeCondition($this->em, $this->class, $this->getSQLTableAlias($this->class->name));
+        if ($active !== null) {
+            $conditions[] = $active;
         }
 
         return implode(' AND ', $conditions);

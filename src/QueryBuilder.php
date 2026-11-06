@@ -14,6 +14,8 @@ class QueryBuilder extends SqlQueryBuilder
     private ResultSetMapping $mapping;
     /** @var array<string, EntityResultPlan> */
     private array $entities = [];
+    private bool $includeDeleted = false;
+    private array $joinedAliases = [];
 
     public function __construct(private readonly EntityManagerInterface $em)
     {
@@ -39,11 +41,27 @@ class QueryBuilder extends SqlQueryBuilder
         $plan = EntityResultPlan::forEntity($this->em, $class, $alias);
         $this->entities[$alias] = $plan;
         $plan->apply($this->mapping, $class, $alias);
-        parent::select(...$plan->select)->from($plan->table, $alias);
+        parent::select(...$plan->select)->from($this->entityTable($class, $plan->table), $alias);
+        $metadata = $this->em->getClassMetadata($class);
+        $number = 0;
+        foreach ($metadata->softDeleteToOneAssociations as $field) {
+            $association = $metadata->associationMappings[$field];
+            assert($association->isToOneOwningSide());
+            $target = $this->em->getClassMetadata($association->targetEntity);
+            $joined = substr($alias, 0, 28) . '_sd' . ++$number;
+            $this->addJoinedEntity($target->name, $joined, $alias, $association->fieldName);
+            $platform = $this->em->getConnection()->getDatabasePlatform();
+            $quote = $this->em->getConfiguration()->getQuoteStrategy();
+            $joinColumn = $association->joinColumns[0];
+            $condition = $alias . '.' . $quote->getJoinColumnName($joinColumn, $metadata, $platform)
+                . ' = ' . $joined . '.' . $quote->getReferencedJoinColumnName($joinColumn, $metadata, $platform);
+            $table = $quote->getTableName($target, $platform);
+            $this->leftJoin($alias, $table, $joined, $condition);
+        }
         return $this;
     }
 
-    /** Map an already explicitly joined table to a complete association. No SQL join is inferred. */
+    /** Map an explicit SQL join; register SoftDelete targets before adding their join. */
     public function addJoinedEntity(string $class, string $alias, string $parent, string $relation): self
     {
         if (isset($this->entities[$alias]) || ! isset($this->entities[$parent])) {
@@ -54,10 +72,60 @@ class QueryBuilder extends SqlQueryBuilder
         if ($association->targetEntity !== $class) {
             throw new \InvalidArgumentException('Joined entity does not match the mapped association.');
         }
+        if (isset($this->joinedAliases[$alias]) && $this->em->getClassMetadata($class)->softDeleteField !== null) {
+            throw new \LogicException('Register a SoftDelete joined entity with addJoinedEntity() before adding its SQL join.');
+        }
         $plan = EntityResultPlan::forEntity($this->em, $class, $alias);
         $plan->apply($this->mapping, $class, $alias, $parent, $relation);
         $this->entities[$alias] = $plan;
         $this->addSelect(...$plan->select);
+        return $this;
+    }
+
+    /** Explicit visibility for this query only; call before registering entity projections. */
+    public function withDeleted(): self
+    {
+        if ($this->entities !== []) {
+            throw new \LogicException('withDeleted() must be called before fromEntity().');
+        }
+        $this->includeDeleted = true;
+        return $this;
+    }
+
+    private function entityTable(string $class, string $table): string
+    {
+        $condition = $this->includeDeleted ? null : \ModernORM\Behavior\SoftDeletePolicy::activeCondition($this->em, $this->em->getClassMetadata($class));
+        return $condition === null ? $table : '(SELECT * FROM ' . $table . ' WHERE ' . $condition . ')';
+    }
+
+    private function joinedTable(string $table, string $alias): string
+    {
+        $this->joinedAliases[$alias] = true;
+        $class = $this->mapping->aliasMap[$alias] ?? null;
+        return $class === null ? $table : $this->entityTable($class, $table);
+    }
+
+    public function innerJoin(string $fromAlias, string $join, string $alias, ?string $condition = null): self
+    {
+        parent::innerJoin($fromAlias, $this->joinedTable($join, $alias), $alias, $condition);
+        return $this;
+    }
+
+    public function leftJoin(string $fromAlias, string $join, string $alias, ?string $condition = null): self
+    {
+        parent::leftJoin($fromAlias, $this->joinedTable($join, $alias), $alias, $condition);
+        return $this;
+    }
+
+    public function rightJoin(string $fromAlias, string $join, string $alias, ?string $condition = null): self
+    {
+        parent::rightJoin($fromAlias, $this->joinedTable($join, $alias), $alias, $condition);
+        return $this;
+    }
+
+    public function fullJoin(string $fromAlias, string $join, string $alias, ?string $condition = null): self
+    {
+        parent::fullJoin($fromAlias, $this->joinedTable($join, $alias), $alias, $condition);
         return $this;
     }
 

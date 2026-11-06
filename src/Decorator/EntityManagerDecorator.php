@@ -41,6 +41,21 @@ abstract class EntityManagerDecorator extends ObjectManagerDecorator implements 
         return $this->wrapped->getRepository($className);
     }
 
+    public function findIncludingDeleted(string $className, mixed $id): ?object
+    {
+        return $this->wrapped->findIncludingDeleted($className, $id);
+    }
+
+    public function restore(object $entity): void
+    {
+        $this->wrapped->restore($entity);
+    }
+
+    public function hardDelete(object $entity): void
+    {
+        $this->wrapped->hardDelete($entity);
+    }
+
     public function getStatistics(): ?\ModernORM\Statistics
     {
         return $this->wrapped->getStatistics();

@@ -117,6 +117,10 @@ class AttributeDriver implements MappingDriver
             $metadata->markReadOnly();
         }
 
+        if (isset($classAttributes[Mapping\SoftDelete::class])) {
+            $metadata->softDeleteField = 'deletedAt';
+        }
+
         $primaryTable = [];
 
         if (isset($classAttributes[Mapping\Table::class])) {

@@ -14,9 +14,12 @@ Batch fetching, PostgreSQL bulk writes, entity L2 cache and built-in observabili
 | **PostgreSQL-native bulk** | Multi-row INSERT, UPSERT, UPDATE, DELETE and `RETURNING`, with explicit UnitOfWork policies. |
 | **Entity L2 cache** | Cache entities across EntityManagers with PSR-6 storage, TTL and generation-based invalidation. |
 | **SQL-first queries** | PostgreSQL expressions and CTEs, with managed entity hydration or plain rows. |
+| **Built-in behaviors** | Timestampable, Blameable and SoftDelete built in — no extra behavior package required. |
 | **Built-in Statistics API** | Measure SQL, flush, batch, bulk, hydration and UnitOfWork phases; consume neutral operation events. |
 
 PHP attributes, native lazy objects, Identity Map and UnitOfWork keep ordinary entity persistence familiar.
+
+Behaviors are explicitly enabled per entity: [Timestampable](docs/timestampable.md), [Blameable](docs/blameable.md) and [SoftDelete](docs/soft-delete.md). SoftDelete is unreleased; beta.4 includes Timestampable and the Blameable provider/listener API.
 
 ## Fewer queries. The same entity workflow.
 

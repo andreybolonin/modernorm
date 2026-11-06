@@ -2059,9 +2059,20 @@ class UnitOfWork implements PropertyChangedListener
         $this->cascadePersist($entity, $visited);
     }
 
-    /**
-     * Deletes an entity as part of the current unit of work.
-     */
+    private bool $hardDelete = false;
+
+    /** @internal Physical deletion, including ordinary remove cascades. */
+    public function hardRemove(object $entity): void
+    {
+        $previous = $this->hardDelete;
+        $this->hardDelete = true;
+        try {
+            $this->remove($entity);
+        } finally {
+            $this->hardDelete = $previous;
+        }
+    }
+
     public function remove(object $entity): void
     {
         $visited = [];
@@ -2089,6 +2100,24 @@ class UnitOfWork implements PropertyChangedListener
         }
 
         $visited[$oid] = $entity; // mark visited
+
+        $class = $this->em->getClassMetadata($entity::class);
+        if ($class->softDeleteField !== null && ! $this->hardDelete) {
+            $state = $this->getEntityState($entity);
+            if ($state === self::STATE_DETACHED) {
+                throw ORMInvalidArgumentException::detachedEntityCannot($entity, 'removed');
+            }
+            if (isset($this->entityInsertions[$oid])) {
+                $this->scheduleForDelete($entity);
+            } elseif ($state === self::STATE_MANAGED && $class->getFieldValue($entity, $class->softDeleteField) === null) {
+                if ($this->isReadOnly($entity)) {
+                    throw new \LogicException('SoftDelete cannot update an entity marked read-only in the UnitOfWork.');
+                }
+                $class->setFieldValue($entity, $class->softDeleteField, new \DateTimeImmutable());
+                $this->scheduleForDirtyCheck($entity);
+            }
+            return;
+        }
 
         // Cascade first, because scheduleForDelete() removes the entity from the identity map, which
         // can cause problems when a lazy proxy has to be initialized for the cascade operation.
@@ -2787,6 +2816,13 @@ class UnitOfWork implements PropertyChangedListener
                         $class->propertyAccessors[$field]->setValue($entity, null);
                         $this->originalEntityData[$oid][$field] = null;
 
+                        break;
+                    }
+
+                    if ($targetClass->softDeleteField !== null) {
+                        $newValue = $this->em->find($targetClass->name, $associatedId);
+                        $class->propertyAccessors[$field]->setValue($entity, $newValue);
+                        $this->originalEntityData[$oid][$field] = $newValue;
                         break;
                     }
 

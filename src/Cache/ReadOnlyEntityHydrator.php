@@ -17,7 +17,11 @@ final class ReadOnlyEntityHydrator
     }
     public function signature(ClassMetadata $metadata): string
     {
-        return hash('sha256', serialize([$metadata->name, $metadata->table, $metadata->fieldMappings, $metadata->identifier]));
+        $mapping = [$metadata->name, $metadata->table, $metadata->fieldMappings, $metadata->identifier];
+        if ($metadata->softDeleteField !== null) {
+            $mapping[] = ['softDelete' => $metadata->softDeleteField];
+        }
+        return hash('sha256', serialize($mapping));
     }
     public function fromDatabaseRow(ClassMetadata $metadata, array $data): ReadOnlyEntityCacheEntry
     {
@@ -46,6 +50,9 @@ final class ReadOnlyEntityHydrator
         $platform = $this->em->getConnection()->getDatabasePlatform();
         foreach ($metadata->fieldMappings as $field => $mapping) {
             $data[$field] = Type::getType($mapping->type)->convertToPHPValue($entry->data[$field], $platform);
+        }
+        if ($metadata->softDeleteField !== null && $data[$metadata->softDeleteField] !== null) {
+            return null;
         }
         $field = $metadata->getSingleIdentifierFieldName();
         if (UnitOfWork::getIdHashByIdentifier([$data[$field]]) !== UnitOfWork::getIdHashByIdentifier($key->identifier)) {

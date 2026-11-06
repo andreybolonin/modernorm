@@ -41,6 +41,15 @@ interface EntityManagerInterface extends ObjectManager
      */
     public function getCache(): Cache|null;
 
+    /** Load an entity by ID including a soft-deleted row; bypasses L2. */
+    public function findIncludingDeleted(string $className, mixed $id): ?object;
+
+    /** Restore a managed soft-deleted entity on the next flush. */
+    public function restore(object $entity): void;
+
+    /** Explicit physical deletion on the next flush. */
+    public function hardDelete(object $entity): void;
+
     /**
      * Gets the database connection object used by the EntityManager.
      */

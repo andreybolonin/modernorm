@@ -12,6 +12,7 @@ Start with the [project README](../README.md) for key features, installation and
 | Queries, hydration, joins and pagination | [SQL query API](sql-query-api.md) |
 | Automatic creation and update dates | [Timestampable trait](timestampable.md) |
 | Creation and update actor attribution | [Blameable behavior](blameable.md) |
+| Logical deletion, visibility and restoration | [SoftDelete policy](soft-delete.md) |
 | Immutable entities | [Immutable contract](immutable-entities.md) |
 | ManyToOne batching and shared settings | [Batch fetching](batch-fetching.md) |
 | OneToMany loading | [Collection batching](collection-batch-fetching.md) |

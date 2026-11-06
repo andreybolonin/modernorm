@@ -341,6 +341,12 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
      */
     public array $fieldMappings = [];
 
+    /** Built-in logical deletion field; null disables the policy. */
+    public ?string $softDeleteField = null;
+
+    /** @var list<string> Owning nullable associations that require visibility-aware eager loading. */
+    public array $softDeleteToOneAssociations = [];
+
     /**
      * READ-ONLY: An array of field names. Used to look up field names from column names.
      * Keys are column names and values are field names.
@@ -659,6 +665,8 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
         $serialized = [
             'associationMappings',
             'fieldMappings',
+            'softDeleteField',
+            'softDeleteToOneAssociations',
             'fieldNames',
             'embeddedClasses',
             'identifier',

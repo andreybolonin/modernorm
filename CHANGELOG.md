@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Add opt-in SoftDelete mapping and trait: logical `remove()`, explicit `restore()` / `hardDelete()`, query-local inclusion of deleted rows, repository/count/query-builder filtering and ordinary/batch collection visibility.
+- Nullable to-one SoftDelete targets use eager loading; mandatory targets, cascade remove/orphanRemoval, EXTRA_LAZY targets, Immutable and READ_ONLY L2 combinations are rejected. Flat entity L2 uses the existing INVALIDATE commit/rollback protocol. Bulk DELETE remains physical.
+- Extend EntityManagerInterface and its decorator with the SoftDelete API. Metadata uses cache salt V11; clear/version query-plan caches and restart workers when adopting changed mappings.
+
 - Add `#[Blameable(actorClass: User::class)]` to generate nullable actor associations for BlameableTrait without redeclaring properties. Compatible explicit ManyToOne mappings remain supported.
 
 ## 0.1.0-beta.4 — 2026-11-05
