@@ -15,6 +15,7 @@ class QueryBuilder extends SqlQueryBuilder
     /** @var array<string, EntityResultPlan> */
     private array $entities = [];
     private bool $includeDeleted = false;
+    private bool $deletedOnly = false;
     private array $joinedAliases = [];
 
     public function __construct(private readonly EntityManagerInterface $em)
@@ -38,11 +39,14 @@ class QueryBuilder extends SqlQueryBuilder
         if ($this->entities !== []) {
             throw new \LogicException('fromEntity defines one root. Use explicit joins and addJoinedEntity for associations.');
         }
+        $metadata = $this->em->getClassMetadata($class);
+        if ($this->deletedOnly && $metadata->softDeleteField === null) {
+            throw new \LogicException('onlyDeleted() requires a SoftDelete root entity.');
+        }
         $plan = EntityResultPlan::forEntity($this->em, $class, $alias);
         $this->entities[$alias] = $plan;
         $plan->apply($this->mapping, $class, $alias);
-        parent::select(...$plan->select)->from($this->entityTable($class, $plan->table), $alias);
-        $metadata = $this->em->getClassMetadata($class);
+        parent::select(...$plan->select)->from($this->entityTable($class, $plan->table, true), $alias);
         $number = 0;
         foreach ($metadata->softDeleteToOneAssociations as $field) {
             $association = $metadata->associationMappings[$field];
@@ -89,12 +93,27 @@ class QueryBuilder extends SqlQueryBuilder
             throw new \LogicException('withDeleted() must be called before fromEntity().');
         }
         $this->includeDeleted = true;
+        $this->deletedOnly = false;
         return $this;
     }
 
-    private function entityTable(string $class, string $table): string
+    /** Select deleted roots only; associations retain ordinary active visibility. */
+    public function onlyDeleted(): self
     {
-        $condition = $this->includeDeleted ? null : \ModernORM\Behavior\SoftDeletePolicy::activeCondition($this->em, $this->em->getClassMetadata($class));
+        if ($this->entities !== []) {
+            throw new \LogicException('onlyDeleted() must be called before fromEntity().');
+        }
+        $this->includeDeleted = false;
+        $this->deletedOnly = true;
+        return $this;
+    }
+
+    private function entityTable(string $class, string $table, bool $root = false): string
+    {
+        $metadata = $this->em->getClassMetadata($class);
+        $condition = $this->includeDeleted ? null : ($root && $this->deletedOnly
+            ? \ModernORM\Behavior\SoftDeletePolicy::deletedCondition($this->em, $metadata)
+            : \ModernORM\Behavior\SoftDeletePolicy::activeCondition($this->em, $metadata));
         return $condition === null ? $table : '(SELECT * FROM ' . $table . ' WHERE ' . $condition . ')';
     }
 

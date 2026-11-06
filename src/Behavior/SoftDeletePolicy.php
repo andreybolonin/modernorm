@@ -67,11 +67,21 @@ final class SoftDeletePolicy
 
     public static function activeCondition(EntityManagerInterface $em, ClassMetadata $class, string $alias = ''): ?string
     {
+        return self::condition($em, $class, $alias, false);
+    }
+
+    public static function deletedCondition(EntityManagerInterface $em, ClassMetadata $class, string $alias = ''): ?string
+    {
+        return self::condition($em, $class, $alias, true);
+    }
+
+    private static function condition(EntityManagerInterface $em, ClassMetadata $class, string $alias, bool $deleted): ?string
+    {
         if ($class->softDeleteField === null) {
             return null;
         }
         $column = $em->getConfiguration()->getQuoteStrategy()->getColumnName($class->softDeleteField, $class, $em->getConnection()->getDatabasePlatform());
 
-        return ($alias === '' ? '' : $alias . '.') . $column . ' IS NULL';
+        return ($alias === '' ? '' : $alias . '.') . $column . ($deleted ? ' IS NOT NULL' : ' IS NULL');
     }
 }

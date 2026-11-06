@@ -52,7 +52,15 @@ $includingDeleted = $em->createQueryBuilder()
     ->fromEntity(Document::class, 'd')
     ->orderBy('d.id', 'ASC')
     ->getQuery()->getResult();
+
+$trash = $em->createQueryBuilder()
+    ->onlyDeleted()
+    ->fromEntity(Document::class, 'd')
+    ->orderBy('d.id', 'ASC')
+    ->getQuery()->getResult();
 ```
+
+`onlyDeleted()` selects root entities whose deletion field is non-null. It requires a SoftDelete root; a non-SoftDelete root is rejected. Joined and independently loaded associations retain ordinary active visibility, so an active owner of a deleted document remains available. Use `withDeleted()` for inclusion of deleted entities in all explicitly mapped projections. Both modes must be chosen before `fromEntity()`; the last mode chosen before the projection wins. Cloning a builder preserves its mode without changing other builders.
 
 Visibility is local to the query; there is no global enable/disable flag to leak between requests/jobs. `findIncludingDeleted()` bypasses L2, while respecting the Identity Map. withDeleted includes deleted rows in explicitly mapped projections, not in later independently loaded associations.
 
@@ -67,6 +75,26 @@ $qb->addJoinedEntity(Document::class, 'd', 'f', 'documents')
 ```
 
 The reverse registration order is explicitly rejected for SoftDelete targets. Normal non-SoftDelete joins retain their existing API. Including the predicate inside the joined table preserves an owner with only deleted children when using LEFT JOIN.
+
+## Visibility and persistence lifecycle
+
+The following matrix applies after `flush()` to the same UnitOfWork and to freshly loaded contexts. Restore returns the row to ordinary visibility without changing its ID; repeated restore before flush is idempotent.
+
+| Loading path | Default | Explicit deleted visibility | After restore and flush |
+| --- | --- | --- | --- |
+| `find()` / `getReference()` | Active entities only, including Identity Map hits | `findIncludingDeleted()` includes either state | Same managed instance becomes visible again |
+| Repository find/count methods | Active rows only | Use a mapped QueryBuilder | Restored rows appear again |
+| Mapped QueryBuilder roots | Active rows only | `withDeleted()` includes both; `onlyDeleted()` selects deleted roots | Restored roots leave `onlyDeleted()` results |
+| Nullable to-one targets | Deleted targets resolve to null; visibility-aware eager loading replaces unchecked ghosts | `withDeleted()` includes explicitly fetch-joined targets; independently loaded associations stay active-only | Existing FKs reconnect on clear/reload |
+| Ordinary lazy and batch OneToMany / ManyToMany | Active members only | Explicit mapped joins can include deleted members with `withDeleted()` | Members reappear on clear/reload; join-table membership is preserved |
+| Identity Map | Reuses object identity without overriding an active-only lookup's deletion check | Inclusion queries reuse the same managed instance | Restore does not detach or replace the entity |
+| Flat entity L2 | Active payloads only | Inclusion and trash queries bypass L2 and do not publish tombstones | Invalidation precedes writes and follows commit; ordinary loading can refill the active payload |
+
+The regression suite exercises repeated remove/restore cycles, ordinary and batch collections, preloaded tombstones in the Identity Map, mapped joins, shared L2 across EntityManagers and rollback of both deletion and restoration. A failed restore leaves the database row deleted and absent from active L2 reads. Reset/discard the failed EntityManager before continuing.
+
+Visibility controls SQL row selection; it does not refresh application objects. Flush pending changes before comparing SQL results with the in-memory deletion field. Existing PHP references and initialized collections are not retroactively rewritten. A long-lived context does not discover another writer's changes solely through Identity Map hits: clear/reload at the application boundary. Inclusion modes apply to the current query, not subsequent queries or independently loaded associations.
+
+Native/raw SQL and custom result mappings follow caller-supplied predicates. Bulk BYPASS/CLEAR govern UnitOfWork state, not SoftDelete visibility: bulk DELETE remains physical. These explicit SQL/state boundaries are not SoftDelete-aware repository loading.
 
 ## Association boundary
 
@@ -86,7 +114,7 @@ Only the existing flat entity cache scope is supported. A cacheable SoftDelete e
 #[ORM\Cacheable(writePolicy: \ModernORM\Cache\CacheWritePolicy::INVALIDATE)]
 ```
 
-READ_ONLY cache and Immutable are incompatible with the required UPDATE. Logical deletion/restoration use the existing generation-based pre/post invalidation, commit/rollback handling and top-level ORM-owned cached-write transaction requirement. Cached tombstones are rejected; inclusion queries bypass L2 and do not publish deleted payloads. These writes retain the existing commit/invalidation crash-window and external-writer limitations; this feature does not add transactional outbox or caller-owned cached-write transaction support.
+READ_ONLY cache and Immutable are incompatible with the required UPDATE. Logical deletion/restoration use the existing generation-based pre/post invalidation, commit/rollback handling and top-level ORM-owned cached-write transaction requirement. Cached tombstones are rejected; inclusion and `onlyDeleted()` queries bypass L2 and do not publish deleted payloads. These writes retain the existing commit/invalidation crash-window and external-writer limitations; this feature does not add transactional outbox or caller-owned cached-write transaction support.
 
 ## Bulk and unique constraints
 

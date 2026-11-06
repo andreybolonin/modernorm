@@ -94,6 +94,14 @@ class ExtraLazySoftMappingSource
     public \Doctrine\Common\Collections\Collection $targets;
 }
 
+#[ORM\Entity, ORM\SoftDelete]
+class SoftMappingLinkedEntity
+{
+    use SoftDeleteTrait;
+    #[ORM\Id, ORM\Column] public int $id;
+    #[ORM\ManyToOne(targetEntity: SoftMappingEntity::class)] public ?SoftMappingEntity $target = null;
+}
+
 final class SoftDeleteMappingTest extends TestCase
 {
     private function manager(ArrayAdapter $cache): EntityManager
@@ -145,4 +153,45 @@ final class SoftDeleteMappingTest extends TestCase
         $this->expectException(\LogicException::class);
         $query->withDeleted();
     }
+
+    public function testOnlyDeletedMustBeChosenBeforeProjection(): void
+    {
+        $query = $this->manager(new ArrayAdapter())->createQueryBuilder()->fromEntity(SoftMappingEntity::class, 's');
+        $this->expectException(\LogicException::class);
+        $query->onlyDeleted();
+    }
+
+    public function testOnlyDeletedRequiresSoftDeleteRootAndLeavesBuilderReusable(): void
+    {
+        $query = $this->manager(new ArrayAdapter())->createQueryBuilder()->onlyDeleted();
+        try {
+            $query->fromEntity(NullableSoftMappingSource::class, 's');
+            self::fail('Expected a SoftDelete root requirement');
+        } catch (\LogicException $error) {
+            self::assertStringContainsString('SoftDelete root', $error->getMessage());
+        }
+        self::assertStringContainsString('IS NOT NULL', $query->fromEntity(SoftMappingEntity::class, 's')->getSQL());
+    }
+
+    public function testOnlyDeletedFiltersRootAndKeepsActiveJoinedTargets(): void
+    {
+        $query = $this->manager(new ArrayAdapter())->createQueryBuilder()->onlyDeleted()->fromEntity(SoftMappingLinkedEntity::class, 's');
+        self::assertSame(1, substr_count($query->getSQL(), ' IS NOT NULL'));
+        self::assertSame(1, substr_count($query->getSQL(), ' IS NULL'));
+    }
+
+    public function testVisibilityModesAreQueryLocalAndLastChoiceWinsBeforeProjection(): void
+    {
+        $em = $this->manager(new ArrayAdapter());
+        $base = $em->createQueryBuilder()->onlyDeleted();
+        $all = (clone $base)->withDeleted()->fromEntity(SoftMappingEntity::class, 's');
+        $deleted = $base->fromEntity(SoftMappingEntity::class, 's');
+        self::assertStringNotContainsString(' IS NULL', $all->getSQL());
+        self::assertStringNotContainsString(' IS NOT NULL', $all->getSQL());
+        self::assertStringContainsString(' IS NOT NULL', $deleted->getSQL());
+        self::assertStringContainsString(' IS NOT NULL', $em->createQueryBuilder()->withDeleted()->onlyDeleted()->fromEntity(SoftMappingEntity::class, 's')->getSQL());
+        self::assertStringContainsString(' IS NULL', $em->createQueryBuilder()->fromEntity(SoftMappingEntity::class, 's')->getSQL());
+        self::assertFalse($em->getConnection()->isConnected());
+    }
+
 }

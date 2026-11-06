@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add query-local `onlyDeleted()` for SoftDelete roots while preserving active association visibility; cover remove/restore symmetry across repositories, mapped queries, lazy/batch collections, Identity Map, shared L2 and rollback. Document the visibility/lifecycle matrix.
+
 - Add opt-in SoftDelete mapping and trait: logical `remove()`, explicit `restore()` / `hardDelete()`, query-local inclusion of deleted rows, repository/count/query-builder filtering and ordinary/batch collection visibility.
 - Nullable to-one SoftDelete targets use eager loading; mandatory targets, cascade remove/orphanRemoval, EXTRA_LAZY targets, Immutable and READ_ONLY L2 combinations are rejected. Flat entity L2 uses the existing INVALIDATE commit/rollback protocol. Bulk DELETE remains physical.
 - Extend EntityManagerInterface and its decorator with the SoftDelete API. Metadata uses cache salt V11; clear/version query-plan caches and restart workers when adopting changed mappings.
