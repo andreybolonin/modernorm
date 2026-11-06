@@ -23,7 +23,7 @@ final class StatisticsConnection extends AbstractConnectionMiddleware
     {
         $measurement = $this->statistics->start();
         try {
-            return new StatisticsStatement(parent::prepare($sql), $this->statistics);
+            return new StatisticsStatement(parent::prepare($sql), $this->statistics, DmlOperation::fromSql($sql));
         } catch (Throwable $exception) {
             // Successful prepare is not execution; failed prepare is one failed SQL attempt.
             if ($measurement !== null) {
@@ -39,13 +39,18 @@ final class StatisticsConnection extends AbstractConnectionMiddleware
         if ($measurement === null) {
             return parent::query($sql);
         }
+        $operation = DmlOperation::fromSql($sql);
+        $rows = null;
         $failed = true;
         try {
             $result = parent::query($sql);
             $failed = false;
+            if ($operation !== null) {
+                $rows = DmlDetails::rows($result);
+            }
             return $result;
         } finally {
-            $this->statistics->recordSql($measurement, $failed);
+            $this->statistics->recordSql($measurement, $failed, $operation, $rows);
         }
     }
 
@@ -55,13 +60,18 @@ final class StatisticsConnection extends AbstractConnectionMiddleware
         if ($measurement === null) {
             return parent::exec($sql);
         }
+        $operation = DmlOperation::fromSql($sql);
+        $rows = null;
         $failed = true;
         try {
             $result = parent::exec($sql);
             $failed = false;
+            if ($operation !== null) {
+                $rows = DmlDetails::rows($result);
+            }
             return $result;
         } finally {
-            $this->statistics->recordSql($measurement, $failed);
+            $this->statistics->recordSql($measurement, $failed, $operation, $rows);
         }
     }
 }

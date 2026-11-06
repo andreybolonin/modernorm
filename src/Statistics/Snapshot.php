@@ -19,6 +19,7 @@ final readonly class Snapshot
         public BulkSnapshot $bulk = new BulkSnapshot(),
         public HydrationSnapshot $hydration = new HydrationSnapshot(),
         public UnitOfWorkSnapshot $unitOfWork = new UnitOfWorkSnapshot(),
+        public DmlSnapshot $dml = new DmlSnapshot(),
     ) {
     }
 

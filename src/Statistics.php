@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace ModernORM;
 
 use ModernORM\Statistics\Measurement;
+use ModernORM\Statistics\DmlOperation;
+use ModernORM\Statistics\DmlDetails;
+use ModernORM\Statistics\DmlSnapshot;
+use ModernORM\Statistics\DmlOperationSnapshot;
 use ModernORM\Statistics\BatchKind;
 use ModernORM\Statistics\BatchFallbackReason;
 use ModernORM\Statistics\BatchMeasurement;
@@ -34,6 +38,8 @@ final class Statistics
     private int $flushTimeNanoseconds = 0;
     private int $flushErrors = 0;
 
+    /** @var array<string, DmlOperationSnapshot> */
+    private array $dml = [];
     private array $batches = [];
     private int $observerErrors = 0;
     private bool $notifying = false;
@@ -79,6 +85,7 @@ final class Statistics
         $this->sqlCount = $this->sqlTimeNanoseconds = $this->sqlErrors = 0;
         $this->flushCount = $this->flushTimeNanoseconds = $this->flushErrors = 0;
         $this->batches = [];
+        $this->dml = [];
         $this->observerErrors = 0;
         $this->bulk = new BulkSnapshot();
         $this->hydration = new HydrationSnapshot();
@@ -100,6 +107,7 @@ final class Statistics
             $this->bulk,
             $this->hydration,
             new UnitOfWorkSnapshot($this->phases),
+            new DmlSnapshot($this->dml['insert'] ?? new DmlOperationSnapshot(), $this->dml['update'] ?? new DmlOperationSnapshot(), $this->dml['delete'] ?? new DmlOperationSnapshot()),
         );
     }
 
@@ -127,7 +135,7 @@ final class Statistics
     }
 
     /** @internal Counts failed preparation or an execution attempt; never SQL text or parameters. */
-    public function recordSql(Measurement $measurement, bool $failed): void
+    public function recordSql(Measurement $measurement, bool $failed, ?DmlOperation $operation = null, ?int $affectedRows = null): void
     {
         if (! $this->enabled || $measurement->generation !== $this->generation) {
             return;
@@ -136,7 +144,22 @@ final class Statistics
         $this->sqlErrors += (int) $failed;
         $duration = hrtime(true) - $measurement->startedAt;
         $this->sqlTimeNanoseconds += $duration;
-        $this->operationCompleted(OperationKind::SQL, $measurement, $duration, $failed);
+        $details = null;
+        if ($operation !== null) {
+            $old = $this->dml[$operation->value] ?? new DmlOperationSnapshot();
+            $rows = $failed ? null : $affectedRows;
+            $this->dml[$operation->value] = new DmlOperationSnapshot(
+                $old->count + 1,
+                $old->errors + (int) $failed,
+                $old->timeNanoseconds + $duration,
+                $old->affectedRows + ($rows ?? 0),
+                $old->unknownRowCounts + (int) (!$failed && $rows === null),
+            );
+            if ($this->observer !== null) {
+                $details = new DmlDetails($operation, $rows);
+            }
+        }
+        $this->operationCompleted(OperationKind::SQL, $measurement, $duration, $failed, $details);
     }
 
     /** @internal A flush error is an exception from any flush phase, not proof of rollback. */
@@ -373,10 +396,10 @@ final class Statistics
         return new BatchSnapshot(...$totals, byKind: $byKind);
     }
 
-    private function operationCompleted(OperationKind $kind, Measurement $measurement, int $duration, bool $failed): void
+    private function operationCompleted(OperationKind $kind, Measurement $measurement, int $duration, bool $failed, ?DmlDetails $dml = null): void
     {
         if ($this->observer !== null) {
-            $this->emit(new OperationEvent($kind, $measurement->startedAtUnixNanoseconds, $duration, $failed), $measurement->generation);
+            $this->emit(new OperationEvent($kind, $measurement->startedAtUnixNanoseconds, $duration, $failed, dml: $dml), $measurement->generation);
         }
     }
 

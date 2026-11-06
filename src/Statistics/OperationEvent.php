@@ -26,6 +26,7 @@ final readonly class OperationEvent
         public ?HydrationDetails $hydration = null,
         public ?UnitOfWorkDetails $unitOfWork = null,
         public ?int $finishedAtUnixNanoseconds = null,
+        public ?DmlDetails $dml = null,
     ) {
     }
 

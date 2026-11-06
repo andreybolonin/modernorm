@@ -104,7 +104,7 @@ final class StatisticsTest extends TestCase
         self::assertSame($snapshot->sqlTimeNanoseconds / 1_000_000, $snapshot->sqlTimeMilliseconds());
         self::assertSame(0.0, $snapshot->flushTimeMilliseconds());
         self::assertSame([
-            'sqlCount', 'sqlTimeNanoseconds', 'sqlErrors', 'flushCount', 'flushTimeNanoseconds', 'flushErrors', 'batch', 'observerErrors', 'bulk', 'hydration', 'unitOfWork',
+            'sqlCount', 'sqlTimeNanoseconds', 'sqlErrors', 'flushCount', 'flushTimeNanoseconds', 'flushErrors', 'batch', 'observerErrors', 'bulk', 'hydration', 'unitOfWork', 'dml',
         ], array_keys(get_object_vars($snapshot)));
     }
 
@@ -375,6 +375,50 @@ final class StatisticsTest extends TestCase
         } finally {
             $connection->close();
         }
+    }
+
+
+    public function testExecutedDmlAcrossFlushBulkFailureZeroRowsAndRollback(): void
+    {
+        $db = $this->em->getConnection();
+        $first = new StatisticsRecord(1, 'first');
+        $second = new StatisticsRecord(2, 'second');
+        $this->em->persist($first);
+        $this->em->persist($second);
+        $this->em->flush();
+        self::assertSame(2, $this->statistics->snapshot()->dml->insert->count);
+        self::assertSame(2, $this->statistics->snapshot()->dml->insert->affectedRows);
+        $first->name = 'updated';
+        $this->em->flush();
+        self::assertSame(1, $this->statistics->snapshot()->dml->update->count);
+        $statement = $db->prepare('UPDATE modernorm_test_statistics SET name = :name WHERE id = :id');
+        $statement->bindValue('name', 'prepared');
+        $statement->bindValue('id', 1);
+        $statement->executeStatement();
+        $statement->bindValue('id', -1);
+        $statement->executeStatement();
+        self::assertSame(3, $this->statistics->snapshot()->dml->update->count);
+        self::assertSame(2, $this->statistics->snapshot()->dml->update->affectedRows);
+        $result = $this->em->bulk()->update(StatisticsRecord::class, ['name' => 'bulk'], 'id = 1', \ModernORM\Bulk\BulkPolicy::CLEAR, returning: ['id']);
+        self::assertSame(1, $result->affectedRows);
+        self::assertSame(4, $this->statistics->snapshot()->dml->update->count);
+        $db->beginTransaction();
+        self::assertSame(1, $db->executeStatement('DELETE FROM modernorm_test_statistics WHERE id = 2'));
+        $db->rollBack();
+        self::assertSame(1, $this->statistics->snapshot()->dml->delete->count);
+        self::assertSame(1, $this->statistics->snapshot()->dml->delete->affectedRows);
+        self::assertSame(1, (int) $db->fetchOne('SELECT COUNT(*) FROM modernorm_test_statistics WHERE id = 2'));
+        try {
+            $db->executeStatement("INSERT INTO modernorm_test_statistics VALUES (1, 'duplicate')");
+            self::fail();
+        } catch (UniqueConstraintViolationException) {
+        }
+        self::assertSame(3, $this->statistics->snapshot()->dml->insert->count);
+        self::assertSame(1, $this->statistics->snapshot()->dml->insert->errors);
+        self::assertSame(2, $this->statistics->snapshot()->dml->insert->affectedRows);
+        self::assertSame(0, $this->statistics->snapshot()->dml->insert->unknownRowCounts);
+        $db->executeQuery('WITH removed AS (DELETE FROM modernorm_test_statistics WHERE id = -1 RETURNING id) SELECT * FROM removed')->fetchAllAssociative();
+        self::assertSame(1, $this->statistics->snapshot()->dml->delete->count, 'Native CTE stays SQL-only rather than guessing its write effects.');
     }
 
 }
