@@ -262,39 +262,10 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
      */
     public bool $isEmbeddedClass = false;
 
-    /**
-     * READ-ONLY: The names of the parent <em>entity</em> classes (ancestors), starting with the
-     * nearest one and ending with the root entity class.
-     *
-     * @phpstan-var list<class-string>
-     */
+    /** @phpstan-var list<class-string> Legacy inheritance state, retained only for rejection/diagnostics. */
     public array $parentClasses = [];
 
-    /**
-     * READ-ONLY: For classes in inheritance mapping hierarchies, this field contains the names of all
-     * <em>entity</em> subclasses of this class. These may also be abstract classes.
-     *
-     * This list is used, for example, to enumerate all necessary tables in JTI when querying for root
-     * or subclass entities, or to gather all fields comprised in an entity inheritance tree.
-     *
-     * For classes that do not use STI/JTI, this list is empty.
-     *
-     * Implementation note:
-     *
-     * In PHP, there is no general way to discover all subclasses of a given class at runtime. For that
-     * reason, the list of classes given in the discriminator map at the root entity is considered
-     * authoritative. The discriminator map must contain all <em>concrete</em> classes that can
-     * appear in the particular inheritance hierarchy tree. Since there can be no instances of abstract
-     * entity classes, users are not required to list such classes with a discriminator value.
-     *
-     * The possibly remaining "gaps" for abstract entity classes are filled after the class metadata for the
-     * root entity has been loaded.
-     *
-     * For subclasses of such root entities, the list can be reused/passed downwards, it only needs to
-     * be filtered accordingly (only keep remaining subclasses)
-     *
-     * @phpstan-var list<class-string>
-     */
+    /** @phpstan-var list<class-string> Legacy inheritance state, retained only for rejection/diagnostics. */
     public array $subClasses = [];
 
     /**
@@ -313,7 +284,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     public array $identifier = [];
 
     /**
-     * READ-ONLY: The position of each identifier field, used to control the order of composite primary key fields.
+     * Legacy identifier ordering metadata retained for mapping diagnostics.
      *
      * @phpstan-var array<string, int>
      */
@@ -355,34 +326,13 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
      */
     public array $fieldNames = [];
 
-    /**
-     * READ-ONLY: The discriminator value of this class.
-     *
-     * <b>This does only apply to the JOINED and SINGLE_TABLE inheritance mapping strategies
-     * where a discriminator column is used.</b>
-     *
-     * @see discriminatorColumn
-     */
+    /** Legacy discriminator state, retained only for rejection/diagnostics. */
     public mixed $discriminatorValue = null;
 
-    /**
-     * READ-ONLY: The discriminator map of all mapped classes in the hierarchy.
-     *
-     * <b>This does only apply to the JOINED and SINGLE_TABLE inheritance mapping strategies
-     * where a discriminator column is used.</b>
-     *
-     * @see discriminatorColumn
-     *
-     * @var array<int|string, string>
-     *
-     * @phpstan-var array<int|string, class-string>
-     */
+    /** @phpstan-var array<int|string, class-string> Legacy discriminator state, retained only for rejection/diagnostics. */
     public array $discriminatorMap = [];
 
-    /**
-     * READ-ONLY: The definition of the discriminator column used in JOINED and SINGLE_TABLE
-     * inheritance mappings.
-     */
+    /** Legacy discriminator state, retained only for rejection/diagnostics. */
     public DiscriminatorColumnMapping|null $discriminatorColumn = null;
 
     /**
@@ -573,27 +523,10 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     /**
      * Extracts the identifier values of an entity of this class.
      *
-     * For composite identifiers, the identifier values are returned as an array
-     * with the same order as the field order in {@link identifier}.
-     *
      * @return array<string, mixed>
      */
     public function getIdentifierValues(object $entity): array
     {
-        if ($this->isIdentifierComposite) {
-            $id = [];
-
-            foreach ($this->identifier as $idField) {
-                $value = $this->propertyAccessors[$idField]->getValue($entity);
-
-                if ($value !== null) {
-                    $id[$idField] = $value;
-                }
-            }
-
-            return $id;
-        }
-
         $id    = $this->identifier[0];
         $value = $this->propertyAccessors[$id]->getValue($entity);
 
@@ -671,7 +604,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
             'embeddedClasses',
             'identifier',
             'identifierPositions',
-            'isIdentifierComposite', // TODO: REMOVE
+            'isIdentifierComposite', // Retain legacy-state rejection when restoring metadata.
             'name',
             'namespace', // TODO: REMOVE
             'table',
@@ -871,10 +804,6 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
         if (! $this->identifier) {
             throw MappingException::identifierRequired($this->name);
         }
-
-        if ($this->usesIdGenerator() && $this->isIdentifierComposite) {
-            throw MappingException::compositeKeyAssignedIdGeneratorRequired($this->name);
-        }
     }
 
     /**
@@ -953,11 +882,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
             return false;
         }
 
-        if (! $this->isIdentifierComposite) {
-            return $fieldName === $this->identifier[0];
-        }
-
-        return in_array($fieldName, $this->identifier, true);
+        return $fieldName === $this->identifier[0];
     }
 
     public function isUniqueField(string $fieldName): bool
@@ -1136,7 +1061,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
         }
 
 
-        if (isset($this->fieldNames[$mapping->columnName]) || ($this->discriminatorColumn && $this->discriminatorColumn->name === $mapping->columnName)) {
+        if (isset($this->fieldNames[$mapping->columnName])) {
             throw MappingException::duplicateColumnName($this->name, $mapping->columnName);
         }
 
@@ -1236,31 +1161,8 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
             throw MappingException::illegalOrphanRemoval($this->name, $mapping['fieldName']);
         }
 
-        // Complete id mapping
-        if (isset($mapping['id']) && $mapping['id'] === true) {
-            if (isset($mapping['orphanRemoval']) && $mapping['orphanRemoval']) {
-                throw MappingException::illegalOrphanRemovalOnIdentifierAssociation($this->name, $mapping['fieldName']);
-            }
-
-            if (! in_array($mapping['fieldName'], $this->identifier, true)) {
-                if (isset($mapping['joinColumns']) && count($mapping['joinColumns']) >= 2) {
-                    throw MappingException::cannotMapCompositePrimaryKeyEntitiesAsForeignId(
-                        $mapping['targetEntity'],
-                        $this->name,
-                        $mapping['fieldName'],
-                    );
-                }
-
-                assert(is_string($mapping['fieldName']));
-                $this->registerIdentifierField($mapping['fieldName'], $mapping['idPosition'] ?? null);
-                $this->containsForeignIdentifier = true;
-            }
-
-            // Check for composite key
-            if (! $this->isIdentifierComposite && count($this->identifier) > 1) {
-                $this->isIdentifierComposite = true;
-            }
-
+        if (! empty($mapping['id'])) {
+            throw new MappingException('ModernORM requires one scalar field as the entity primary key: ' . $this->name);
         }
 
         unset($mapping['idPosition']);
@@ -1327,7 +1229,6 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
                         $this->namingStrategy,
                         $this->name,
                         $this->table ?? null,
-                        $this->isInheritanceTypeSingleTable(),
                     ) :
                     OneToOneInverseSideMapping::fromMappingArrayAndName($mapping, $this->name);
 
@@ -1337,7 +1238,6 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
                     $this->namingStrategy,
                     $this->name,
                     $this->table ?? null,
-                    $this->isInheritanceTypeSingleTable(),
                 );
 
             case self::ONE_TO_MANY:
@@ -1457,24 +1357,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
      */
     public function getIdentifierColumnNames(): array
     {
-        $columnNames = [];
-
-        foreach ($this->identifier as $idProperty) {
-            if (isset($this->fieldMappings[$idProperty])) {
-                $columnNames[] = $this->fieldMappings[$idProperty]->columnName;
-
-                continue;
-            }
-
-            // Association defined as Id field
-            assert($this->associationMappings[$idProperty]->isToOneOwningSide());
-            $joinColumns      = $this->associationMappings[$idProperty]->joinColumns;
-            $assocColumnNames = array_map(static fn (JoinColumnMapping $joinColumn): string => $joinColumn->name, $joinColumns);
-
-            $columnNames = array_merge($columnNames, $assocColumnNames);
-        }
-
-        return $columnNames;
+        return $this->identifier === [] ? [] : [$this->getColumnName($this->identifier[0])];
     }
 
     /**
@@ -1616,7 +1499,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
         $this->rootEntityName = $this->name;
     }
 
-    /** Reject removed entity inheritance, including metadata restored from cache or modified by listeners. */
+    /** Reject composite/association identifiers, including legacy cached metadata and listener changes. */
     public function assertSupportedIdentifier(): void
     {
         if ($this->isIdentifierComposite || count($this->identifier) > 1 || $this->containsForeignIdentifier

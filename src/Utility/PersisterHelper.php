@@ -259,18 +259,6 @@ class PersisterHelper
             return [$value];
         }
 
-        $class = $em->getClassMetadata($valueClass);
-
-        if ($class->isIdentifierComposite) {
-            $newValue = [];
-
-            foreach ($class->getIdentifierValues($value) as $innerValue) {
-                $newValue = array_merge($newValue, self::convertToParameterValue($innerValue, $em));
-            }
-
-            return $newValue;
-        }
-
         return [$em->getUnitOfWork()->getSingleIdentifierValue($value)];
     }
 }

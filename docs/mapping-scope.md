@@ -35,7 +35,9 @@ Import `use ModernORM\Mapping as ORM`; Doctrine mapping aliases are not provided
 
 SINGLE_TABLE/JOINED persisters, discriminator dispatch, subclass/table projection joins, polymorphic hydration and fluent inheritance helpers are removed. InheritanceType, DiscriminatorColumn and DiscriminatorMap raise MappingException. An Entity extending another Entity is rejected even without these attributes. Replace an abstract Entity with MappedSuperclass or concrete composition.
 
-Validation runs when reading attributes, after metadata listeners and when restoring cached metadata. Inheritance metadata setters and discriminator ResultSetMapping are also rejected.
+Validation runs when reading attributes, after metadata listeners and when restoring cached metadata. Inheritance metadata setters and discriminator ResultSetMapping are also rejected. Runtime hydration, Identity Map, identifier generation and persister paths no longer implement composite/association identifiers, recursive identifier references or subclass loading. Concrete class names identify entities directly. Legacy metadata flags and discriminator fields remain only for explicit rejection, cache restoration and diagnostic tools; they do not enable an alternate persistence mode.
+
+Composite UNIQUE constraints and multi-column join-table primary keys are independent of composite entity IDs. Their column loops and schema generation remain supported; regression checks include a string owner ID stored under a non-default column name. MappedSuperclass/ordinary PHP inheritance, enum IDs, native lazy loading, batching and explicit fetch joins continue to use the scalar-ID paths.
 
 MappedSuperclass and ordinary PHP inheritance from a non-Entity class remain supported:
 

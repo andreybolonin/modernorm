@@ -14,12 +14,10 @@ use ReflectionMethod;
 
 use function array_fill_keys;
 use function array_keys;
-use function array_map;
 use function assert;
 use function count;
 use function is_array;
 use function key;
-use function ltrim;
 use function spl_object_id;
 
 /**
@@ -258,26 +256,7 @@ class ObjectHydrator extends AbstractHydrator
         // TODO: Abstract this code and UnitOfWork::createEntity() equivalent?
         $class = $this->metadataCache[$className];
 
-        if ($class->isIdentifierComposite) {
-            $idHash = UnitOfWork::getIdHashByIdentifier(
-                array_map(
-                    /** @return mixed */
-                    static fn (string $fieldName) => isset($class->associationMappings[$fieldName]) && assert($class->associationMappings[$fieldName]->isToOneOwningSide())
-                        ? $data[$class->associationMappings[$fieldName]->joinColumns[0]->name]
-                        : $data[$fieldName],
-                    $class->identifier,
-                ),
-            );
-
-            return $this->uow->tryGetByIdHash(ltrim($idHash), $class->rootEntityName);
-        } elseif (isset($class->associationMappings[$class->identifier[0]])) {
-            $association = $class->associationMappings[$class->identifier[0]];
-            assert($association->isToOneOwningSide());
-
-            return $this->uow->tryGetByIdHash($data[$association->joinColumns[0]->name], $class->rootEntityName);
-        }
-
-        return $this->uow->tryGetByIdHash($data[$class->identifier[0]], $class->rootEntityName);
+        return $this->uow->tryGetByIdHash($data[$class->identifier[0]], $class->name);
     }
 
     /**

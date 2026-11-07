@@ -173,10 +173,6 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
 
         if (! $class->isMappedSuperclass) {
             foreach ($class->embeddedClasses as $property => $embeddableClass) {
-                if (isset($embeddableClass->inherited)) {
-                    continue;
-                }
-
                 if (isset($this->embeddablesActiveNesting[$embeddableClass->class])) {
                     throw MappingException::infiniteEmbeddableNesting($class->name, $property);
                 }
@@ -206,10 +202,6 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
 
             if ($parent->cache) {
                 $class->cache = $parent->cache;
-            }
-
-            if ($parent->containsForeignIdentifier) {
-                $class->containsForeignIdentifier = true;
             }
 
             if ($parent->containsEnumIdentifier) {
@@ -272,7 +264,7 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
     }
 
     /**
-     * Puts the `inherited` and `declared` values into mapping information for fields, associations
+     * Records the declaring class into mapping information for fields, associations
      * and embedded classes.
      */
     private function addMappingInheritanceInformation(
@@ -310,15 +302,8 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
         foreach ($parentClass->associationMappings as $field => $mapping) {
             $subClassMapping = clone $mapping;
             $this->addMappingInheritanceInformation($subClassMapping, $parentClass);
-            // When the class inheriting the relation ($subClass) is the first entity class since the
-            // relation has been defined in a mapped superclass (or in a chain
-            // of mapped superclasses) above, then declare this current entity class as the source of
-            // the relationship.
-            // According to the definitions given in https://github.com/doctrine/orm/pull/10396/,
-            // this is the case <=> ! isset($mapping['inherited']).
-            if (! isset($subClassMapping->inherited)) {
-                $subClassMapping->sourceEntity = $subClass->name;
-            }
+            // The parent is a MappedSuperclass; the concrete entity owns its copied relation.
+            $subClassMapping->sourceEntity = $subClass->name;
 
             $subClass->addInheritedAssociationMapping($subClassMapping);
         }
@@ -346,10 +331,6 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
         string $prefix,
     ): void {
         foreach ($subClass->embeddedClasses as $property => $embeddableClass) {
-            if (isset($embeddableClass->inherited)) {
-                continue;
-            }
-
             $embeddableMetadata = $this->getMetadataFor($embeddableClass->class);
 
             $parentClass->mapEmbedded(

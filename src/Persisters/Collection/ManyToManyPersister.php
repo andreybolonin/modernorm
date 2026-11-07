@@ -13,7 +13,6 @@ use ModernORM\PersistentCollection;
 use ModernORM\Utility\PersisterHelper;
 
 use function array_fill;
-use function array_pop;
 use function assert;
 use function count;
 use function implode;
@@ -234,22 +233,7 @@ class ManyToManyPersister extends AbstractCollectionPersister
         assert($mapping->isManyToManyOwningSide());
         $identifier = $this->uow->getEntityIdentifier($collection->getOwner());
 
-        // Optimization for single column identifier
-        if (count($mapping->relationToSourceKeyColumns) === 1) {
-            return [reset($identifier)];
-        }
-
-        // Composite identifier
-        $sourceClass = $this->em->getClassMetadata($mapping->sourceEntity);
-        $params      = [];
-
-        foreach ($mapping->relationToSourceKeyColumns as $columnName => $refColumnName) {
-            $params[] = isset($sourceClass->fieldNames[$refColumnName])
-                ? $identifier[$sourceClass->fieldNames[$refColumnName]]
-                : $identifier[$sourceClass->getFieldForColumn($refColumnName)];
-        }
-
-        return $params;
+        return array_fill(0, count($mapping->relationToSourceKeyColumns), reset($identifier));
     }
 
     /**
@@ -362,33 +346,13 @@ class ManyToManyPersister extends AbstractCollectionPersister
         $params  = [];
         $mapping = $this->getMapping($collection);
         assert($mapping->isManyToManyOwningSide());
-        $isComposite = count($mapping->joinTableColumns) > 2;
-
-        $identifier1 = $this->uow->getEntityIdentifier($collection->getOwner());
-        $identifier2 = $this->uow->getEntityIdentifier($element);
-
-        $class1 = $class2 = null;
-        if ($isComposite) {
-            $class1 = $this->em->getClassMetadata($collection->getOwner()::class);
-            $class2 = $collection->getTypeClass();
-        }
+        $sourceIdentifier = $this->uow->getEntityIdentifier($collection->getOwner());
+        $targetIdentifier = $this->uow->getEntityIdentifier($element);
+        $sourceId = reset($sourceIdentifier);
+        $targetId = reset($targetIdentifier);
 
         foreach ($mapping->joinTableColumns as $joinTableColumn) {
-            $isRelationToSource = isset($mapping->relationToSourceKeyColumns[$joinTableColumn]);
-
-            if (! $isComposite) {
-                $params[] = $isRelationToSource ? array_pop($identifier1) : array_pop($identifier2);
-
-                continue;
-            }
-
-            if ($isRelationToSource) {
-                $params[] = $identifier1[$class1->getFieldForColumn($mapping->relationToSourceKeyColumns[$joinTableColumn])];
-
-                continue;
-            }
-
-            $params[] = $identifier2[$class2->getFieldForColumn($mapping->relationToTargetKeyColumns[$joinTableColumn])];
+            $params[] = isset($mapping->relationToSourceKeyColumns[$joinTableColumn]) ? $sourceId : $targetId;
         }
 
         return $params;
@@ -457,9 +421,7 @@ class ManyToManyPersister extends AbstractCollectionPersister
             if (isset($mapping->{$sourceRelationMode}[$joinTableColumn])) {
                 $column         = $mapping->{$sourceRelationMode}[$joinTableColumn];
                 $whereClauses[] = 't.' . $joinTableColumn . ' = ?';
-                $params[]       = $sourceClass->containsForeignIdentifier
-                    ? $id[$sourceClass->getFieldForColumn($column)]
-                    : $id[$sourceClass->fieldNames[$column]];
+                $params[]       = $id[$sourceClass->fieldNames[$column]];
                 $types[]        = PersisterHelper::getTypeOfColumn($column, $sourceClass, $this->em);
             } elseif (! $joinNeeded) {
                 $column = $mapping->{$targetRelationMode}[$joinTableColumn];

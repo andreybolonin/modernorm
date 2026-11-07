@@ -148,15 +148,6 @@ class OneToManyPersister extends AbstractCollectionPersister
         return $numAffected;
     }
 
-    /**
-     * Delete Class Table Inheritance entities.
-     * A temporary table is needed to keep IDs to be deleted in both parent and child class' tables.
-     *
-     * Thanks Steve Ebersole (Hibernate) for idea on how to tackle reliably this scenario, we owe him a beer! =)
-     *
-     * @throws DBALException
-     */
-
     private function getMapping(PersistentCollection $collection): OneToManyAssociationMapping
     {
         $mapping = $collection->getMapping();

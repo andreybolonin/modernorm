@@ -8,8 +8,6 @@ use Doctrine\DBAL\Platforms\AbstractPlatform;
 use ModernORM\Internal\SQLResultCasing;
 
 use function array_map;
-use function array_merge;
-use function assert;
 use function explode;
 use function implode;
 use function is_numeric;
@@ -110,30 +108,7 @@ class DefaultQuoteStrategy implements QuoteStrategy
      */
     public function getIdentifierColumnNames(ClassMetadata $class, AbstractPlatform $platform): array
     {
-        $quotedColumnNames = [];
-
-        foreach ($class->identifier as $fieldName) {
-            if (isset($class->fieldMappings[$fieldName])) {
-                $quotedColumnNames[] = $this->getColumnName($fieldName, $class, $platform);
-
-                continue;
-            }
-
-            // Association defined as Id field
-            $assoc = $class->associationMappings[$fieldName];
-            assert($assoc->isToOneOwningSide());
-            $joinColumns            = $assoc->joinColumns;
-            $assocQuotedColumnNames = array_map(
-                static fn (JoinColumnMapping $joinColumn) => isset($joinColumn->quoted)
-                    ? $platform->quoteSingleIdentifier($joinColumn->name)
-                    : $joinColumn->name,
-                $joinColumns,
-            );
-
-            $quotedColumnNames = array_merge($quotedColumnNames, $assocQuotedColumnNames);
-        }
-
-        return $quotedColumnNames;
+        return $class->identifier === [] ? [] : [$this->getColumnName($class->identifier[0], $class, $platform)];
     }
 
     public function getColumnAlias(

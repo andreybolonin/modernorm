@@ -576,7 +576,7 @@ abstract class AbstractHydrator
                 ];
 
             case isset($this->rsm->metaMappings[$key]):
-                // Meta column (has meaning in relational schema only, i.e. foreign keys or discriminator columns).
+                // Meta column (foreign keys and other mapped relational values).
                 $fieldName = $this->rsm->metaMappings[$key];
                 $resultAlias  = $this->rsm->columnOwnerMap[$key];
                 $type      = isset($this->rsm->typeMappings[$key])
@@ -622,22 +622,8 @@ abstract class AbstractHydrator
      */
     protected function registerManaged(ClassMetadata $class, object $entity, array $data): void
     {
-        if ($class->isIdentifierComposite) {
-            $id = [];
-
-            foreach ($class->identifier as $fieldName) {
-                $id[$fieldName] = isset($class->associationMappings[$fieldName]) && $class->associationMappings[$fieldName]->isToOneOwningSide()
-                    ? $data[$class->associationMappings[$fieldName]->joinColumns[0]->name]
-                    : $data[$fieldName];
-            }
-        } else {
-            $fieldName = $class->identifier[0];
-            $id        = [
-                $fieldName => isset($class->associationMappings[$fieldName]) && $class->associationMappings[$fieldName]->isToOneOwningSide()
-                    ? $data[$class->associationMappings[$fieldName]->joinColumns[0]->name]
-                    : $data[$fieldName],
-            ];
-        }
+        $fieldName = $class->identifier[0];
+        $id = [$fieldName => $data[$fieldName]];
 
         $this->em->getUnitOfWork()->registerManaged($entity, $id, $data);
     }

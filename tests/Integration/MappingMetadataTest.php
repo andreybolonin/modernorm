@@ -42,6 +42,24 @@ final class MappingDefaultsRecord
     public string|null $optional = null;
 }
 
+#[ORM\Entity]
+class ScalarSchemaTarget
+{
+    #[ORM\Id, ORM\Column] public int $id;
+}
+
+#[ORM\Entity]
+#[ORM\UniqueConstraint(name: 'scalar_owner_tenant_code', fields: ['tenant', 'code'])]
+class ScalarOwnerWithCompositeConstraints
+{
+    #[ORM\Id, ORM\Column(name: 'owner_key')] public string $id;
+    #[ORM\Column] public string $tenant;
+    #[ORM\Column] public string $code;
+    #[ORM\ManyToMany(targetEntity: ScalarSchemaTarget::class)]
+    #[ORM\JoinTable(name: 'scalar_owner_targets', joinColumns: [new ORM\JoinColumn(name: 'owner_id', referencedColumnName: 'owner_key')], inverseJoinColumns: [new ORM\JoinColumn(name: 'target_id')])]
+    public \Doctrine\Common\Collections\Collection $targets;
+}
+
 final class MappingMetadataTest extends TestCase
 {
     private EntityManager $em;
@@ -63,6 +81,23 @@ final class MappingMetadataTest extends TestCase
     protected function tearDown(): void
     {
         $this->em->getConnection()->close();
+    }
+
+    public function testScalarEntityIdsRetainCompositeUniqueAndJoinTablePrimaryKeys(): void
+    {
+        $em = $this->em;
+        $owner = $em->getClassMetadata(ScalarOwnerWithCompositeConstraints::class);
+        $target = $em->getClassMetadata(ScalarSchemaTarget::class);
+        $schema = (new SchemaTool($em))->getSchemaFromMetadata([$owner, $target]);
+        $table = $schema->getTable($owner->getTableName());
+        self::assertSame(['owner_key'], $table->getPrimaryKey()->getColumns());
+        self::assertSame(['tenant', 'code'], $table->getIndex('scalar_owner_tenant_code')->getColumns());
+        $join = $schema->getTable('scalar_owner_targets');
+        self::assertSame(['owner_id', 'target_id'], $join->getPrimaryKey()->getColumns());
+        self::assertCount(2, $join->getForeignKeys());
+        foreach ($join->getForeignKeys() as $foreignKey) {
+            self::assertSame($foreignKey->getForeignTableName() === $owner->getTableName() ? ['owner_key'] : ['id'], $foreignKey->getForeignColumns());
+        }
     }
 
     public function testColumnOverrideAndReverseLookupSurviveSerialization(): void

@@ -137,6 +137,46 @@ final class MappingScopeTest extends TestCase
         $em->getClassMetadata(ScopeEntity::class);
     }
 
+    public static function legacyInheritanceStates(): iterable
+    {
+        yield 'strategy' => ['inheritanceType', ClassMetadata::INHERITANCE_TYPE_JOINED];
+        yield 'subclasses' => ['subClasses', [UnsupportedEntityChild::class]];
+        yield 'parents' => ['parentClasses', [ScopeEntity::class]];
+        yield 'discriminator map' => ['discriminatorMap', ['child' => UnsupportedEntityChild::class]];
+        yield 'discriminator value' => ['discriminatorValue', 'child'];
+    }
+
+    #[DataProvider('legacyInheritanceStates')]
+    public function testLegacySerializedInheritanceStateCannotEnableRuntimeBranches(string $property, mixed $value): void
+    {
+        $cache = new ArrayAdapter(storeSerialized: false);
+        $first = $this->manager($cache);
+        $metadata = $first->getClassMetadata(ScopeEntity::class);
+        $payload = serialize($metadata);
+        // Build a legacy serialized payload: these properties are absent from valid metadata.
+        $payload = preg_replace_callback(
+            '/^(O:\d+:"[^"]+":)(\d+)(:\{)/',
+            static fn (array $parts): string => $parts[1] . ((int) $parts[2] + 1) . $parts[3],
+            $payload,
+            1,
+        );
+        self::assertNotNull($payload);
+        $payload = substr($payload, 0, -1) . serialize($property) . serialize($value) . '}';
+        $restored = unserialize($payload);
+        self::assertInstanceOf(ClassMetadata::class, $restored);
+        self::assertSame($value, $restored->$property);
+        $key = array_key_first($cache->getValues());
+        $cache->save($cache->getItem($key)->set($restored));
+        $next = $this->manager($cache);
+        try {
+            $next->getClassMetadata(ScopeEntity::class);
+            self::fail('Expected legacy inheritance metadata to be rejected.');
+        } catch (MappingException $error) {
+            self::assertStringContainsString('Entity inheritance mapping is not supported', $error->getMessage());
+        }
+        self::assertFalse($next->getConnection()->isConnected());
+    }
+
     public function testCachedInheritanceMetadataCannotBypassValidation(): void
     {
         $cache = new ArrayAdapter();

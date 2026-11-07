@@ -1138,11 +1138,7 @@ class UnitOfWork implements PropertyChangedListener
                 $class->setIdentifierValues($entity, $idValue);
             }
 
-            // Some identifiers may be foreign keys to new entities.
-            // In this case, we don't have the value yet and should treat it as if we have a post-insert generator
-            if (! $this->hasMissingIdsWhichAreForeignKeys($class, $idValue)) {
-                $this->entityIdentifiers[$oid] = $idValue;
-            }
+            $this->entityIdentifiers[$oid] = $idValue;
         }
 
         $this->entityStates[$oid] = self::STATE_MANAGED;
@@ -1150,18 +1146,6 @@ class UnitOfWork implements PropertyChangedListener
         if (! isset($this->entityInsertions[$oid])) {
             $this->scheduleForInsert($entity);
         }
-    }
-
-    /** @param mixed[] $idValue */
-    private function hasMissingIdsWhichAreForeignKeys(ClassMetadata $class, array $idValue): bool
-    {
-        foreach ($idValue as $idField => $idFieldValue) {
-            if ($idFieldValue === null && isset($class->associationMappings[$idField])) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     /**
@@ -1272,14 +1256,6 @@ class UnitOfWork implements PropertyChangedListener
             $persister->executeInserts();
 
             foreach ($batch->entities as $entity) {
-                $oid = spl_object_id($entity);
-
-                if (! isset($this->entityIdentifiers[$oid])) {
-                    //entity was not added to identity map because some identifiers are foreign keys to new entities.
-                    //add it now
-                    $this->addToEntityIdentifiersAndEntityMap($class, $oid, $entity);
-                }
-
                 if ($invoke !== ListenersInvoker::INVOKE_NONE) {
                     $eventsToDispatch[] = ['class' => $class, 'entity' => $entity, 'invoke' => $invoke];
                 }
@@ -1297,38 +1273,6 @@ class UnitOfWork implements PropertyChangedListener
                 $event['invoke'],
             );
         }
-    }
-
-    /**
-     * @phpstan-param ClassMetadata<T> $class
-     * @phpstan-param T $entity
-     *
-     * @template T of object
-     */
-    private function addToEntityIdentifiersAndEntityMap(
-        ClassMetadata $class,
-        int $oid,
-        object $entity,
-    ): void {
-        $identifier = [];
-
-        foreach ($class->getIdentifierFieldNames() as $idField) {
-            $origValue = $class->getFieldValue($entity, $idField);
-
-            $value = null;
-            if (isset($class->associationMappings[$idField])) {
-                // NOTE: Single Columns as associated identifiers only allowed - this constraint it is enforced.
-                $value = $this->getSingleIdentifierValue($origValue);
-            }
-
-            $identifier[$idField]                     = $value ?? $origValue;
-            $this->originalEntityData[$oid][$idField] = $origValue;
-        }
-
-        $this->entityStates[$oid]      = self::STATE_MANAGED;
-        $this->entityIdentifiers[$oid] = $identifier;
-
-        $this->addToIdentityMap($entity);
     }
 
     /**
@@ -1722,7 +1666,7 @@ class UnitOfWork implements PropertyChangedListener
      */
     public function isScheduledForDirtyCheck(object $entity): bool
     {
-        $rootEntityName = $this->em->getClassMetadata($entity::class)->rootEntityName;
+        $rootEntityName = $this->em->getClassMetadata($entity::class)->name;
 
         return isset($this->scheduledForSynchronization[$rootEntityName][spl_object_id($entity)]);
     }
@@ -1796,7 +1740,7 @@ class UnitOfWork implements PropertyChangedListener
     {
         $classMetadata = $this->em->getClassMetadata($entity::class);
         $idHash        = $this->getIdHashByEntity($entity);
-        $className     = $classMetadata->rootEntityName;
+        $className     = $classMetadata->name;
 
         if (isset($this->identityMap[$className][$idHash])) {
             if ($this->identityMap[$className][$idHash] !== $entity) {
@@ -1886,7 +1830,7 @@ class UnitOfWork implements PropertyChangedListener
             return self::STATE_NEW;
         }
 
-        if ($class->containsForeignIdentifier || $class->containsEnumIdentifier) {
+        if ($class->containsEnumIdentifier) {
             $id = $this->identifierFlattener->flattenIdentifier($class, $id);
         }
 
@@ -1902,7 +1846,7 @@ class UnitOfWork implements PropertyChangedListener
                 }
 
                 // Last try before db lookup: check the identity map.
-                if ($this->tryGetById($id, $class->rootEntityName)) {
+                if ($this->tryGetById($id, $class->name)) {
                     return self::STATE_DETACHED;
                 }
 
@@ -1919,7 +1863,7 @@ class UnitOfWork implements PropertyChangedListener
                 // the last resort: a db lookup
 
                 // Last try before db lookup: check the identity map.
-                if ($this->tryGetById($id, $class->rootEntityName)) {
+                if ($this->tryGetById($id, $class->name)) {
                     return self::STATE_DETACHED;
                 }
 
@@ -1954,7 +1898,7 @@ class UnitOfWork implements PropertyChangedListener
             throw ORMInvalidArgumentException::entityHasNoIdentity($entity, 'remove from identity map');
         }
 
-        $className = $classMetadata->rootEntityName;
+        $className = $classMetadata->name;
 
         if (isset($this->identityMap[$className][$idHash])) {
             unset($this->identityMap[$className][$idHash], $this->readOnlyObjects[$oid]);
@@ -2012,7 +1956,7 @@ class UnitOfWork implements PropertyChangedListener
         $classMetadata = $this->em->getClassMetadata($entity::class);
         $idHash        = self::getIdHashByIdentifier($this->entityIdentifiers[$oid]);
 
-        return isset($this->identityMap[$classMetadata->rootEntityName][$idHash]);
+        return isset($this->identityMap[$classMetadata->name][$idHash]);
     }
 
     /**
@@ -2690,8 +2634,8 @@ class UnitOfWork implements PropertyChangedListener
         // in originalEntityData for correct changeset computation.
         $existingData = [];
 
-        if (isset($this->identityMap[$class->rootEntityName][$idHash])) {
-            $entity = $this->identityMap[$class->rootEntityName][$idHash];
+        if (isset($this->identityMap[$class->name][$idHash])) {
+            $entity = $this->identityMap[$class->name][$idHash];
             $oid    = spl_object_id($entity);
 
             if (
@@ -2809,10 +2753,10 @@ class UnitOfWork implements PropertyChangedListener
         }
 
         // Loading the entity right here, if its in the eager loading map get rid of it there.
-        unset($this->eagerLoadingEntities[$class->rootEntityName][$idHash]);
+        unset($this->eagerLoadingEntities[$class->name][$idHash]);
 
-        if (isset($this->eagerLoadingEntities[$class->rootEntityName]) && ! $this->eagerLoadingEntities[$class->rootEntityName]) {
-            unset($this->eagerLoadingEntities[$class->rootEntityName]);
+        if (isset($this->eagerLoadingEntities[$class->name]) && ! $this->eagerLoadingEntities[$class->name]) {
+            unset($this->eagerLoadingEntities[$class->name]);
         }
 
         foreach ($class->associationMappings as $field => $assoc) {
@@ -2857,7 +2801,6 @@ class UnitOfWork implements PropertyChangedListener
                     $associatedId = [];
 
                     assert($assoc->isToOneOwningSide());
-                    // TODO: Is this even computed right in all cases of composite keys?
                     foreach ($assoc->targetToSourceKeyColumns as $targetColumn => $srcColumn) {
                         $joinColumnValue = $data[$srcColumn] ?? null;
 
@@ -2866,11 +2809,7 @@ class UnitOfWork implements PropertyChangedListener
                                 $joinColumnValue = $joinColumnValue->value;
                             }
 
-                            if ($targetClass->containsForeignIdentifier) {
-                                $associatedId[$targetClass->getFieldForColumn($targetColumn)] = $joinColumnValue;
-                            } else {
-                                $associatedId[$targetClass->fieldNames[$targetColumn]] = $joinColumnValue;
-                            }
+                            $associatedId[$targetClass->fieldNames[$targetColumn]] = $joinColumnValue;
                         } elseif (in_array($targetClass->getFieldForColumn($targetColumn), $targetClass->identifier, true)) {
                             // the missing key is part of target's entity primary key
                             $associatedId = [];
@@ -2895,13 +2834,11 @@ class UnitOfWork implements PropertyChangedListener
 
                     // Foreign key is set
                     // Check identity map first
-                    // FIXME: Can break easily with composite keys if join column values are in
-                    //        wrong order. The correct order is the one in ClassMetadata#identifier.
                     $relatedIdHash = self::getIdHashByIdentifier($associatedId);
 
                     switch (true) {
-                        case isset($this->identityMap[$targetClass->rootEntityName][$relatedIdHash]):
-                            $newValue = $this->identityMap[$targetClass->rootEntityName][$relatedIdHash];
+                        case isset($this->identityMap[$targetClass->name][$relatedIdHash]):
+                            $newValue = $this->identityMap[$targetClass->name][$relatedIdHash];
 
                             // If this is an uninitialized proxy, we are deferring eager loads,
                             // this association is marked as eager fetch, and its an uninitialized proxy (wtf!)
@@ -2909,45 +2846,33 @@ class UnitOfWork implements PropertyChangedListener
                             if (
                                 $hints['fetchMode'][$class->name][$field] === ClassMetadata::FETCH_EAGER &&
                                 isset($hints[self::HINT_DEFEREAGERLOAD]) &&
-                                ! $targetClass->isIdentifierComposite &&
                                 $this->isUninitializedObject($newValue)
                             ) {
-                                $this->eagerLoadingEntities[$targetClass->rootEntityName][$relatedIdHash] = current($associatedId);
+                                $this->eagerLoadingEntities[$targetClass->name][$relatedIdHash] = current($associatedId);
                             }
 
                             break;
 
-                        case $targetClass->subClasses:
-                            // If it might be a subtype, it can not be lazy. There isn't even
-                            // a way to solve this with deferred eager loading, which means putting
-                            // an entity with subclasses at a *-to-one location is really bad! (performance-wise)
-                            $newValue = $this->getEntityPersister($assoc->targetEntity)->loadOneToOneEntity($assoc, $entity, $associatedId);
-                            break;
-
                         default:
-                            $normalizedAssociatedId = $this->normalizeIdentifier($targetClass, $associatedId);
-
                             switch (true) {
                                 // We are negating the condition here. Other cases will assume it is valid!
                                 case $hints['fetchMode'][$class->name][$field] !== ClassMetadata::FETCH_EAGER:
-                                    $newValue = $this->em->getProxyFactory()->getProxy($assoc->targetEntity, $normalizedAssociatedId);
+                                    $newValue = $this->em->getProxyFactory()->getProxy($assoc->targetEntity, $associatedId);
                                     $this->registerManagedProxy($newValue, $associatedId);
                                     break;
 
-                                    // Deferred eager load only works for single identifier classes
                                 case isset($hints[self::HINT_DEFEREAGERLOAD]) &&
-                                    $hints[self::HINT_DEFEREAGERLOAD] &&
-                                    ! $targetClass->isIdentifierComposite:
+                                    $hints[self::HINT_DEFEREAGERLOAD]:
                                     // TODO: Is there a faster approach?
-                                    $this->eagerLoadingEntities[$targetClass->rootEntityName][$relatedIdHash] = current($normalizedAssociatedId);
+                                    $this->eagerLoadingEntities[$targetClass->name][$relatedIdHash] = current($associatedId);
 
-                                    $newValue = $this->em->getProxyFactory()->getProxy($assoc->targetEntity, $normalizedAssociatedId);
+                                    $newValue = $this->em->getProxyFactory()->getProxy($assoc->targetEntity, $associatedId);
                                     $this->registerManagedProxy($newValue, $associatedId);
                                     break;
 
                                 default:
                                     // TODO: This is very imperformant, ignore it?
-                                    $newValue = $this->em->find($assoc->targetEntity, $normalizedAssociatedId);
+                                    $newValue = $this->em->find($assoc->targetEntity, $associatedId);
                                     break;
                             }
                     }
@@ -2958,7 +2883,7 @@ class UnitOfWork implements PropertyChangedListener
                         $this->em->getProxyFactory()->getBatchQueue()->add(
                             $newValue,
                             $targetClass,
-                            $this->normalizeIdentifier($targetClass, $associatedId),
+                            $associatedId,
                             $assoc->batchSize,
                         );
                     }
@@ -3213,9 +3138,7 @@ class UnitOfWork implements PropertyChangedListener
 
     /**
      * Gets the identifier of an entity.
-     * The returned value is always an array of identifier values. If the entity
-     * has a composite identifier then the identifier values are in the same
-     * order as the identifier field names as returned by ClassMetadata#getIdentifierFieldNames().
+     * The returned array contains the entity's single scalar identifier, keyed by field name.
      *
      * @return mixed[] The identifier values.
      */
@@ -3235,10 +3158,6 @@ class UnitOfWork implements PropertyChangedListener
     public function getSingleIdentifierValue(object $entity): mixed
     {
         $class = $this->em->getClassMetadata($entity::class);
-
-        if ($class->isIdentifierComposite) {
-            throw ORMInvalidArgumentException::invalidCompositeIdentifier();
-        }
 
         $values = $this->isInIdentityMap($entity)
             ? $this->getEntityIdentifier($entity)
@@ -3271,7 +3190,7 @@ class UnitOfWork implements PropertyChangedListener
      */
     public function scheduleForDirtyCheck(object $entity): void
     {
-        $rootClassName = $this->em->getClassMetadata($entity::class)->rootEntityName;
+        $rootClassName = $this->em->getClassMetadata($entity::class)->name;
 
         $this->scheduledForSynchronization[$rootClassName][spl_object_id($entity)] = $entity;
     }
@@ -3404,7 +3323,7 @@ class UnitOfWork implements PropertyChangedListener
         // Update changeset and mark entity for synchronization
         $this->entityChangeSets[$oid][$propertyName] = [$oldValue, $newValue];
 
-        if (! isset($this->scheduledForSynchronization[$class->rootEntityName][$oid])) {
+        if (! isset($this->scheduledForSynchronization[$class->name][$oid])) {
             $this->scheduleForDirtyCheck($sender);
         }
     }
@@ -3677,44 +3596,6 @@ class UnitOfWork implements PropertyChangedListener
             $identifierValue,
             $class->getTypeOfField($class->getSingleIdentifierFieldName()),
         );
-    }
-
-    /**
-     * Given a flat identifier, this method will produce another flat identifier, but with all
-     * association fields that are mapped as identifiers replaced by entity references, recursively.
-     *
-     * @param mixed[] $flatIdentifier
-     *
-     * @return array<string, mixed>
-     */
-    private function normalizeIdentifier(ClassMetadata $targetClass, array $flatIdentifier): array
-    {
-        $normalizedAssociatedId = [];
-
-        foreach ($targetClass->getIdentifierFieldNames() as $name) {
-            if (! array_key_exists($name, $flatIdentifier)) {
-                continue;
-            }
-
-            if (! $targetClass->isSingleValuedAssociation($name)) {
-                $normalizedAssociatedId[$name] = $flatIdentifier[$name];
-                continue;
-            }
-
-            $targetIdMetadata = $this->em->getClassMetadata($targetClass->getAssociationTargetClass($name));
-
-            // Note: the ORM prevents using an entity with a composite identifier as an identifier association
-            //       therefore, reset($targetIdMetadata->identifier) is always correct
-            $normalizedAssociatedId[$name] = $this->em->getReference(
-                $targetIdMetadata->getName(),
-                $this->normalizeIdentifier(
-                    $targetIdMetadata,
-                    [(string) reset($targetIdMetadata->identifier) => $flatIdentifier[$name]],
-                ),
-            );
-        }
-
-        return $normalizedAssociatedId;
     }
 
     /**

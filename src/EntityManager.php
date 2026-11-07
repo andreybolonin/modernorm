@@ -328,7 +328,7 @@ class EntityManager implements EntityManagerInterface
 
         $unitOfWork = $this->getUnitOfWork();
 
-        $entity = $unitOfWork->tryGetById($sortedId, $class->rootEntityName);
+        $entity = $unitOfWork->tryGetById($sortedId, $class->name);
 
         // Check identity map first
         if ($entity !== false) {
@@ -409,7 +409,7 @@ class EntityManager implements EntityManagerInterface
         }
         $sortedId = $this->normalizeIdentifier($class, $id);
 
-        $entity = $this->unitOfWork->tryGetById($sortedId, $class->rootEntityName);
+        $entity = $this->unitOfWork->tryGetById($sortedId, $class->name);
 
         // Check identity map first, if its already in there just return it.
         if ($entity !== false) {

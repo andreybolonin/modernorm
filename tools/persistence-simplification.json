@@ -63,5 +63,49 @@
       "tests/Unit/Psr6CacheTest.php",
       "tests/Integration/AdvancedMappingTest.php"
     ]
+  },
+  "scalar_identifier_runtime_cleanup": {
+    "date": "2026-11-07",
+    "removed": [
+      "composite and association ID hydration/identity-map branches",
+      "recursive association identifier normalization and foreign-ID postponement",
+      "subclass to-one loading and hierarchy-root routing",
+      "composite-ID parameter expansion and association-ID UPDATE predicates",
+      "inheritance-specific to-one uniqueness switch and sequence-root checks",
+      "association-ID schema primary keys and discriminator target remapping",
+      "table alias/schema routing through entity-inheritance member markers"
+    ],
+    "preserved": [
+      "single scalar IDs including string/enum IDs and generators",
+      "MappedSuperclass and ordinary PHP inheritance",
+      "composite UNIQUE constraints and multi-column join-table primary keys",
+      "association join-column loops",
+      "legacy metadata validation, cached-payload rejection and diagnostics"
+    ],
+    "metadata_format_changed": false,
+    "source_files": [
+      "src/EntityManager.php",
+      "src/Id/AssignedGenerator.php",
+      "src/Internal/Hydration/AbstractHydrator.php",
+      "src/Internal/Hydration/ObjectHydrator.php",
+      "src/Mapping/ClassMetadata.php",
+      "src/Mapping/ClassMetadataFactory.php",
+      "src/Mapping/DefaultQuoteStrategy.php",
+      "src/Mapping/ToOneOwningSideMapping.php",
+      "src/Persisters/Collection/ManyToManyPersister.php",
+      "src/Persisters/Collection/OneToManyPersister.php",
+      "src/Persisters/Entity/BasicEntityPersister.php",
+      "src/Tools/ResolveTargetEntityListener.php",
+      "src/Tools/SchemaTool.php",
+      "src/Tools/SchemaValidator.php",
+      "src/UnitOfWork.php",
+      "src/Utility/PersisterHelper.php"
+    ],
+    "regression_tests": [
+      "tests/Unit/IdentifierScopeTest.php",
+      "tests/Unit/MappingScopeTest.php",
+      "tests/Integration/MappingMetadataTest.php"
+    ],
+    "added_regression_cases": 9
   }
 }

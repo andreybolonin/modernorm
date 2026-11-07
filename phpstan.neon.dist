@@ -6,6 +6,9 @@ parameters:
     paths:
         - src
         - tests/Unit/ObjectHydrationTest.php
+        - tests/Unit/IdentifierScopeTest.php
+        - tests/Unit/MappingScopeTest.php
+        - tests/Integration/MappingMetadataTest.php
         - benchmarks/hydration.php
         - tests/Integration/TimestampableTest.php
         - tests/Integration/BlameableTest.php

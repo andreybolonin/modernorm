@@ -282,7 +282,6 @@ class BasicEntityPersister implements EntityPersister
         $tableName  = $this->quoteStrategy->getTableName($versionedClass, $this->platform);
         $identifier = $this->quoteStrategy->getIdentifierColumnNames($versionedClass, $this->platform);
 
-        // FIXME: Order with composite keys might not be correct
         $sql = 'SELECT ' . implode(', ', $columnNames)
             . ' FROM ' . $tableName
             . ' WHERE ' . implode(' = ? AND ', $identifier) . ' = ?';
@@ -404,33 +403,10 @@ class BasicEntityPersister implements EntityPersister
         $where      = [];
         $identifier = $this->em->getUnitOfWork()->getEntityIdentifier($entity);
 
-        foreach ($this->class->identifier as $idField) {
-            if (! isset($this->class->associationMappings[$idField])) {
-                $params[] = $identifier[$idField];
-                $types[]  = $this->class->fieldMappings[$idField]->type;
-                $where[]  = $this->quoteStrategy->getColumnName($idField, $this->class, $this->platform);
-
-                continue;
-            }
-
-            assert($this->class->associationMappings[$idField]->isToOneOwningSide());
-
-            $params[] = $identifier[$idField];
-            $where[]  = $this->quoteStrategy->getJoinColumnName(
-                $this->class->associationMappings[$idField]->joinColumns[0],
-                $this->class,
-                $this->platform,
-            );
-
-            $targetMapping = $this->em->getClassMetadata($this->class->associationMappings[$idField]->targetEntity);
-            $targetType    = PersisterHelper::getTypeOfField($targetMapping->identifier[0], $targetMapping, $this->em);
-
-            if ($targetType === []) {
-                throw UnrecognizedField::byFullyQualifiedName($this->class->name, $targetMapping->identifier[0]);
-            }
-
-            $types[] = reset($targetType);
-        }
+        $idField = $this->class->identifier[0];
+        $params[] = $identifier[$idField];
+        $types[] = $this->class->fieldMappings[$idField]->type;
+        $where[] = $this->quoteStrategy->getColumnName($idField, $this->class, $this->platform);
 
         if ($versioned) {
             $versionField = $this->class->versionField;
@@ -480,7 +456,6 @@ class BasicEntityPersister implements EntityPersister
             }
 
             // @Todo this only covers scenarios with no inheritance or of the same level. Is there something
-            // like self-referential relationship between different levels of an inheritance hierarchy? I hope not!
             $selfReferential = ($mapping->targetEntity === $mapping->sourceEntity);
             $class           = $this->class;
             $association     = $mapping;
@@ -956,30 +931,14 @@ class BasicEntityPersister implements EntityPersister
             $sourceKeyColumn = $joinColumn->referencedColumnName;
             $quotedKeyColumn = $this->quoteStrategy->getJoinColumnName($joinColumn, $class, $this->platform);
 
-            switch (true) {
-                case $sourceClass->containsForeignIdentifier:
-                    $field = $sourceClass->getFieldForColumn($sourceKeyColumn);
-                    $value = $sourceClass->propertyAccessors[$field]->getValue($sourceEntity);
-
-                    if (isset($sourceClass->associationMappings[$field])) {
-                        $value = $this->em->getUnitOfWork()->getEntityIdentifier($value);
-                        $value = $value[$this->em->getClassMetadata($sourceClass->associationMappings[$field]->targetEntity)->identifier[0]];
-                    }
-
-                    break;
-
-                case isset($sourceClass->fieldNames[$sourceKeyColumn]):
-                    $field = $sourceClass->fieldNames[$sourceKeyColumn];
-                    $value = $sourceClass->propertyAccessors[$field]->getValue($sourceEntity);
-
-                    break;
-
-                default:
-                    throw MappingException::joinColumnMustPointToMappedField(
-                        $sourceClass->name,
-                        $sourceKeyColumn,
-                    );
+            if (! isset($sourceClass->fieldNames[$sourceKeyColumn])) {
+                throw MappingException::joinColumnMustPointToMappedField(
+                    $sourceClass->name,
+                    $sourceKeyColumn,
+                );
             }
+            $field = $sourceClass->fieldNames[$sourceKeyColumn];
+            $value = $sourceClass->propertyAccessors[$field]->getValue($sourceEntity);
 
             $criteria[$quotedJoinTable . '.' . $quotedKeyColumn] = $value;
             $parameters[]                                        = [
@@ -1083,9 +1042,7 @@ class BasicEntityPersister implements EntityPersister
             }
 
             if (isset($this->class->fieldMappings[$fieldName])) {
-                $tableAlias = isset($this->class->fieldMappings[$fieldName]->inherited)
-                    ? $this->getSQLTableAlias($this->class->fieldMappings[$fieldName]->inherited)
-                    : $baseTableAlias;
+                $tableAlias = $baseTableAlias;
 
                 $columnName    = $this->quoteStrategy->getColumnName($fieldName, $this->class, $this->platform);
                 $orderByList[] = $tableAlias . '.' . $columnName . ' ' . $orientation;
@@ -1101,9 +1058,7 @@ class BasicEntityPersister implements EntityPersister
 
                 assert($association->isToOneOwningSide());
 
-                $tableAlias = isset($association->inherited)
-                    ? $this->getSQLTableAlias($association->inherited)
-                    : $baseTableAlias;
+                $tableAlias = $baseTableAlias;
 
                 foreach ($association->joinColumns as $joinColumn) {
                     $columnName    = $this->quoteStrategy->getJoinColumnName($joinColumn, $this->class, $this->platform);
@@ -1164,10 +1119,6 @@ class BasicEntityPersister implements EntityPersister
             }
 
             $eagerEntity = $this->em->getClassMetadata($assoc->targetEntity);
-
-            if ($eagerEntity->inheritanceType !== ClassMetadata::INHERITANCE_TYPE_NONE) {
-                continue; // now this is why you shouldn't use inheritance
-            }
 
             $assocAlias = 'e' . ($eagerAliasCounter++);
             $this->currentPersisterContext->rsm->addJoinedEntityResult($assoc->targetEntity, $assocAlias, 'r', $assocField);
@@ -1556,7 +1507,7 @@ class BasicEntityPersister implements EntityPersister
         AssociationMapping|null $assoc = null,
     ): array {
         if (isset($this->class->fieldMappings[$field])) {
-            $className = $this->class->fieldMappings[$field]->inherited ?? $this->class->name;
+            $className = $this->class->name;
 
             return [$this->getSQLTableAlias($className) . '.' . $this->quoteStrategy->getColumnName($field, $this->class, $this->platform)];
         }
@@ -1593,7 +1544,7 @@ class BasicEntityPersister implements EntityPersister
 
                 assert($association->isToOneOwningSide());
 
-                $className = $association->inherited ?? $this->class->name;
+                $className = $this->class->name;
 
                 foreach ($association->joinColumns as $joinColumn) {
                     $columns[] = $this->getSQLTableAlias($className) . '.' . $this->quoteStrategy->getJoinColumnName($joinColumn, $this->class, $this->platform);
@@ -1680,29 +1631,10 @@ class BasicEntityPersister implements EntityPersister
         $parameters  = [];
         $owningAssoc = $this->class->associationMappings[$assoc->mappedBy];
         $sourceClass = $this->em->getClassMetadata($assoc->sourceEntity);
-        $tableAlias  = $this->getSQLTableAlias($owningAssoc->inherited ?? $this->class->name);
+        $tableAlias  = $this->getSQLTableAlias($this->class->name);
         assert($owningAssoc->isManyToOne());
 
         foreach ($owningAssoc->targetToSourceKeyColumns as $sourceKeyColumn => $targetKeyColumn) {
-            if ($sourceClass->containsForeignIdentifier) {
-                $field = $sourceClass->getFieldForColumn($sourceKeyColumn);
-                $value = $sourceClass->propertyAccessors[$field]->getValue($sourceEntity);
-
-                if (isset($sourceClass->associationMappings[$field])) {
-                    $value = $this->em->getUnitOfWork()->getEntityIdentifier($value);
-                    $value = $value[$this->em->getClassMetadata($sourceClass->associationMappings[$field]->targetEntity)->identifier[0]];
-                }
-
-                $criteria[$tableAlias . '.' . $targetKeyColumn] = $value;
-                $parameters[]                                   = [
-                    'value' => $value,
-                    'field' => $field,
-                    'class' => $sourceClass,
-                ];
-
-                continue;
-            }
-
             $field = $sourceClass->fieldNames[$sourceKeyColumn];
             $value = $sourceClass->propertyAccessors[$field]->getValue($sourceEntity);
 

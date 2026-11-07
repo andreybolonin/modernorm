@@ -238,20 +238,7 @@ class SchemaTool
                 $joinTablesToAdd,
             );
 
-            $pkColumns = [];
-
-            foreach ($class->identifier as $identifierField) {
-                if (isset($class->fieldMappings[$identifierField])) {
-                    $pkColumns[] = $this->quoteStrategy->getColumnName($identifierField, $class, $this->platform);
-                } elseif (isset($class->associationMappings[$identifierField])) {
-                    $assoc = $class->associationMappings[$identifierField];
-                    assert($assoc->isToOneOwningSide());
-
-                    foreach ($assoc->joinColumns as $joinColumn) {
-                        $pkColumns[] = $this->quoteStrategy->getJoinColumnName($joinColumn, $class, $this->platform);
-                    }
-                }
-            }
+            $pkColumns = [$this->quoteStrategy->getColumnName($class->identifier[0], $class, $this->platform)];
 
             if (! $table->hasIndex('primary')) {
                 self::addPrimaryKeyConstraint($table, $pkColumns);
@@ -306,7 +293,7 @@ class SchemaTool
 
             $processedClasses[$class->name] = true;
 
-            if ($class->isIdGeneratorSequence() && $class->name === $class->rootEntityName) {
+            if ($class->isIdGeneratorSequence()) {
                 $seqDef     = $class->sequenceGeneratorDefinition;
                 $quotedName = $this->quoteStrategy->getSequenceName($seqDef, $class, $this->platform);
                 if (! $schema->hasSequence($quotedName)) {
@@ -415,20 +402,7 @@ class SchemaTool
                 $joinTablesToAdd,
             );
 
-            $pkColumns = [];
-
-            foreach ($class->identifier as $identifierField) {
-                if (isset($class->fieldMappings[$identifierField])) {
-                    $pkColumns[] = $this->quoteStrategy->getColumnName($identifierField, $class, $this->platform);
-                } elseif (isset($class->associationMappings[$identifierField])) {
-                    $assoc = $class->associationMappings[$identifierField];
-                    assert($assoc->isToOneOwningSide());
-
-                    foreach ($assoc->joinColumns as $joinColumn) {
-                        $pkColumns[] = $this->quoteStrategy->getJoinColumnName($joinColumn, $class, $this->platform);
-                    }
-                }
-            }
+            $pkColumns = [$this->quoteStrategy->getColumnName($class->identifier[0], $class, $this->platform)];
 
             if (! $table->hasIndex('primary')) {
                 self::addPrimaryKeyConstraint($table, $pkColumns);
@@ -493,7 +467,7 @@ class SchemaTool
 
             $schema = $schemaEditor->create();
 
-            if ($class->isIdGeneratorSequence() && $class->name === $class->rootEntityName) {
+            if ($class->isIdGeneratorSequence()) {
                 $seqDef     = $class->sequenceGeneratorDefinition;
                 $quotedName = $this->quoteStrategy->getSequenceName($seqDef, $class, $this->platform);
                 if (! $schema->hasSequence($quotedName)) {
@@ -720,11 +694,7 @@ class SchemaTool
         SchemaConfig $schemaConfig,
         array &$joinTablesToAdd,
     ): void {
-        foreach ($class->associationMappings as $id => $mapping) {
-            if (isset($mapping->inherited) && ! in_array($id, $class->identifier, true)) {
-                continue;
-            }
-
+        foreach ($class->associationMappings as $mapping) {
             $foreignClass = $this->em->getClassMetadata($mapping->targetEntity);
 
             if ($mapping->isToOneOwningSide()) {
@@ -799,41 +769,11 @@ class SchemaTool
         }
     }
 
-    /**
-     * Gets the class metadata that is responsible for the definition of the referenced column name.
-     *
-     * Previously this was a simple task, but with DDC-117 this problem is actually recursive. If its
-     * not a simple field, go through all identifier field names that are associations recursively and
-     * find that referenced column name.
-     *
-     * TODO: Is there any way to make this code more pleasing?
-     *
-     * @phpstan-return array{ClassMetadata, string}|null
-     */
+    /** @phpstan-return array{ClassMetadata, string}|null */
     private function getDefiningClass(ClassMetadata $class, string $referencedColumnName): array|null
     {
-        $referencedFieldName = $class->getFieldName($referencedColumnName);
-
-        if ($class->hasField($referencedFieldName)) {
-            return [$class, $referencedFieldName];
-        }
-
-        if (in_array($referencedColumnName, $class->getIdentifierColumnNames(), true)) {
-            // it seems to be an entity as foreign key
-            foreach ($class->getIdentifierFieldNames() as $fieldName) {
-                if (
-                    $class->hasAssociation($fieldName)
-                    && $class->getSingleAssociationJoinColumnName($fieldName) === $referencedColumnName
-                ) {
-                    return $this->getDefiningClass(
-                        $this->em->getClassMetadata($class->associationMappings[$fieldName]->targetEntity),
-                        $class->getSingleAssociationReferencedJoinColumnName($fieldName),
-                    );
-                }
-            }
-        }
-
-        return null;
+        $fieldName = $class->getFieldName($referencedColumnName);
+        return $class->hasField($fieldName) ? [$class, $fieldName] : null;
     }
 
     /**

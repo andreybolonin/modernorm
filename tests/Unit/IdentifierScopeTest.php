@@ -93,6 +93,37 @@ final class IdentifierScopeTest extends TestCase
         $this->manager($cache)->getClassMetadata(ScalarIdentifier::class);
     }
 
+    public static function invalidCachedIdentifierStates(): iterable
+    {
+        yield 'multiple identifier fields' => ['fields'];
+        yield 'composite flag on scalar ID' => ['composite'];
+        yield 'foreign identifier flag' => ['foreign'];
+    }
+
+    #[DataProvider('invalidCachedIdentifierStates')]
+    public function testSerializedLegacyIdentifierMetadataIsRejectedBeforeConnecting(string $state): void
+    {
+        $cache = new ArrayAdapter(storeSerialized: true);
+        $first = $this->manager($cache);
+        $metadata = clone $first->getClassMetadata(ScalarIdentifier::class);
+        match ($state) {
+            'fields' => $metadata->identifier[] = 'scope',
+            'composite' => $metadata->isIdentifierComposite = true,
+            'foreign' => $metadata->containsForeignIdentifier = true,
+            default => throw new \LogicException('Unknown identifier fixture state.'),
+        };
+        $key = array_key_first($cache->getValues());
+        $cache->save($cache->getItem($key)->set($metadata));
+        $next = $this->manager($cache);
+        try {
+            $next->getClassMetadata(ScalarIdentifier::class);
+            self::fail('Expected invalid serialized identifier metadata to be rejected.');
+        } catch (MappingException $error) {
+            self::assertStringContainsString('one scalar field', $error->getMessage());
+        }
+        self::assertFalse($next->getConnection()->isConnected());
+    }
+
     public function testMatchingIsRejectedWithoutInitializingPersistentCollection(): void
     {
         $em = $this->manager();

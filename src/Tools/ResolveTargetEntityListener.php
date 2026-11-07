@@ -75,11 +75,7 @@ class ResolveTargetEntityListener implements EventSubscriber
             }
         }
 
-        foreach ($cm->discriminatorMap as $value => $class) {
-            if (isset($this->resolveTargetEntities[$class])) {
-                $cm->addDiscriminatorMapClass($value, $this->resolveTargetEntities[$class]['targetEntity']);
-            }
-        }
+
     }
 
     private function remapAssociation(ClassMetadata $classMetadata, AssociationMapping $mapping): void

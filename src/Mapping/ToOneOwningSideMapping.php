@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace ModernORM\Mapping;
 
-use Doctrine\Deprecations\Deprecation;
+use ModernORM\Exception\MappingException;
 use RuntimeException;
 
 use function array_flip;
@@ -101,8 +101,11 @@ abstract class ToOneOwningSideMapping extends OwningSideMapping implements ToOne
         NamingStrategy $namingStrategy,
         string $name,
         array|null $table,
-        bool $isInheritanceTypeSingleTable,
     ): static {
+        if (! empty($mappingArray['id'])) {
+            throw new MappingException('ModernORM requires one scalar field as the entity primary key: ' . $name);
+        }
+
         if (isset($mappingArray['joinColumns'])) {
             foreach ($mappingArray['joinColumns'] as $index => $joinColumn) {
                 if (empty($joinColumn['name'])) {
@@ -131,31 +134,13 @@ abstract class ToOneOwningSideMapping extends OwningSideMapping implements ToOne
         $uniqueConstraintColumns = [];
 
         foreach ($mapping->joinColumns as $joinColumn) {
-            if ($mapping->id) {
-                if ($joinColumn->nullable !== null) {
-                    Deprecation::trigger(
-                        'doctrine/orm',
-                        'https://github.com/doctrine/orm/pull/12126',
-                        <<<'DEPRECATION'
-                        Specifying the "nullable" attribute for join columns in to-one associations (here, %s::$%s) that are part of the identifier is a no-op.
-                        The ORM will always set it to false.
-                        Doing so is deprecated and will be an error in 4.0.
-                        DEPRECATION,
-                        $mapping->sourceEntity,
-                        $mapping->fieldName,
-                    );
-                }
-
-                $joinColumn->nullable = false;
-            } elseif ($joinColumn->nullable === null) {
+            if ($joinColumn->nullable === null) {
                 $joinColumn->nullable = true;
             }
 
-            if ($mapping->isOneToOne() && ! $isInheritanceTypeSingleTable) {
+            if ($mapping->isOneToOne()) {
                 if (count($mapping->joinColumns) === 1) {
-                    if (empty($mapping->id)) {
-                        $joinColumn->unique = true;
-                    }
+                    $joinColumn->unique = true;
                 } else {
                     $uniqueConstraintColumns[] = $joinColumn->name;
                 }
@@ -200,9 +185,6 @@ abstract class ToOneOwningSideMapping extends OwningSideMapping implements ToOne
         $joinColumns = [];
         foreach ($array['joinColumns'] as $column) {
             $columnArray = (array) $column;
-            if ($this->id) {
-                unset($columnArray['nullable']);
-            }
 
             $joinColumns[] = $columnArray;
         }
