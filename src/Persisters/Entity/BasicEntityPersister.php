@@ -14,6 +14,8 @@ use Doctrine\DBAL\Result;
 use Doctrine\DBAL\Types\Type;
 use Doctrine\DBAL\Types\Types;
 use ModernORM\EntityManagerInterface;
+use ModernORM\Id\IdentityGenerator;
+use ModernORM\Id\BigIntegerIdentityGenerator;
 use ModernORM\Mapping\AssociationMapping;
 use ModernORM\Mapping\ClassMetadata;
 use ModernORM\Mapping\JoinColumnMapping;
@@ -30,7 +32,6 @@ use ModernORM\Query;
 use ModernORM\Query\ResultSetMapping;
 use ModernORM\Exception\InvalidFindByCall;
 use ModernORM\UnitOfWork;
-use ModernORM\Utility\IdentifierFlattener;
 use ModernORM\Utility\PersisterHelper;
 use LengthException;
 use SortDirection;
@@ -136,11 +137,6 @@ class BasicEntityPersister implements EntityPersister
      */
     protected QuoteStrategy $quoteStrategy;
 
-    /**
-     * The IdentifierFlattener used for manipulating identifiers
-     */
-    protected readonly IdentifierFlattener $identifierFlattener;
-
     protected CachedPersisterContext $currentPersisterContext;
     private readonly CachedPersisterContext $limitsHandlingContext;
     private readonly CachedPersisterContext $noLimitsContext;
@@ -158,7 +154,6 @@ class BasicEntityPersister implements EntityPersister
         $this->conn                  = $em->getConnection();
         $this->platform              = $this->conn->getDatabasePlatform();
         $this->quoteStrategy         = $em->getConfiguration()->getQuoteStrategy();
-        $this->identifierFlattener   = new IdentifierFlattener();
         $this->noLimitsContext       = $this->currentPersisterContext = new CachedPersisterContext(
             $class,
             new Query\ResultSetMapping(),
@@ -204,7 +199,19 @@ class BasicEntityPersister implements EntityPersister
         $idGenerator    = $this->class->idGenerator;
         $isPostInsertId = $idGenerator->isPostInsertGenerator();
 
-        $stmt      = $this->conn->prepare($this->getInsertSQL());
+        // Custom generators (including subclasses) retain their own post-insert contract.
+        $returnsIdentity = $idGenerator::class === IdentityGenerator::class
+            || $idGenerator::class === BigIntegerIdentityGenerator::class;
+        $insertSql = $this->getInsertSQL();
+        if ($returnsIdentity) {
+            $insertSql .= ' RETURNING ' . $this->quoteStrategy->getColumnName(
+                $this->class->identifier[0],
+                $this->class,
+                $this->platform,
+            );
+        }
+
+        $stmt      = $this->conn->prepare($insertSql);
         $tableName = $this->class->getTableName();
 
         foreach ($this->queuedInserts as $key => $entity) {
@@ -218,10 +225,27 @@ class BasicEntityPersister implements EntityPersister
                 }
             }
 
-            $stmt->executeStatement();
+            if ($returnsIdentity) {
+                $result = $stmt->executeQuery();
+                try {
+                    $identity = $result->fetchOne();
+                    if ($identity === false) {
+                        throw new LengthException('INSERT RETURNING did not return an identifier.');
+                    }
+                    $generatedId = $idGenerator::class === BigIntegerIdentityGenerator::class
+                        ? (string) $identity
+                        : (int) $identity;
+                } finally {
+                    $result->free();
+                }
+            } else {
+                $stmt->executeStatement();
+            }
 
             if ($isPostInsertId) {
-                $generatedId = $idGenerator->generateId($this->em, $entity);
+                if (! $returnsIdentity) {
+                    $generatedId = $idGenerator->generateId($this->em, $entity);
+                }
                 $id          = [$this->class->identifier[0] => $generatedId];
 
                 $uow->assignPostInsertId($entity, $generatedId);
@@ -280,18 +304,17 @@ class BasicEntityPersister implements EntityPersister
         }
 
         $tableName  = $this->quoteStrategy->getTableName($versionedClass, $this->platform);
-        $identifier = $this->quoteStrategy->getIdentifierColumnNames($versionedClass, $this->platform);
+        $idField = $versionedClass->identifier[0];
+        $identifier = $this->quoteStrategy->getColumnName($idField, $versionedClass, $this->platform);
 
         $sql = 'SELECT ' . implode(', ', $columnNames)
             . ' FROM ' . $tableName
-            . ' WHERE ' . implode(' = ? AND ', $identifier) . ' = ?';
-
-        $flatId = $this->identifierFlattener->flattenIdentifier($versionedClass, $id);
+            . ' WHERE ' . $identifier . ' = ?';
 
         $values = $this->conn->fetchNumeric(
             $sql,
-            array_values($flatId),
-            $this->extractIdentifierTypes($id, $versionedClass),
+            [$id[$idField] instanceof BackedEnum ? $id[$idField]->value : $id[$idField]],
+            [$versionedClass->fieldMappings[$idField]->type],
         );
 
         if ($values === false) {
@@ -305,23 +328,6 @@ class BasicEntityPersister implements EntityPersister
         }
 
         return $values;
-    }
-
-    /**
-     * @param mixed[] $id
-     *
-     * @return list<ParameterType|int|string>
-     * @phpstan-return list<ParameterType::*|ArrayParameterType::*|string>
-     */
-    final protected function extractIdentifierTypes(array $id, ClassMetadata $versionedClass): array
-    {
-        $types = [];
-
-        foreach ($id as $field => $value) {
-            $types = [...$types, ...PersisterHelper::inferParameterTypes($field, $value, $versionedClass, $this->em)];
-        }
-
-        return $types;
     }
 
     public function update(object $entity): void
@@ -446,7 +452,6 @@ class BasicEntityPersister implements EntityPersister
      * @param array<mixed> $identifier
      * @param string[]     $types
      *
-     * @todo Add check for platform if it supports foreign keys/cascading.
      */
     protected function deleteJoinTableRecords(array $identifier, array $types): void
     {
@@ -1255,9 +1260,7 @@ class BasicEntityPersister implements EntityPersister
         $tableName = $this->quoteStrategy->getTableName($this->class, $this->platform);
 
         if ($columns === []) {
-            $identityColumn = $this->quoteStrategy->getColumnName($this->class->identifier[0], $this->class, $this->platform);
-
-            return $this->platform->getEmptyIdentityInsertSQL($tableName, $identityColumn);
+            return 'INSERT INTO ' . $tableName . ' DEFAULT VALUES';
         }
 
         $placeholders = [];

@@ -41,6 +41,7 @@ use ModernORM\Internal\UnitOfWork\EntityDeleteDependencies;
 use ModernORM\Internal\UnitOfWork\WriteOrderPlanner;
 use ModernORM\Internal\UnitOfWork\AssociationChangePlanner;
 use ModernORM\Internal\UnitOfWork\AssociationMembership;
+use ModernORM\Internal\UnitOfWork\FieldChangeComparator;
 use ModernORM\Internal\UnitOfWork\OrphanRemovalReason;
 use ModernORM\Mapping\AssociationMapping;
 use ModernORM\Mapping\ClassMetadata;
@@ -803,29 +804,20 @@ class UnitOfWork implements PropertyChangedListener
 
                 $orgValue = $originalData[$propName];
 
-                if (! empty($class->fieldMappings[$propName]->enumType)) {
-                    if (is_array($orgValue)) {
-                        foreach ($orgValue as $id => $val) {
-                            if ($val instanceof BackedEnum) {
-                                $orgValue[$id] = $val->value;
-                            }
-                        }
-                    } else {
-                        if ($orgValue instanceof BackedEnum) {
-                            $orgValue = $orgValue->value;
-                        }
+                if (! isset($class->associationMappings[$propName])) {
+                    $fieldChange = FieldChangeComparator::compare(
+                        $orgValue,
+                        $actualValue,
+                        ! empty($class->fieldMappings[$propName]->enumType),
+                    );
+                    if ($fieldChange !== null) {
+                        $changeSet[$propName] = $fieldChange;
                     }
-                }
 
-                // skip if value haven't changed
-                if ($orgValue === $actualValue) {
                     continue;
                 }
 
-                // if regular field
-                if (! isset($class->associationMappings[$propName])) {
-                    $changeSet[$propName] = [$orgValue, $actualValue];
-
+                if ($orgValue === $actualValue) {
                     continue;
                 }
 
@@ -1225,22 +1217,13 @@ class UnitOfWork implements PropertyChangedListener
         foreach ($actualData as $propName => $actualValue) {
             $orgValue = $originalData[$propName] ?? null;
 
-            if (isset($class->fieldMappings[$propName]->enumType)) {
-                if (is_array($orgValue)) {
-                    foreach ($orgValue as $id => $val) {
-                        if ($val instanceof BackedEnum) {
-                            $orgValue[$id] = $val->value;
-                        }
-                    }
-                } else {
-                    if ($orgValue instanceof BackedEnum) {
-                        $orgValue = $orgValue->value;
-                    }
-                }
-            }
-
-            if ($orgValue !== $actualValue) {
-                $changeSet[$propName] = [$orgValue, $actualValue];
+            $fieldChange = FieldChangeComparator::compare(
+                $orgValue,
+                $actualValue,
+                isset($class->fieldMappings[$propName]->enumType),
+            );
+            if ($fieldChange !== null) {
+                $changeSet[$propName] = $fieldChange;
             }
         }
 

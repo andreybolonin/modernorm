@@ -131,7 +131,7 @@ DQL, entity inheritance, composite entity IDs, XML/YAML mapping, ORM Filters and
 
 ## Confirmed inherited bugs
 
-These behaviors were reproduced on ModernORM before the persistence audit; the corresponding mechanisms were checked against the Doctrine ORM 3.7.6 sources from which ModernORM was derived. **Fixed** means fixed in the current development code, **not in the published beta.4 release**. Upstream links identify provenance, not the current status of a Doctrine fix.
+These behaviors were reproduced on ModernORM before the persistence and PostgreSQL write-path audits; the corresponding mechanisms were checked against the Doctrine ORM 3.7.6 sources from which ModernORM was derived. **Fixed** means fixed in the current development code, **not in the published beta.4 release**. Upstream links identify provenance, not the current status of a Doctrine fix.
 
 | Confirmed bug | Upstream reference | ModernORM status |
 | --- | --- | --- |
@@ -143,10 +143,12 @@ These behaviors were reproduced on ModernORM before the persistence audit; the c
 | EXTRA_LAZY indexed lookup on unidirectional ManyToMany requires a nonexistent inverse property | [ManyToManyPersister source](https://github.com/doctrine/orm/blob/3.7.6/src/Persisters/Collection/ManyToManyPersister.php#L80) | **Fixed** — scope lookup through the join table |
 | `onFlush` loses explicitly computed INSERTs/UPDATEs when the initial queue is empty | [UnitOfWork source](https://github.com/doctrine/orm/blob/3.7.6/src/UnitOfWork.php#L388) | **Fixed** — recheck pending operations after the event |
 | An exception from `postFlush` skips cleanup of completed flush state | [UnitOfWork source](https://github.com/doctrine/orm/blob/3.7.6/src/UnitOfWork.php#L496) | **Fixed** — cleanup runs in `finally`; an already committed transaction stays committed |
+| Identity INSERT can assign a different sequence's value after a trigger advances it | [IdentityGenerator source](https://github.com/doctrine/orm/blob/3.7.6/src/Id/IdentityGenerator.php) | **Fixed** — standard identity INSERT reads its own identifier through RETURNING |
+| A trigger-suppressed identity INSERT can register an entity for a nonexistent row | [BasicEntityPersister source](https://github.com/doctrine/orm/blob/3.7.6/src/Persisters/Entity/BasicEntityPersister.php) | **Fixed** — missing RETURNING row fails flush and closes the manager |
 | Removing a row and inserting its replacement with the same immediate UNIQUE value fails in one flush | [#5109](https://github.com/doctrine/orm/issues/5109) | **Open — documented limitation**: INSERT precedes DELETE; use two flushes in one transaction or a suitable deferred UNIQUE constraint |
 | Swapping two immediate UNIQUE values fails on an intermediate UPDATE | [Update execution source](https://github.com/doctrine/orm/blob/3.7.6/src/UnitOfWork.php#L1209) | **Open — documented limitation**: no automatic conflict-resolution plan; suitable deferred constraints require an explicit migration |
 
-[Audit, contracts and per-bug tests](docs/persistence-audit.md) · [Before/after evidence: 36 scenarios, 23 failing before, all passing after](docs/evidence/persistence-audit-2026-11-07.json). Scenario counts are not independent bug counts; limitation tests assert the expected failure. This is a confirmed list, not an exhaustive inventory of Doctrine issues. Nested-flush rejection, manual rollback boundaries and excluded SoftDelete combinations are tracked separately in the audit.
+[Audit, contracts and per-bug tests](docs/persistence-audit.md) · [PostgreSQL write-path audit](docs/postgresql-write-audit.md) · [Before/after evidence: 36 scenarios, 23 failing before, all passing after](docs/evidence/persistence-audit-2026-11-07.json). Scenario counts are not independent bug counts; limitation tests assert the expected failure. This is a confirmed list, not an exhaustive inventory of Doctrine issues. Nested-flush rejection, manual rollback boundaries and excluded SoftDelete combinations are tracked separately in the audit.
 
 ## Install & get started
 

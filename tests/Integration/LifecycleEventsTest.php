@@ -1,5 +1,14 @@
 <?php
 
+/*
+ * This file is part of the ModernORM package.
+ *
+ * (c) Andrey Bolonin <andreybolonin1989@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 declare(strict_types=1);
 
 namespace ModernORM\Tests\Integration;
@@ -20,6 +29,12 @@ use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
+enum EventRecordState: string
+{
+    case READY = 'ready';
+    case DONE = 'done';
+}
+
 #[ORM\Entity, ORM\Table(name: 'modernorm_test_event_records'), ORM\HasLifecycleCallbacks]
 #[ORM\EntityListeners([RecordEntityListener::class])]
 final class EventRecord
@@ -29,6 +44,15 @@ final class EventRecord
 
     #[ORM\Column]
     public string $note = 'initial';
+
+    #[ORM\Column(nullable: true)]
+    public ?string $optional = null;
+
+    #[ORM\Column(enumType: EventRecordState::class)]
+    public EventRecordState $state = EventRecordState::READY;
+
+    #[ORM\Column(type: 'datetime', nullable: true)]
+    public ?\DateTime $changedAt = null;
 
     /** @var list<string> */
     public array $trace = [];
@@ -186,6 +210,62 @@ final class LifecycleEventsTest extends TestCase
         $loaded = $this->em->find(EventRecord::class, $record->id);
         self::assertSame('normalized', $loaded->name);
         self::assertSame('updated-by-listener', $loaded->note);
+    }
+
+    public function testNullableAndEnumChangesSurviveReloadAndNoOpFlush(): void
+    {
+        $record = $this->seed();
+        $record->optional = 'present';
+        $record->state = EventRecordState::DONE;
+        $this->em->flush();
+        $this->em->clear();
+        $loaded = $this->em->find(EventRecord::class, $record->id);
+        self::assertSame('present', $loaded->optional);
+        self::assertSame(EventRecordState::DONE, $loaded->state);
+        $uow = $this->em->getUnitOfWork();
+        $uow->computeChangeSet($this->em->getClassMetadata(EventRecord::class), $loaded);
+        self::assertSame([], $uow->getEntityChangeSet($loaded));
+        $loaded->optional = null;
+        $this->em->flush();
+        $this->em->clear();
+        self::assertNull($this->em->find(EventRecord::class, $record->id)->optional);
+    }
+
+    public function testMutableDateRequiresReplacementToBePersisted(): void
+    {
+        $record = $this->seed();
+        $record->changedAt = new \DateTime('2026-01-01 12:00:00');
+        $this->em->flush();
+        $record->changedAt->modify('+1 day');
+        $this->em->flush();
+        self::assertSame('2026-01-01 12:00:00', $this->em->getConnection()->fetchOne(
+            'SELECT changedAt FROM modernorm_test_event_records WHERE id = ?',
+            [$record->id],
+        ));
+        $record->changedAt = clone $record->changedAt;
+        $this->em->flush();
+        $this->em->clear();
+        self::assertSame('2026-01-02', $this->em->find(EventRecord::class, $record->id)->changedAt->format('Y-m-d'));
+    }
+
+    public function testExplicitRecomputeMergesScalarChangesAndRepeatedFlushIsClean(): void
+    {
+        $record = $this->seed();
+        $uow = $this->em->getUnitOfWork();
+        $metadata = $this->em->getClassMetadata(EventRecord::class);
+        $record->name = 'first-change';
+        $uow->computeChangeSet($metadata, $record);
+        $record->note = 'second-change';
+        $uow->recomputeSingleEntityChangeSet($metadata, $record);
+        self::assertSame(['original', 'first-change'], $uow->getEntityChangeSet($record)['name']);
+        self::assertSame(['prepared', 'second-change'], $uow->getEntityChangeSet($record)['note']);
+        $this->em->flush();
+        self::assertSame([], $uow->getEntityChangeSet($record));
+        $this->em->flush();
+        $this->em->clear();
+        $loaded = $this->em->find(EventRecord::class, $record->id);
+        self::assertSame('first-change', $loaded->name);
+        self::assertSame('second-change', $loaded->note);
     }
 
     public function testFlushEventsAlsoRunWithoutPendingChanges(): void
