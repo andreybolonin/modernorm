@@ -73,9 +73,21 @@ A manual database rollback cannot rewind object properties, generated identifier
 
 ## Component boundary introduced
 
-`Internal/UnitOfWork/AssociationChangePlanner` computes removed membership from before/after object sets. It performs no SQL, invokes no callbacks and schedules no operations. UnitOfWork applies the result, rechecks orphan origins against the final association state and coordinates execution. PersistentCollection reports mutations and avoids orphaning an entity that remains in the container. Collection persisters scope lookups to the association.
+`Internal/UnitOfWork/AssociationChangePlanner` now owns candidate scheduling/cancellation, origin tokens, reasons and the final orphan policy. It compares materialized object arrays and consumes `AssociationMembership` facts. It has no dependency on EntityManager, metadata, persisters or PersistentCollection and performs no SQL/property access. Origins are opaque tokens interpreted by the UnitOfWork adapter.
 
-This is one extraction, not a full UnitOfWork redesign. A future write-plan/executor split should preserve these tests plus the existing lifecycle, optimistic-locking, cache and rollback contracts. Moving methods between classes without explicit data and phase boundaries would retain the same coupling.
+PersistentCollection reports candidate changes for associations with orphan removal enabled; it does not decide final membership. UnitOfWork observes current collection membership and owning-side references lazily, delegates the decision, and invokes the existing removal lifecycle. Short-circuit observation and per-candidate execution preserve loading/callback order. Candidate snapshots keep insertion order, and flush cleanup/clear discard pending candidates and their origins.
+
+The original 36-case comparison above remains historical audit evidence. The local extraction adds 11 isolated planner tests plus two PostgreSQL regression cases: retaining a previously scheduled orphan via collection replacement, and clearing pending candidates before a later flush. One-to-one candidates without collection origins retain their previous unconditional scheduling behavior; no new transfer semantics or SQL ordering are introduced.
+
+A subsequent local extraction moves INSERT/DELETE graph ordering into `Internal/UnitOfWork/WriteOrderPlanner`. UnitOfWork supplies streamed `InsertDependency` / `DeleteDependency` facts and per-entity deletion groups. Separate cascade and ordinary dependency observations preserve the previous two-pass read order, SCC representatives and graph edge order. The planner reads no ORM state and performs no SQL. Thirteen isolated tests cover ordering and invalid graph input; four PostgreSQL tests verify actual FK behavior and callback order. The same four tests also pass against the pre-extraction UnitOfWork at `ef8c003`.
+
+UPDATE sorting, SQL execution, callbacks, transactions and generated-ID assignment remain in UnitOfWork. UNIQUE conflicts stay documented limitations; this extraction does not attempt to fix them.
+
+Flush completion is subsequently separated into private UnitOfWork methods: `commitFlushTransaction`, `handleFailedFlush`, `completeSuccessfulFlush`, `synchronizeVisitedCollections`, and `dispatchPostFlushAndCleanup`. No independent coordinator class or new public API is introduced. Existing exception wrapping, uncertain-COMMIT cache recovery, manager/connection handling and phase metrics retain their previous order. Cache completion failure stops before snapshots/`postFlush`; a `postFlush` exception clears completed queues without entering write-failure rollback.
+
+Two additional lifecycle tests cover an empty flush whose callback fails followed by a successful update, and a callback failure after releasing the flush savepoint inside a manual outer transaction. The existing post-commit L2 failure test now also asserts that `postFlush` is not dispatched. Existing write-failure, deferred-constraint COMMIT failure, lost-acknowledgement, cache-recovery and outer rollback tests remain regression coverage. Collection snapshot errors and arbitrary `onClear` failure combinations are not given new semantics by this extraction.
+
+These are local extractions, not a full UnitOfWork redesign. A future write-plan/executor split should preserve these tests plus the existing lifecycle, optimistic-locking, cache and rollback contracts. Moving methods between classes without explicit data and phase boundaries would retain the same coupling.
 
 ## Reproduction and scope
 

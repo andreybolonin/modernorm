@@ -34,10 +34,14 @@ use ModernORM\Exception\ORMException;
 use ModernORM\Exception\UnexpectedAssociationValue;
 use ModernORM\Id\AssignedGenerator;
 use ModernORM\Internal\HydrationCompleteHandler;
-use ModernORM\Internal\StronglyConnectedComponents;
-use ModernORM\Internal\TopologicalSort;
 use ModernORM\Internal\UnitOfWork\InsertBatch;
+use ModernORM\Internal\UnitOfWork\InsertDependency;
+use ModernORM\Internal\UnitOfWork\DeleteDependency;
+use ModernORM\Internal\UnitOfWork\EntityDeleteDependencies;
+use ModernORM\Internal\UnitOfWork\WriteOrderPlanner;
 use ModernORM\Internal\UnitOfWork\AssociationChangePlanner;
+use ModernORM\Internal\UnitOfWork\AssociationMembership;
+use ModernORM\Internal\UnitOfWork\OrphanRemovalReason;
 use ModernORM\Mapping\AssociationMapping;
 use ModernORM\Mapping\ClassMetadata;
 use ModernORM\Exception\MappingException;
@@ -75,6 +79,7 @@ use function get_debug_type;
 use function implode;
 use function in_array;
 use function is_array;
+use function iterator_to_array;
 use function is_object;
 use function reset;
 use function spl_object_id;
@@ -285,15 +290,8 @@ class UnitOfWork implements PropertyChangedListener
      */
     private readonly IdentifierFlattener $identifierFlattener;
 
-    /**
-     * Orphaned entities that are scheduled for removal.
-     *
-     * @phpstan-var array<int, object>
-     */
-    private array $orphanRemovals = [];
-
-    /** @var array<int, list<PersistentCollection>> */
-    private array $orphanRemovalOrigins = [];
+    private readonly AssociationChangePlanner $associationChangePlanner;
+    private readonly WriteOrderPlanner $writeOrderPlanner;
 
     /**
      * Read-Only objects are never evaluated
@@ -353,6 +351,8 @@ class UnitOfWork implements PropertyChangedListener
     public function __construct(
         private readonly EntityManagerInterface $em,
     ) {
+        $this->associationChangePlanner = new AssociationChangePlanner();
+        $this->writeOrderPlanner = new WriteOrderPlanner();
         $this->statistics = $em->getStatistics();
         $this->lazyCollectionQueue = new LazyCollectionQueue($em);
         $this->eventDispatcher          = $em->getEventManager();
@@ -396,20 +396,16 @@ class UnitOfWork implements PropertyChangedListener
             $onFlushDispatched = true;
             // onFlush listeners may explicitly compute new work even when the initial queue was empty.
             if (! $this->hasPendingOperations()) {
-                try {
-                    $this->dispatchPostFlushEvent();
-                } finally {
-                    $this->postCommitCleanup();
-                }
+                $this->dispatchPostFlushAndCleanup();
                 return;
             }
         }
 
         $this->assertThatThereAreNoUnintentionallyNonPersistedAssociations();
 
-        if ($this->orphanRemovals) {
-            foreach ($this->orphanRemovals as $oid => $orphan) {
-                if (! $this->isStillAssociated($orphan, $this->orphanRemovalOrigins[$oid] ?? [])) {
+        if ($this->associationChangePlanner->hasCandidates()) {
+            foreach ($this->associationChangePlanner->candidates() as $orphan) {
+                if ($this->associationChangePlanner->isOrphan($this->observeOrphanMemberships($orphan))) {
                     $this->remove($orphan);
                 }
             }
@@ -473,49 +469,71 @@ class UnitOfWork implements PropertyChangedListener
                 }
             });
 
-            $this->measurePhase(\ModernORM\Statistics\UnitOfWorkPhase::COMMIT, function () use ($connection, &$commitFailure): void {
-                $commitFailed = false;
-                try {
-                    if ($connection->commit() === false) {
-                        $commitFailed = true;
-                        $commitFailure = new \RuntimeException('Database commit returned false.');
-                    }
-                } catch (DBAL\Exception $e) {
-                    $commitFailed = true;
-                    $commitFailure = $e;
-                } catch (\Throwable $e) {
-                    $commitFailure = $e;
-                    throw $e;
-                }
-
-                if ($commitFailed) {
-                    throw new OptimisticLockException('Commit failed', null, $e ?? null);
-                }
-            });
+            $this->commitFlushTransaction($connection, $commitFailure);
 
             $successful = true;
         } finally {
             if (! $successful) {
-                try {
-                    $this->em->close();
-                    if ($connection->isTransactionActive()) {
-                        $connection->rollBack();
-                    }
-                } finally {
-                    if ($commitFailure !== null && $this->hasCache) {
-                        // DBAL's nesting level may already be zero although the
-                        // driver outcome is unknown. Never reuse that connection.
-                        $connection->close();
-                        $this->afterTransactionCommitFailed($commitFailure);
-                    } else {
-                        $this->afterTransactionRolledBack();
-                    }
-                }
+                $this->handleFailedFlush($connection, $commitFailure);
             }
         }
 
-        $this->afterTransactionComplete();
+        $this->completeSuccessfulFlush();
+    }
 
+    /** Preserve the original COMMIT failure for uncertain-outcome cache recovery. */
+    private function commitFlushTransaction(DBAL\Connection $connection, ?\Throwable &$commitFailure): void
+    {
+        $this->measurePhase(\ModernORM\Statistics\UnitOfWorkPhase::COMMIT, function () use ($connection, &$commitFailure): void {
+            $commitFailed = false;
+            try {
+                if ($connection->commit() === false) {
+                    $commitFailed = true;
+                    $commitFailure = new \RuntimeException('Database commit returned false.');
+                }
+            } catch (DBAL\Exception $e) {
+                $commitFailed = true;
+                $commitFailure = $e;
+            } catch (\Throwable $e) {
+                $commitFailure = $e;
+                throw $e;
+            }
+
+            if ($commitFailed) {
+                throw new OptimisticLockException('Commit failed', null, $e ?? null);
+            }
+        });
+    }
+
+    /** The write/COMMIT failure path; successful completion and postFlush never enter here. */
+    private function handleFailedFlush(DBAL\Connection $connection, ?\Throwable $commitFailure): void
+    {
+        try {
+            $this->em->close();
+            if ($connection->isTransactionActive()) {
+                $connection->rollBack();
+            }
+        } finally {
+            if ($commitFailure !== null && $this->hasCache) {
+                // Nesting may be zero although the driver outcome is unknown.
+                $connection->close();
+                $this->afterTransactionCommitFailed($commitFailure);
+            } else {
+                $this->afterTransactionRolledBack();
+            }
+        }
+    }
+
+    /** A flush transaction/savepoint completed; an outer transaction may still be active. */
+    private function completeSuccessfulFlush(): void
+    {
+        $this->afterTransactionComplete();
+        $this->synchronizeVisitedCollections();
+        $this->dispatchPostFlushAndCleanup();
+    }
+
+    private function synchronizeVisitedCollections(): void
+    {
         // Unset removed entities from collections, and take new snapshots from
         // all visited collections.
         foreach ($this->visitedCollections as $coid => $coll) {
@@ -527,7 +545,11 @@ class UnitOfWork implements PropertyChangedListener
 
             $coll->takeSnapshot();
         }
+    }
 
+    /** Shared by empty and successful flushes; callback failure must not retain completed queues. */
+    private function dispatchPostFlushAndCleanup(): void
+    {
         try {
             $this->dispatchPostFlushEvent();
         } finally {
@@ -538,7 +560,7 @@ class UnitOfWork implements PropertyChangedListener
     private function hasPendingOperations(): bool
     {
         return (bool) ($this->entityInsertions || $this->entityDeletions || $this->entityUpdates ||
-            $this->collectionUpdates || $this->collectionDeletions || $this->orphanRemovals);
+            $this->collectionUpdates || $this->collectionDeletions || $this->associationChangePlanner->hasCandidates());
     }
 
     private function measurePhase(\ModernORM\Statistics\UnitOfWorkPhase $phase, \Closure $work, bool $after = false): void
@@ -583,10 +605,9 @@ class UnitOfWork implements PropertyChangedListener
         $this->collectionDeletions              =
         $this->pendingCollectionElementRemovals =
         $this->visitedCollections               =
-        $this->orphanRemovalOrigins             =
-        $this->orphanRemovals                   =
         $this->entityChangeSets                 =
         $this->scheduledForSynchronization      = [];
+        $this->associationChangePlanner->clear();
     }
 
     /**
@@ -857,7 +878,7 @@ class UnitOfWork implements PropertyChangedListener
 
                     if ($orgValue !== null && $assoc->orphanRemoval) {
                         assert(is_object($orgValue));
-                        $this->scheduleOrphanRemoval($orgValue);
+                        $this->associationChangePlanner->schedule($orgValue, OrphanRemovalReason::TO_ONE_REPLACEMENT);
                     }
                 }
             }
@@ -896,8 +917,11 @@ class UnitOfWork implements PropertyChangedListener
     {
         $mapping = $original->getMapping();
         if ($mapping->isOneToMany() && $mapping->orphanRemoval) {
-            foreach (AssociationChangePlanner::removedElements($original, $current) as $removed) {
-                $this->scheduleOrphanRemoval($removed, $original);
+            // Read current membership first, matching the previous collection-diff traversal order.
+            $currentMembers = is_array($current) ? $current : iterator_to_array($current);
+            $originalMembers = $original->toArray();
+            foreach (AssociationChangePlanner::removedElements($originalMembers, $currentMembers) as $removed) {
+                $this->associationChangePlanner->schedule($removed, OrphanRemovalReason::COLLECTION_REPLACEMENT, $original);
             }
             return;
         }
@@ -1368,59 +1392,37 @@ class UnitOfWork implements PropertyChangedListener
     /** @return list<object> */
     private function computeInsertExecutionOrder(): array
     {
-        $sort = new TopologicalSort();
+        $entities = $this->entityInsertions;
+        return $this->writeOrderPlanner->orderInserts($entities, $this->observeInsertDependencies($entities));
+    }
 
-        // First make sure we have all the nodes
-        foreach ($this->entityInsertions as $entity) {
-            $sort->addNode($entity);
-        }
-
-        // Now add edges
-        foreach ($this->entityInsertions as $entity) {
+    /**
+     * @param array<int, object> $entities
+     * @return \Generator<int, InsertDependency>
+     */
+    private function observeInsertDependencies(array $entities): \Generator
+    {
+        foreach ($entities as $entity) {
             $class = $this->em->getClassMetadata($entity::class);
-
-            foreach ($class->associationMappings as $assoc) {
-                // We only need to consider the owning sides of to-one associations,
-                // since many-to-many associations are persisted at a later step and
-                // have no insertion order problems (all entities already in the database
-                // at that time).
-                if (! $assoc->isToOneOwningSide()) {
+            foreach ($class->associationMappings as $association) {
+                if (! $association->isToOneOwningSide()) {
                     continue;
                 }
-
-                $targetEntity = $class->getFieldValue($entity, $assoc->fieldName);
-
-                // If there is no entity that we need to refer to, or it is already in the
-                // database (i. e. does not have to be inserted), no need to consider it.
-                if ($targetEntity === null || ! $sort->hasNode($targetEntity)) {
+                $target = $class->getFieldValue($entity, $association->fieldName);
+                if ($target === null || ! isset($entities[spl_object_id($target)])) {
                     continue;
                 }
-
-                // An entity that references back to itself _and_ uses an application-provided ID
-                // (the "NONE" generator strategy) can be exempted from commit order computation.
-                // See https://github.com/doctrine/orm/pull/10735/ for more details on this edge case.
-                // A non-NULLable self-reference would be a cycle in the graph.
-                if ($targetEntity === $entity && $class->isIdentifierNatural()) {
-                    continue;
-                }
-
-                // According to https://www.doctrine-project.org/projects/doctrine-orm/en/2.14/reference/annotations-reference.html#annref_joincolumn,
-                // the default for "nullable" is true. Unfortunately, it seems this default is not applied at the metadata driver, factory or other
-                // level, but in fact we may have an undefined 'nullable' key here, so we must assume that default here as well.
-                //
-                // Same in \ModernORM\Tools\EntityGenerator::isAssociationIsNullable or \ModernORM\Persisters\Entity\BasicEntityPersister::getJoinSQLForJoinColumns,
-                // to give two examples.
-                $joinColumns = reset($assoc->joinColumns);
-                $isNullable  = ! isset($joinColumns->nullable) || $joinColumns->nullable;
-
-                // Add dependency. The dependency direction implies that "$entity depends on $targetEntity". The
-                // topological sort result will output the depended-upon nodes first, which means we can insert
-                // entities in that order.
-                $sort->addEdge($entity, $targetEntity, $isNullable);
+                $assignedSelfReference = $target === $entity && $class->isIdentifierNatural();
+                // Match the previous default and first-join-column policy.
+                $column = reset($association->joinColumns);
+                yield new InsertDependency(
+                    $entity,
+                    $target,
+                    ! isset($column->nullable) || $column->nullable,
+                    $assignedSelfReference,
+                );
             }
         }
-
-        return $sort->sort();
     }
 
     /** @return list<object> */
@@ -1451,115 +1453,59 @@ class UnitOfWork implements PropertyChangedListener
     /** @return list<object> */
     private function computeDeleteExecutionOrder(): array
     {
-        $stronglyConnectedComponents = new StronglyConnectedComponents();
-        $sort                        = new TopologicalSort();
+        $entities = $this->entityDeletions;
+        return $this->writeOrderPlanner->orderDeletes(
+            $entities,
+            $this->observeCascadeDeleteDependencies($entities),
+            $this->observeEntityDeleteDependencies($entities),
+        );
+    }
 
-        foreach ($this->entityDeletions as $entity) {
-            $stronglyConnectedComponents->addNode($entity);
-            $sort->addNode($entity);
+    /**
+     * @param array<int, object> $entities
+     * @return \Generator<int, DeleteDependency>
+     */
+    private function observeCascadeDeleteDependencies(array $entities): \Generator
+    {
+        foreach ($entities as $entity) {
+            yield from $this->observeDeleteDependencies($entities, $entity, true);
         }
+    }
 
-        // First, consider only "on delete cascade" associations between entities
-        // and find strongly connected groups. Once we delete any one of the entities
-        // in such a group, _all_ of the other entities will be removed as well. So,
-        // we need to treat those groups like a single entity when performing delete
-        // order topological sorting.
-        foreach ($this->entityDeletions as $entity) {
-            $class = $this->em->getClassMetadata($entity::class);
+    /**
+     * @param array<int, object> $entities
+     * @return \Generator<int, EntityDeleteDependencies>
+     */
+    private function observeEntityDeleteDependencies(array $entities): \Generator
+    {
+        foreach ($entities as $entity) {
+            yield new EntityDeleteDependencies($entity, $this->observeDeleteDependencies($entities, $entity, false));
+        }
+    }
 
-            foreach ($class->associationMappings as $assoc) {
-                // We only need to consider the owning sides of to-one associations,
-                // since many-to-many associations can always be (and have already been)
-                // deleted in a preceding step.
-                if (! $assoc->isToOneOwningSide()) {
-                    continue;
-                }
-
-                $joinColumns = reset($assoc->joinColumns);
-                if (! isset($joinColumns->onDelete)) {
-                    continue;
-                }
-
-                $onDeleteOption = strtolower($joinColumns->onDelete);
-                if ($onDeleteOption !== 'cascade') {
-                    continue;
-                }
-
-                $targetEntity = $class->getFieldValue($entity, $assoc->fieldName);
-
-                // If the association does not refer to another entity or that entity
-                // is not to be deleted, there is no ordering problem and we can
-                // skip this particular association.
-                if ($targetEntity === null || ! $stronglyConnectedComponents->hasNode($targetEntity)) {
-                    continue;
-                }
-
-                $stronglyConnectedComponents->addEdge($entity, $targetEntity);
+    /**
+     * Reads only the associations considered by the corresponding old ordering pass.
+     *
+     * @param array<int, object> $entities
+     * @return \Generator<int, DeleteDependency>
+     */
+    private function observeDeleteDependencies(array $entities, object $entity, bool $cascadeOnly): \Generator
+    {
+        $class = $this->em->getClassMetadata($entity::class);
+        foreach ($class->associationMappings as $association) {
+            if (! $association->isToOneOwningSide()) {
+                continue;
+            }
+            $column = reset($association->joinColumns);
+            $onDelete = isset($column->onDelete) ? strtolower($column->onDelete) : null;
+            if (($cascadeOnly && $onDelete !== 'cascade') || (! $cascadeOnly && $onDelete === 'set null')) {
+                continue;
+            }
+            $target = $class->getFieldValue($entity, $association->fieldName);
+            if ($target !== null && isset($entities[spl_object_id($target)])) {
+                yield new DeleteDependency($entity, $target, $onDelete);
             }
         }
-
-        $stronglyConnectedComponents->findStronglyConnectedComponents();
-
-        // Now do the actual topological sorting to find the delete order.
-        foreach ($this->entityDeletions as $entity) {
-            $class = $this->em->getClassMetadata($entity::class);
-
-            // Get the entities representing the SCC
-            $entityComponent = $stronglyConnectedComponents->getNodeRepresentingStronglyConnectedComponent($entity);
-
-            // When $entity is part of a non-trivial strongly connected component group
-            // (a group containing not only those entities alone), make sure we process it _after_ the
-            // entity representing the group.
-            // The dependency direction implies that "$entity depends on $entityComponent
-            // being deleted first". The topological sort will output the depended-upon nodes first.
-            if ($entityComponent !== $entity) {
-                $sort->addEdge($entity, $entityComponent, false);
-            }
-
-            foreach ($class->associationMappings as $assoc) {
-                // We only need to consider the owning sides of to-one associations,
-                // since many-to-many associations can always be (and have already been)
-                // deleted in a preceding step.
-                if (! $assoc->isToOneOwningSide()) {
-                    continue;
-                }
-
-                // For associations that implement a database-level set null operation,
-                // we do not have to follow a particular order: If the referred-to entity is
-                // deleted first, the DBMS will temporarily set the foreign key to NULL (SET NULL).
-                // So, we can skip it in the computation.
-                $joinColumns = reset($assoc->joinColumns);
-                if (isset($joinColumns->onDelete)) {
-                    $onDeleteOption = strtolower($joinColumns->onDelete);
-                    if ($onDeleteOption === 'set null') {
-                        continue;
-                    }
-                }
-
-                $targetEntity = $class->getFieldValue($entity, $assoc->fieldName);
-
-                // If the association does not refer to another entity or that entity
-                // is not to be deleted, there is no ordering problem and we can
-                // skip this particular association.
-                if ($targetEntity === null || ! $sort->hasNode($targetEntity)) {
-                    continue;
-                }
-
-                // Get the entities representing the SCC
-                $targetEntityComponent = $stronglyConnectedComponents->getNodeRepresentingStronglyConnectedComponent($targetEntity);
-
-                // When we have a dependency between two different groups of strongly connected nodes,
-                // add it to the computation.
-                // The dependency direction implies that "$targetEntityComponent depends on $entityComponent
-                // being deleted first". The topological sort will output the depended-upon nodes first,
-                // so we can work through the result in the returned order.
-                if ($targetEntityComponent !== $entityComponent) {
-                    $sort->addEdge($targetEntityComponent, $entityComponent, false);
-                }
-            }
-        }
-
-        return $sort->sort();
     }
 
     /**
@@ -2526,10 +2472,9 @@ class UnitOfWork implements PropertyChangedListener
         $this->pendingCollectionElementRemovals =
         $this->visitedCollections               =
         $this->eagerLoadingEntities             =
-        $this->eagerLoadingCollections          =
-        $this->orphanRemovalOrigins             =
-        $this->orphanRemovals                   = [];
+        $this->eagerLoadingCollections          = [];
 
+        $this->associationChangePlanner->clear();
         $this->eventDispatcher->dispatchEvent(Events::onClear, new OnClearEventArgs($this->em));
     }
 
@@ -2543,17 +2488,18 @@ class UnitOfWork implements PropertyChangedListener
      */
     public function scheduleOrphanRemoval(object $entity, ?PersistentCollection $origin = null): void
     {
-        $oid = spl_object_id($entity);
-        $this->orphanRemovals[$oid] = $entity;
-        if ($origin !== null) {
-            $this->orphanRemovalOrigins[$oid][] = $origin;
-        }
+        $this->associationChangePlanner->schedule(
+            $entity,
+            $origin === null ? OrphanRemovalReason::EXPLICIT : OrphanRemovalReason::COLLECTION_MUTATION,
+            $origin,
+        );
     }
 
-    /** @param list<PersistentCollection> $origins */
-    private function isStillAssociated(object $entity, array $origins): bool
+    /** @return \Generator<int, AssociationMembership> */
+    private function observeOrphanMemberships(object $entity): \Generator
     {
-        foreach ($origins as $origin) {
+        foreach ($this->associationChangePlanner->originsFor($entity) as $origin) {
+            assert($origin instanceof PersistentCollection);
             $owner = $origin->getOwner();
             $mapping = $origin->getMapping();
             if ($owner === null) {
@@ -2562,18 +2508,16 @@ class UnitOfWork implements PropertyChangedListener
             $source = $this->em->getClassMetadata($mapping->sourceEntity);
             $current = $source->propertyAccessors[$mapping->fieldName]->getValue($owner);
             if ($current instanceof Collection && $current->contains($entity)) {
-                return true;
+                yield new AssociationMembership($owner, true);
+                continue;
             }
-            // An explicitly updated owning side can transfer a child in the same flush.
+            $owningSideOwner = null;
             if ($mapping->isOneToMany()) {
                 $target = $this->em->getClassMetadata($mapping->targetEntity);
-                $newOwner = $target->propertyAccessors[$mapping->mappedBy]->getValue($entity);
-                if ($newOwner !== null && $newOwner !== $owner) {
-                    return true;
-                }
+                $owningSideOwner = $target->propertyAccessors[$mapping->mappedBy]->getValue($entity);
             }
+            yield new AssociationMembership($owner, false, $owningSideOwner);
         }
-        return false;
     }
 
     /**
@@ -2584,7 +2528,7 @@ class UnitOfWork implements PropertyChangedListener
      */
     public function cancelOrphanRemoval(object $entity): void
     {
-        unset($this->orphanRemovals[spl_object_id($entity)], $this->orphanRemovalOrigins[spl_object_id($entity)]);
+        $this->associationChangePlanner->cancel($entity);
     }
 
     /**

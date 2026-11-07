@@ -319,8 +319,7 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
             $this->association !== null &&
             $this->association->isToMany() &&
             $this->owner &&
-            $this->getMapping()->orphanRemoval &&
-            ! $this->unwrap()->contains($removed)
+            $this->getMapping()->orphanRemoval
         ) {
             $this->getUnitOfWork()->scheduleOrphanRemoval($removed, $this);
         }
@@ -342,8 +341,7 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
             $this->association !== null &&
             $this->association->isToMany() &&
             $this->owner &&
-            $this->getMapping()->orphanRemoval &&
-            ! $this->unwrap()->contains($element)
+            $this->getMapping()->orphanRemoval
         ) {
             $this->getUnitOfWork()->scheduleOrphanRemoval($element, $this);
         }
@@ -414,7 +412,7 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
         if (
             is_object($previous) && $previous !== $value &&
             $this->association !== null && $this->association->orphanRemoval &&
-            $this->owner !== null && ! $this->unwrap()->contains($previous)
+            $this->owner !== null
         ) {
             $this->getUnitOfWork()->scheduleOrphanRemoval($previous, $this);
         }

@@ -465,6 +465,17 @@ final class UpdateL2CacheTest extends TestCase
 
     public function testPostCommitCacheFailureReportsCommitAndRequiresCacheRecovery(): void
     {
+        $postFlushed = false;
+        $listener = new class ($postFlushed) {
+            public function __construct(public bool &$called)
+            {
+            }
+            public function postFlush(): void
+            {
+                $this->called = true;
+            }
+        };
+        $this->em->getEventManager()->addEventListener([\ModernORM\Events::postFlush], $listener);
         $record = $this->em->find(UpdateCacheRecord::class, '01');
         $record->name = 'committed';
         $this->reset();
@@ -478,6 +489,7 @@ final class UpdateL2CacheTest extends TestCase
         } catch (CacheSynchronizationException $error) {
             self::assertTrue($error->databaseCommitted);
         }
+        self::assertFalse($postFlushed);
         $this->pool->failWrites = false;
         self::assertFalse($this->em->isOpen());
         self::assertSame(1, $this->updateCount());

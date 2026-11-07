@@ -260,6 +260,66 @@ final class LifecycleEventsTest extends TestCase
         self::assertSame('original', $this->em->find(EventRecord::class, $record->id)->name);
     }
 
+    public function testEmptyFlushPostFlushFailureCleansUpAndAllowsLaterUpdate(): void
+    {
+        $record = $this->seed();
+        $calls = 0;
+        $this->listen([Events::postFlush], function () use (&$calls): void {
+            if (++$calls === 1) {
+                throw new RuntimeException('empty postFlush failed');
+            }
+        });
+        try {
+            $this->em->flush();
+            self::fail('Expected empty postFlush failure.');
+        } catch (RuntimeException $error) {
+            self::assertSame('empty postFlush failed', $error->getMessage());
+        }
+        self::assertTrue($this->em->isOpen());
+        self::assertFalse($this->em->getConnection()->isTransactionActive());
+        self::assertSame([], $this->em->getUnitOfWork()->getEntityChangeSet($record));
+        $record->note = 'after empty failure';
+        $this->em->flush();
+        self::assertSame(2, $calls);
+        self::assertSame('after empty failure', $this->em->getConnection()->fetchOne(
+            'SELECT note FROM modernorm_test_event_records WHERE id = ?',
+            [$record->id],
+        ));
+    }
+
+    public function testPostFlushFailureLeavesManualOuterTransactionUnderCallerControl(): void
+    {
+        $record = $this->seed();
+        $connection = $this->em->getConnection();
+        $original = $connection->fetchOne('SELECT note FROM modernorm_test_event_records WHERE id = ?', [$record->id]);
+        $connection->beginTransaction();
+        $this->listen([Events::postFlush], function () use ($connection): void {
+            self::assertSame(1, $connection->getTransactionNestingLevel());
+            throw new RuntimeException('outer postFlush failed');
+        });
+        try {
+            $record->note = 'pending outer';
+            try {
+                $this->em->flush();
+                self::fail('Expected postFlush failure inside the outer transaction.');
+            } catch (RuntimeException $error) {
+                self::assertSame('outer postFlush failed', $error->getMessage());
+            }
+            self::assertTrue($this->em->isOpen());
+            self::assertTrue($connection->isTransactionActive());
+            self::assertSame([], $this->em->getUnitOfWork()->getEntityChangeSet($record));
+            self::assertSame('pending outer', $connection->fetchOne('SELECT note FROM modernorm_test_event_records WHERE id = ?', [$record->id]));
+        } finally {
+            if ($connection->isTransactionActive()) {
+                $connection->rollBack();
+            }
+        }
+        self::assertSame($original, $connection->fetchOne('SELECT note FROM modernorm_test_event_records WHERE id = ?', [$record->id]));
+        self::assertSame('pending outer', $record->note);
+        $this->em->clear();
+        self::assertSame($original, $this->em->find(EventRecord::class, $record->id)->note);
+    }
+
     public function testPreFlushFailureOccursBeforeTransactionAndLeavesManagerOpen(): void
     {
         $record = new EventRecord();

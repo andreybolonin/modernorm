@@ -209,6 +209,35 @@ final class PersistenceAuditTest extends TestCase
         self::assertNotNull($this->em->find(AuditChild::class, $ids[0]));
     }
 
+    public function testCollectionReplacementCanRetainAnAlreadyScheduledOrphan(): void
+    {
+        [$owner, $ids] = $this->owner();
+        $children = $owner->children->toArray();
+        $owner->children->remove($ids[0]);
+        $owner->children = new ArrayCollection(array_values($children));
+        $removals = 0;
+        $this->listen(Events::preRemove, static function () use (&$removals): void {
+            ++$removals;
+        });
+        $this->em->flush();
+        $this->em->clear();
+        self::assertSame(0, $removals);
+        foreach ($ids as $id) {
+            self::assertNotNull($this->em->find(AuditChild::class, $id));
+        }
+    }
+
+    public function testClearDiscardsOrphanCandidatesBeforeTheNextFlush(): void
+    {
+        [$owner, $ids] = $this->owner();
+        $owner->children->remove($ids[0]);
+        $this->em->clear();
+        $this->em->flush();
+        foreach ($ids as $id) {
+            self::assertNotNull($this->em->find(AuditChild::class, $id));
+        }
+    }
+
     public function testReplacingIndexedMemberOrphansOnlyTheDisplacedEntity(): void
     {
         [$owner, $ids] = $this->owner();
