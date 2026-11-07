@@ -44,6 +44,7 @@ use ModernORM\Internal\UnitOfWork\AssociationMembership;
 use ModernORM\Internal\UnitOfWork\FieldChangeComparator;
 use ModernORM\Internal\UnitOfWork\FlushOperationQueues;
 use ModernORM\Internal\UnitOfWork\IdentityMap;
+use ModernORM\Internal\UnitOfWork\PartialLoadTracker;
 use ModernORM\Internal\UnitOfWork\OrphanRemovalReason;
 use ModernORM\Mapping\AssociationMapping;
 use ModernORM\Mapping\ClassMetadata;
@@ -68,7 +69,6 @@ use function array_chunk;
 use function array_combine;
 use function array_diff_key;
 use function array_filter;
-use function array_flip;
 use function array_intersect_key;
 use function array_key_exists;
 use function array_keys;
@@ -224,6 +224,7 @@ class UnitOfWork implements PropertyChangedListener
     private readonly AssociationChangePlanner $associationChangePlanner;
     private readonly WriteOrderPlanner $writeOrderPlanner;
     private readonly FlushOperationQueues $flushQueues;
+    private readonly PartialLoadTracker $partialLoadTracker;
 
     /**
      * Read-Only objects are never evaluated
@@ -231,22 +232,6 @@ class UnitOfWork implements PropertyChangedListener
      * @var array<int, true>
      */
     private array $readOnlyObjects = [];
-
-    /**
-     * Maps OIDs of native lazy objects that are not (yet) fully loaded to the
-     * list of scalar field names that are actually known to be loaded: either
-     * the fields selected by a partial SQL result mapping, or an empty list for a
-     * to-one association proxy that hasn't been initialized at all.
-     *
-     * Used during lazy init to determine precisely which fields must not be
-     * overwritten from the full load, and by computeChangeSet() as the source
-     * of truth for which fields to diff — trusted over inferring the same
-     * thing from the shape of originalEntityData, which can be legitimately
-     * empty for other reasons.
-     *
-     * @var array<int, list<string>>
-     */
-    private array $partialObjectLoadedFields = [];
 
     /**
      * Map of Entity Class-Names and corresponding IDs that should eager loaded when requested.
@@ -287,6 +272,7 @@ class UnitOfWork implements PropertyChangedListener
         $this->writeOrderPlanner = new WriteOrderPlanner();
         $this->flushQueues = new FlushOperationQueues();
         $this->identityMap = new IdentityMap();
+        $this->partialLoadTracker = new PartialLoadTracker();
         $this->statistics = $em->getStatistics();
         $this->lazyCollectionQueue = new LazyCollectionQueue($em);
         $this->eventDispatcher          = $em->getEventManager();
@@ -707,11 +693,12 @@ class UnitOfWork implements PropertyChangedListener
             // Entity is "fully" MANAGED: it was already fully persisted before
             // and we have a copy of the original data
             $originalData  = $this->originalEntityData[$oid];
-            $partialFields = $this->partialObjectLoadedFields[$oid] ?? null;
+            $partialFields = $this->partialLoadTracker->loadedFields($entity);
             $changeSet     = [];
 
             if (PHP_VERSION_ID >= 80400 && $partialFields !== null && ! $this->isUninitializedObject($entity)) {
                 $this->reconcileStalePartialLoadTracking($oid, $class, $actualData, $originalData, $changeSet);
+                $this->partialLoadTracker->forget($entity);
                 $partialFields = null;
             }
 
@@ -1726,6 +1713,7 @@ class UnitOfWork implements PropertyChangedListener
         $className = $classMetadata->name;
 
         if ($this->identityMap->remove($className, $idHash, $entity)) {
+            $this->partialLoadTracker->forget($entity);
             unset($this->readOnlyObjects[$oid]);
             $this->em->getProxyFactory()->getBatchQueue()->remove($entity);
             $this->lazyCollectionQueue->removeOwner($entity);
@@ -1997,6 +1985,7 @@ class UnitOfWork implements PropertyChangedListener
                 }
 
                 $this->flushQueues->removeEntity($oid);
+                $this->partialLoadTracker->forget($entity);
                 unset(
                     $this->entityIdentifiers[$oid],
                     $this->entityStates[$oid],
@@ -2333,6 +2322,7 @@ class UnitOfWork implements PropertyChangedListener
         $this->lazyCollectionQueue->clear();
         $this->flushQueues->clear();
         $this->identityMap->clear();
+        $this->partialLoadTracker->clear();
         $this->entityIdentifiers                =
         $this->originalEntityData               =
         $this->entityChangeSets                 =
@@ -2340,7 +2330,6 @@ class UnitOfWork implements PropertyChangedListener
         $this->scheduledForSynchronization      =
         $this->nonCascadedNewDetectedEntities   =
         $this->readOnlyObjects                  =
-        $this->partialObjectLoadedFields        =
         $this->eagerLoadingEntities             =
         $this->eagerLoadingCollections          = [];
 
@@ -2469,17 +2458,17 @@ class UnitOfWork implements PropertyChangedListener
             // Note: $em->refresh() does NOT set HINT_REFRESH_ENTITY, so explicit refreshes
             // skip this and always do a full overwrite regardless of partial-object status.
             if (
-                isset($this->partialObjectLoadedFields[$oid], $hints[Query::HINT_REFRESH_ENTITY])
+                $this->partialLoadTracker->loadedFields($managedEntity) !== null
+                && isset($hints[Query::HINT_REFRESH_ENTITY])
                 && $hints[Query::HINT_REFRESH_ENTITY] === $entity
             ) {
                 // Restrict $existingData to only the scalar fields loaded in the original
                 // partial query. Other entries in originalEntityData (e.g. association
                 // snapshots added during hydration) must not block the full load from
                 // initialising those fields on the ghost.
-                $partialFields = $this->partialObjectLoadedFields[$oid];
-                $existingData  = array_intersect_key(
+                $existingData = $this->partialLoadTracker->loadedSnapshot(
+                    $managedEntity,
                     $this->originalEntityData[$oid] ?? [],
-                    array_flip($partialFields),
                 );
             }
 
@@ -2504,7 +2493,7 @@ class UnitOfWork implements PropertyChangedListener
             // refresh()), $data is always a complete row: the early return above is the
             // only path left for a caller supplying anything less. The entity can no
             // longer be considered partially loaded.
-            unset($this->partialObjectLoadedFields[$oid]);
+            $this->partialLoadTracker->forget($managedEntity);
         } else {
             $allowsPartialLazyObject = isset($hints['isPartial']) && $hints['isPartial'];
             if ($allowsPartialLazyObject) {
@@ -2549,7 +2538,7 @@ class UnitOfWork implements PropertyChangedListener
             }
 
             if ($allowsPartialLazyObject) {
-                $this->markAsPartiallyLoaded($entity, array_keys(
+                $this->partialLoadTracker->mark($entity, array_keys(
                     array_intersect_key($data, $class->fieldMappings),
                 ));
             }
@@ -3094,17 +3083,7 @@ class UnitOfWork implements PropertyChangedListener
     public function registerManagedProxy(object $entity, array $id): void
     {
         $this->registerManaged($entity, $id, []);
-        $this->markAsPartiallyLoaded($entity, []);
-    }
-
-    /**
-     * @see self::$partialObjectLoadedFields
-     *
-     * @param list<string> $loadedFields
-     */
-    private function markAsPartiallyLoaded(object $entity, array $loadedFields): void
-    {
-        $this->partialObjectLoadedFields[spl_object_id($entity)] = $loadedFields;
+        $this->partialLoadTracker->mark($entity, []);
     }
 
     /* PropertyChangedListener implementation */

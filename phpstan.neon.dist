@@ -6,6 +6,8 @@ parameters:
     paths:
         - src
         - tests/Unit/ObjectHydrationTest.php
+        - tests/Unit/PartialLoadTrackerTest.php
+        - tests/Integration/PartialLoadTrackingTest.php
         - tests/Unit/IdentityMapTest.php
         - tests/Integration/IdentityMapTest.php
         - tests/Unit/FlushOperationQueuesTest.php

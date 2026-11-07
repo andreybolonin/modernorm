@@ -625,7 +625,12 @@ abstract class AbstractHydrator
         $fieldName = $class->identifier[0];
         $id = [$fieldName => $data[$fieldName]];
 
-        $this->em->getUnitOfWork()->registerManaged($entity, $id, $data);
+        $uow = $this->em->getUnitOfWork();
+        // createEntity() merges partial snapshots or replaces them on explicit refresh.
+        // Re-registering a canonical object here would overwrite its loaded-field baseline first.
+        if (! $uow->isInIdentityMap($entity)) {
+            $uow->registerManaged($entity, $id, $data);
+        }
     }
 
     /**
