@@ -9,6 +9,7 @@ parameters:
         - benchmarks/hydration.php
         - tests/Integration/TimestampableTest.php
         - tests/Integration/BlameableTest.php
+        - tests/Integration/PersistenceAuditTest.php
         - tests/Integration/SoftDeleteTest.php
         - tests/Integration/BulkSoftDeleteTest.php
     tmpDir: .phpstan-cache

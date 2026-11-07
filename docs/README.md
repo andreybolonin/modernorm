@@ -8,6 +8,7 @@ Start with the [project README](../README.md) for key features, installation and
 | --- | --- |
 | Architecture and component boundaries | [Architecture](architecture.md) |
 | Tested scenarios and exclusions | [Compatibility matrix](compatibility.md) |
+| Inherited persistence bugs, fixes and limitations | [Persistence audit](persistence-audit.md) |
 | Attributes, identifiers and inheritance boundary | [Mapping scope](mapping-scope.md) |
 | Queries, hydration, joins and pagination | [SQL query API](sql-query-api.md) |
 | Automatic creation and update dates | [Timestampable trait](timestampable.md) |

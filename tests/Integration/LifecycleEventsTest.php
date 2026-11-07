@@ -255,7 +255,7 @@ final class LifecycleEventsTest extends TestCase
             'SELECT name FROM modernorm_test_event_records WHERE id = ?',
             [$record->id],
         ));
-        // Do not retry flush in a context whose post-commit cleanup was interrupted.
+        // Verify committed database state independently of the managed instance.
         $this->em->clear();
         self::assertSame('original', $this->em->find(EventRecord::class, $record->id)->name);
     }

@@ -106,6 +106,7 @@ class EntityManager implements EntityManagerInterface
     private Cache|null $cache = null;
 
     private ?Statistics $statistics = null;
+    private bool $flushing = false;
 
     /**
      * Creates a new EntityManager that operates on the given database connection
@@ -285,19 +286,21 @@ class EntityManager implements EntityManagerInterface
      */
     public function flush(): void
     {
-        $measurement = $this->statistics?->start();
-        if ($measurement === null) {
-            $this->errorIfClosed();
-            $this->unitOfWork->commit();
-            return;
+        if ($this->flushing) {
+            throw new \LogicException('Nested flush() is not supported.');
         }
+        $this->flushing = true;
+        $measurement = $this->statistics?->start();
         $failed = true;
         try {
             $this->errorIfClosed();
             $this->unitOfWork->commit();
             $failed = false;
         } finally {
-            $this->statistics->recordFlush($measurement, $failed);
+            $this->flushing = false;
+            if ($measurement !== null) {
+                $this->statistics->recordFlush($measurement, $failed);
+            }
         }
     }
 

@@ -136,22 +136,7 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
     {
         $this->unwrap()->add($element);
 
-        // If _backRefFieldName is set and its a one-to-many association,
-        // we need to set the back reference.
-        if ($this->backRefFieldName && $this->getMapping()->isOneToMany()) {
-            assert($this->typeClass !== null);
-            // Set back reference to owner
-            $this->typeClass->propertyAccessors[$this->backRefFieldName]->setValue(
-                $element,
-                $this->owner,
-            );
-
-            $this->getUnitOfWork()->setOriginalEntityProperty(
-                spl_object_id($element),
-                $this->backRefFieldName,
-                $this->owner,
-            );
-        }
+        $this->completeBackReference($element);
     }
 
     /**
@@ -161,17 +146,25 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
     public function hydrateSet(mixed $key, mixed $element): void
     {
         $this->unwrap()->set($key, $element);
+        $this->completeBackReference($element);
+    }
 
-        // If _backRefFieldName is set, then the association is bidirectional
-        // and we need to set the back reference.
-        if ($this->backRefFieldName && $this->getMapping()->isOneToMany()) {
-            assert($this->typeClass !== null);
-            // Set back reference to owner
-            $this->typeClass->propertyAccessors[$this->backRefFieldName]->setValue(
-                $element,
-                $this->owner,
-            );
+    private function completeBackReference(object $element): void
+    {
+        if (! $this->backRefFieldName || ! $this->getMapping()->isOneToMany()) {
+            return;
         }
+        assert($this->typeClass !== null);
+        $accessor = $this->typeClass->propertyAccessors[$this->backRefFieldName];
+        $current = $accessor->getValue($element);
+        $uow = $this->getUnitOfWork();
+        $original = $uow->getOriginalEntityData($element);
+        // Loading the inverse collection must not overwrite an explicit owning-side change.
+        if ($current !== $this->owner && ($current !== null || array_key_exists($this->backRefFieldName, $original))) {
+            return;
+        }
+        $accessor->setValue($element, $this->owner);
+        $uow->setOriginalEntityProperty(spl_object_id($element), $this->backRefFieldName, $this->owner);
     }
 
     /**
@@ -326,9 +319,10 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
             $this->association !== null &&
             $this->association->isToMany() &&
             $this->owner &&
-            $this->getMapping()->orphanRemoval
+            $this->getMapping()->orphanRemoval &&
+            ! $this->unwrap()->contains($removed)
         ) {
-            $this->getUnitOfWork()->scheduleOrphanRemoval($removed);
+            $this->getUnitOfWork()->scheduleOrphanRemoval($removed, $this);
         }
 
         return $removed;
@@ -348,9 +342,10 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
             $this->association !== null &&
             $this->association->isToMany() &&
             $this->owner &&
-            $this->getMapping()->orphanRemoval
+            $this->getMapping()->orphanRemoval &&
+            ! $this->unwrap()->contains($element)
         ) {
-            $this->getUnitOfWork()->scheduleOrphanRemoval($element);
+            $this->getUnitOfWork()->scheduleOrphanRemoval($element, $this);
         }
 
         return $removed;
@@ -388,10 +383,8 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
             && $this->getMapping()->fetch === ClassMetadata::FETCH_EXTRA_LAZY
             && isset($this->getMapping()->indexBy)
         ) {
-            assert($this->em !== null);
-            assert($this->typeClass !== null);
-            if (! $this->typeClass->isIdentifierComposite && $this->typeClass->isIdentifier($this->getMapping()->indexBy)) {
-                return $this->em->find($this->typeClass->name, $key);
+            if ($this->unwrap()->containsKey($key)) {
+                return $this->unwrap()->get($key);
             }
 
             return $this->getUnitOfWork()->getCollectionPersister($this->getMapping())->get($this, $key);
@@ -413,9 +406,18 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
 
     public function set(string|int $key, mixed $value): void
     {
+        $previous = parent::get($key);
         parent::set($key, $value);
 
         $this->changed();
+
+        if (
+            is_object($previous) && $previous !== $value &&
+            $this->association !== null && $this->association->orphanRemoval &&
+            $this->owner !== null && ! $this->unwrap()->contains($previous)
+        ) {
+            $this->getUnitOfWork()->scheduleOrphanRemoval($previous, $this);
+        }
 
         if (is_object($value) && $this->em) {
             $this->getUnitOfWork()->cancelOrphanRemoval($value);
@@ -485,7 +487,7 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
             $this->initialize();
 
             foreach ($this->unwrap() as $element) {
-                $uow->scheduleOrphanRemoval($element);
+                $uow->scheduleOrphanRemoval($element, $this);
             }
         }
 

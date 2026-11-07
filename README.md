@@ -129,6 +129,25 @@ Real demonstration workload; displayed timings are not benchmark results. The bu
 
 DQL, entity inheritance, composite entity IDs, XML/YAML mapping, ORM Filters and Criteria SQL translation are intentionally excluded. MappedSuperclass, embeddables, lifecycle callbacks, cascades, orphan removal and basic locking remain available. [Mapping scope](docs/mapping-scope.md) · [Compatibility](docs/compatibility.md).
 
+## Confirmed inherited bugs
+
+These behaviors were reproduced on ModernORM before the persistence audit; the corresponding mechanisms were checked against the Doctrine ORM 3.7.6 sources from which ModernORM was derived. **Fixed** means fixed in the current development code, **not in the published beta.4 release**. Upstream links identify provenance, not the current status of a Doctrine fix.
+
+| Confirmed bug | Upstream reference | ModernORM status |
+| --- | --- | --- |
+| Replacing an orphan-removal collection deletes retained/transferred children; whole-collection deletion skips entity removal callbacks | [#6999](https://github.com/doctrine/orm/issues/6999), [#12642](https://github.com/doctrine/orm/issues/12642) | **Fixed** — compare membership and remove only actual orphans through entity lifecycle |
+| `remove()` / `removeElement()` deletes a child still held under another collection key | [#12642](https://github.com/doctrine/orm/issues/12642) | **Fixed** — recheck remaining membership |
+| `set()` over an occupied key does not orphan the displaced entity | [#12641](https://github.com/doctrine/orm/pull/12641) | **Fixed** — orphan the displaced member only if it is no longer present; UNIQUE ordering remains a separate limitation below |
+| Loading an inverse collection overwrites an explicitly changed owning-side reference | [PersistentCollection source](https://github.com/doctrine/orm/blob/3.7.6/src/PersistentCollection.php#L136) | **Fixed** — preserve owning-side changes during hydration |
+| EXTRA_LAZY `get(id)` returns a target belonging to another owner, including ManyToMany associations | [#8607](https://github.com/doctrine/orm/issues/8607), [PersistentCollection source](https://github.com/doctrine/orm/blob/3.7.6/src/PersistentCollection.php#L366) | **Fixed** — query association membership, including for already-managed targets |
+| EXTRA_LAZY indexed lookup on unidirectional ManyToMany requires a nonexistent inverse property | [ManyToManyPersister source](https://github.com/doctrine/orm/blob/3.7.6/src/Persisters/Collection/ManyToManyPersister.php#L80) | **Fixed** — scope lookup through the join table |
+| `onFlush` loses explicitly computed INSERTs/UPDATEs when the initial queue is empty | [UnitOfWork source](https://github.com/doctrine/orm/blob/3.7.6/src/UnitOfWork.php#L388) | **Fixed** — recheck pending operations after the event |
+| An exception from `postFlush` skips cleanup of completed flush state | [UnitOfWork source](https://github.com/doctrine/orm/blob/3.7.6/src/UnitOfWork.php#L496) | **Fixed** — cleanup runs in `finally`; an already committed transaction stays committed |
+| Removing a row and inserting its replacement with the same immediate UNIQUE value fails in one flush | [#5109](https://github.com/doctrine/orm/issues/5109) | **Open — documented limitation**: INSERT precedes DELETE; use two flushes in one transaction or a suitable deferred UNIQUE constraint |
+| Swapping two immediate UNIQUE values fails on an intermediate UPDATE | [Update execution source](https://github.com/doctrine/orm/blob/3.7.6/src/UnitOfWork.php#L1209) | **Open — documented limitation**: no automatic conflict-resolution plan; suitable deferred constraints require an explicit migration |
+
+[Audit, contracts and per-bug tests](docs/persistence-audit.md) · [Before/after evidence: 36 scenarios, 23 failing before, all passing after](docs/evidence/persistence-audit-2026-11-07.json). Scenario counts are not independent bug counts; limitation tests assert the expected failure. This is a confirmed list, not an exhaustive inventory of Doctrine issues. Nested-flush rejection, manual rollback boundaries and excluded SoftDelete combinations are tracked separately in the audit.
+
 ## Install & get started
 
 Requires **PHP 8.4+**, PostgreSQL and `pdo_pgsql`.

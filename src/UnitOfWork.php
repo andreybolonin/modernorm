@@ -37,6 +37,7 @@ use ModernORM\Internal\HydrationCompleteHandler;
 use ModernORM\Internal\StronglyConnectedComponents;
 use ModernORM\Internal\TopologicalSort;
 use ModernORM\Internal\UnitOfWork\InsertBatch;
+use ModernORM\Internal\UnitOfWork\AssociationChangePlanner;
 use ModernORM\Mapping\AssociationMapping;
 use ModernORM\Mapping\ClassMetadata;
 use ModernORM\Exception\MappingException;
@@ -291,6 +292,9 @@ class UnitOfWork implements PropertyChangedListener
      */
     private array $orphanRemovals = [];
 
+    /** @var array<int, list<PersistentCollection>> */
+    private array $orphanRemovalOrigins = [];
+
     /**
      * Read-Only objects are never evaluated
      *
@@ -386,31 +390,34 @@ class UnitOfWork implements PropertyChangedListener
         // Compute changes done since last commit.
         $this->measurePhase(\ModernORM\Statistics\UnitOfWorkPhase::CHANGE_SETS, fn () => $this->computeChangeSets(), after: true);
 
-        if (
-            ! ($this->entityInsertions ||
-                $this->entityDeletions ||
-                $this->entityUpdates ||
-                $this->collectionUpdates ||
-                $this->collectionDeletions ||
-                $this->orphanRemovals)
-        ) {
+        $onFlushDispatched = false;
+        if (! $this->hasPendingOperations()) {
             $this->dispatchOnFlushEvent();
-            $this->dispatchPostFlushEvent();
-
-            $this->postCommitCleanup();
-
-            return; // Nothing to do.
+            $onFlushDispatched = true;
+            // onFlush listeners may explicitly compute new work even when the initial queue was empty.
+            if (! $this->hasPendingOperations()) {
+                try {
+                    $this->dispatchPostFlushEvent();
+                } finally {
+                    $this->postCommitCleanup();
+                }
+                return;
+            }
         }
 
         $this->assertThatThereAreNoUnintentionallyNonPersistedAssociations();
 
         if ($this->orphanRemovals) {
-            foreach ($this->orphanRemovals as $orphan) {
-                $this->remove($orphan);
+            foreach ($this->orphanRemovals as $oid => $orphan) {
+                if (! $this->isStillAssociated($orphan, $this->orphanRemovalOrigins[$oid] ?? [])) {
+                    $this->remove($orphan);
+                }
             }
         }
 
-        $this->dispatchOnFlushEvent();
+        if (! $onFlushDispatched) {
+            $this->dispatchOnFlushEvent();
+        }
 
         $connection->beginTransaction();
 
@@ -521,9 +528,17 @@ class UnitOfWork implements PropertyChangedListener
             $coll->takeSnapshot();
         }
 
-        $this->dispatchPostFlushEvent();
+        try {
+            $this->dispatchPostFlushEvent();
+        } finally {
+            $this->postCommitCleanup();
+        }
+    }
 
-        $this->postCommitCleanup();
+    private function hasPendingOperations(): bool
+    {
+        return (bool) ($this->entityInsertions || $this->entityDeletions || $this->entityUpdates ||
+            $this->collectionUpdates || $this->collectionDeletions || $this->orphanRemovals);
     }
 
     private function measurePhase(\ModernORM\Statistics\UnitOfWorkPhase $phase, \Closure $work, bool $after = false): void
@@ -568,6 +583,7 @@ class UnitOfWork implements PropertyChangedListener
         $this->collectionDeletions              =
         $this->pendingCollectionElementRemovals =
         $this->visitedCollections               =
+        $this->orphanRemovalOrigins             =
         $this->orphanRemovals                   =
         $this->entityChangeSets                 =
         $this->scheduledForSynchronization      = [];
@@ -814,6 +830,13 @@ class UnitOfWork implements PropertyChangedListener
                 }
 
                 if ($orgValue instanceof PersistentCollection) {
+                    if ($assoc->isOneToMany() && $assoc->orphanRemoval) {
+                        // Replacing a container does not orphan members retained in the association.
+                        $this->scheduleCollectionReplacement($orgValue, $actualValue ?? []);
+                        $changeSet[$propName] = $orgValue;
+                        continue;
+                    }
+
                     // A PersistentCollection was de-referenced, so delete it.
                     $coid = spl_object_id($orgValue);
 
@@ -868,6 +891,19 @@ class UnitOfWork implements PropertyChangedListener
         }
     }
 
+    /** @param iterable<object> $current */
+    private function scheduleCollectionReplacement(PersistentCollection $original, iterable $current): void
+    {
+        $mapping = $original->getMapping();
+        if ($mapping->isOneToMany() && $mapping->orphanRemoval) {
+            foreach (AssociationChangePlanner::removedElements($original, $current) as $removed) {
+                $this->scheduleOrphanRemoval($removed, $original);
+            }
+            return;
+        }
+        $this->collectionDeletions[spl_object_id($original)] = $original;
+    }
+
     /** Process associations without reading/comparing scalar or embedded entity fields. */
     private function computeReadOnlyAssociationChanges(ClassMetadata $class, object $entity): void
     {
@@ -888,7 +924,7 @@ class UnitOfWork implements PropertyChangedListener
                     $class->propertyAccessors[$field]->setValue($entity, $value);
                 }
                 if ($original instanceof PersistentCollection && $original !== $value) {
-                    $this->collectionDeletions[spl_object_id($original)] = $original;
+                    $this->scheduleCollectionReplacement($original, $value ?? []);
                 }
                 $this->originalEntityData[$oid][$field] = $value;
             }
@@ -2547,6 +2583,7 @@ class UnitOfWork implements PropertyChangedListener
         $this->visitedCollections               =
         $this->eagerLoadingEntities             =
         $this->eagerLoadingCollections          =
+        $this->orphanRemovalOrigins             =
         $this->orphanRemovals                   = [];
 
         $this->eventDispatcher->dispatchEvent(Events::onClear, new OnClearEventArgs($this->em));
@@ -2560,9 +2597,39 @@ class UnitOfWork implements PropertyChangedListener
      *
      * @ignore
      */
-    public function scheduleOrphanRemoval(object $entity): void
+    public function scheduleOrphanRemoval(object $entity, ?PersistentCollection $origin = null): void
     {
-        $this->orphanRemovals[spl_object_id($entity)] = $entity;
+        $oid = spl_object_id($entity);
+        $this->orphanRemovals[$oid] = $entity;
+        if ($origin !== null) {
+            $this->orphanRemovalOrigins[$oid][] = $origin;
+        }
+    }
+
+    /** @param list<PersistentCollection> $origins */
+    private function isStillAssociated(object $entity, array $origins): bool
+    {
+        foreach ($origins as $origin) {
+            $owner = $origin->getOwner();
+            $mapping = $origin->getMapping();
+            if ($owner === null) {
+                continue;
+            }
+            $source = $this->em->getClassMetadata($mapping->sourceEntity);
+            $current = $source->propertyAccessors[$mapping->fieldName]->getValue($owner);
+            if ($current instanceof Collection && $current->contains($entity)) {
+                return true;
+            }
+            // An explicitly updated owning side can transfer a child in the same flush.
+            if ($mapping->isOneToMany()) {
+                $target = $this->em->getClassMetadata($mapping->targetEntity);
+                $newOwner = $target->propertyAccessors[$mapping->mappedBy]->getValue($entity);
+                if ($newOwner !== null && $newOwner !== $owner) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /**
@@ -2573,7 +2640,7 @@ class UnitOfWork implements PropertyChangedListener
      */
     public function cancelOrphanRemoval(object $entity): void
     {
-        unset($this->orphanRemovals[spl_object_id($entity)]);
+        unset($this->orphanRemovals[spl_object_id($entity)], $this->orphanRemovalOrigins[spl_object_id($entity)]);
     }
 
     /**

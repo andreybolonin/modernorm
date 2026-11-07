@@ -52,3 +52,5 @@ The local core suite passed **418 tests / 2170 assertions** on PHP **8.4.27 and 
 [Source manifest](../tools/upstream.json) preserves imported file hashes, including subsequently removed files. [Selected test adaptations](../tools/upstream-tests.json), [DQL removal](../tools/dql-removal.json) and [mapping changes](../tools/mapping-simplification.json) record the transformation. This is not the complete upstream test suite or a Doctrine performance comparison.
 
 MIT and Doctrine copyright notices remain in [LICENSE](../LICENSE) and [licenses](../licenses/Doctrine-ORM-MIT.txt). Maintenance follows community issues/PRs without an automatic upstream patching commitment. The [beta contract](beta-release.md) defines release and compatibility expectations.
+
+The [persistence audit](persistence-audit.md) records collection replacement/orphan removal, owner-scoped EXTRA_LAZY lookups, UNIQUE/FK ordering, callback mutations, nested flush rejection and rollback boundaries with per-scenario before/after evidence.

@@ -1,0 +1,232 @@
+{
+    "date": "2026-11-07",
+    "baseline_revision": "203e165eee7b9296dae15f0a192d55103b7b5006",
+    "after_revision": "working tree changes accompanying this report",
+    "php": "8.5.12",
+    "database": "local PostgreSQL",
+    "suite": "tests/Integration/PersistenceAuditTest.php",
+    "method": "The same final test suite ran against baseline EntityManager, UnitOfWork, PersistentCollection and ManyToManyPersister loaded from the recorded revision, then against the modified working tree. All other sources and dependencies were identical. Failure counts are test scenarios, not independent bugs. Passing limitation tests assert the expected exception or documented behavior.",
+    "summary": {
+        "scenarios": 36,
+        "baseline_failed": 23,
+        "after_failed": 0
+    },
+    "checks": [
+        {
+            "test": "testReplacementDeletesOnlyDiscardedChildren with data set \"uninitialized, keep all\"",
+            "before": "failed",
+            "after": "passed",
+            "status": "fixed"
+        },
+        {
+            "test": "testReplacementDeletesOnlyDiscardedChildren with data set \"initialized, keep all\"",
+            "before": "failed",
+            "after": "passed",
+            "status": "fixed"
+        },
+        {
+            "test": "testReplacementDeletesOnlyDiscardedChildren with data set \"uninitialized, keep one\"",
+            "before": "failed",
+            "after": "passed",
+            "status": "fixed"
+        },
+        {
+            "test": "testReplacementDeletesOnlyDiscardedChildren with data set \"initialized, keep one\"",
+            "before": "failed",
+            "after": "passed",
+            "status": "fixed"
+        },
+        {
+            "test": "testReplacementDeletesOnlyDiscardedChildren with data set \"uninitialized, keep none\"",
+            "before": "failed",
+            "after": "passed",
+            "status": "fixed"
+        },
+        {
+            "test": "testReplacementDeletesOnlyDiscardedChildren with data set \"initialized, keep none\"",
+            "before": "failed",
+            "after": "passed",
+            "status": "fixed"
+        },
+        {
+            "test": "testReplacementDeletesOnlyDiscardedChildren with data set \"read-only owner, keep all\"",
+            "before": "failed",
+            "after": "passed",
+            "status": "fixed"
+        },
+        {
+            "test": "testReplacementDeletesOnlyDiscardedChildren with data set \"read-only owner, keep one\"",
+            "before": "failed",
+            "after": "passed",
+            "status": "fixed"
+        },
+        {
+            "test": "testRemovingOneOccurrenceDoesNotOrphanRemainingMember with data set \"remove\"",
+            "before": "failed",
+            "after": "passed",
+            "status": "fixed"
+        },
+        {
+            "test": "testRemovingOneOccurrenceDoesNotOrphanRemainingMember with data set \"removeElement\"",
+            "before": "failed",
+            "after": "passed",
+            "status": "fixed"
+        },
+        {
+            "test": "testReplacingIndexedMemberOrphansOnlyTheDisplacedEntity",
+            "before": "failed",
+            "after": "passed",
+            "status": "fixed"
+        },
+        {
+            "test": "testClearAndReaddPreservesKeptChildAndInsertsNewChild",
+            "before": "passed",
+            "after": "passed",
+            "status": "not_reproduced"
+        },
+        {
+            "test": "testReplacingCollectionWithKeptAndNewMembers",
+            "before": "failed",
+            "after": "passed",
+            "status": "fixed"
+        },
+        {
+            "test": "testExtraLazyOneToManyLookupChecksOwnerEvenForManagedTarget",
+            "before": "failed",
+            "after": "passed",
+            "status": "fixed"
+        },
+        {
+            "test": "testExtraLazyManyToManyLookupChecksJoinTable with data set \"owning by id\"",
+            "before": "failed",
+            "after": "passed",
+            "status": "fixed"
+        },
+        {
+            "test": "testExtraLazyManyToManyLookupChecksJoinTable with data set \"owning by code\"",
+            "before": "passed",
+            "after": "passed",
+            "status": "not_reproduced"
+        },
+        {
+            "test": "testExtraLazyManyToManyLookupChecksJoinTable with data set \"inverse by id\"",
+            "before": "failed",
+            "after": "passed",
+            "status": "fixed"
+        },
+        {
+            "test": "testExtraLazyManyToManyLookupChecksJoinTable with data set \"inverse by code\"",
+            "before": "passed",
+            "after": "passed",
+            "status": "not_reproduced"
+        },
+        {
+            "test": "testExtraLazyManyToManyLookupChecksJoinTable with data set \"unidirectional by id\"",
+            "before": "failed",
+            "after": "passed",
+            "status": "fixed"
+        },
+        {
+            "test": "testExtraLazyManyToManyLookupChecksJoinTable with data set \"unidirectional by code\"",
+            "before": "failed",
+            "after": "passed",
+            "status": "fixed"
+        },
+        {
+            "test": "testImmediateUniqueReplacementInOneFlushFailsAndRollsBack",
+            "before": "passed",
+            "after": "passed",
+            "status": "documented_limitation"
+        },
+        {
+            "test": "testTwoFlushesWithinTransactionReplaceUniqueValueAtomically",
+            "before": "passed",
+            "after": "passed",
+            "status": "verified_workaround"
+        },
+        {
+            "test": "testImmediateUniqueSwapInOneFlushIsDocumentedLimitation",
+            "before": "passed",
+            "after": "passed",
+            "status": "documented_limitation"
+        },
+        {
+            "test": "testReplacingInverseCollectionWithoutOrphanRemovalKeepsDatabaseLinks",
+            "before": "passed",
+            "after": "passed",
+            "status": "documented_limitation"
+        },
+        {
+            "test": "testDeferredUniqueConstraintSupportsOneFlushReplacement",
+            "before": "passed",
+            "after": "passed",
+            "status": "verified_workaround"
+        },
+        {
+            "test": "testForeignKeyInsertAndDeleteOrder",
+            "before": "passed",
+            "after": "passed",
+            "status": "not_reproduced"
+        },
+        {
+            "test": "testOnFlushRecomputedChangeAndSubsequentFlushAreStable",
+            "before": "passed",
+            "after": "passed",
+            "status": "not_reproduced"
+        },
+        {
+            "test": "testOnFlushCanScheduleWorkFromInitiallyEmptyQueue with data set \"new entity\"",
+            "before": "failed",
+            "after": "passed",
+            "status": "fixed"
+        },
+        {
+            "test": "testOnFlushCanScheduleWorkFromInitiallyEmptyQueue with data set \"managed update\"",
+            "before": "failed",
+            "after": "passed",
+            "status": "fixed"
+        },
+        {
+            "test": "testExternalRollbackRequiresClearingTheManagedState",
+            "before": "passed",
+            "after": "passed",
+            "status": "documented_limitation"
+        },
+        {
+            "test": "testTransactionWrapperClosesContextAfterOuterRollback",
+            "before": "passed",
+            "after": "passed",
+            "status": "not_reproduced"
+        },
+        {
+            "test": "testPostFlushFailureDoesNotReplayCommittedInsert",
+            "before": "failed",
+            "after": "passed",
+            "status": "fixed"
+        },
+        {
+            "test": "testExplicitTransferWithCollectionReplacementSurvivesRegardlessOfDiscoveryOrder with data set \"source discovered first\"",
+            "before": "failed",
+            "after": "passed",
+            "status": "fixed"
+        },
+        {
+            "test": "testExplicitTransferWithCollectionReplacementSurvivesRegardlessOfDiscoveryOrder with data set \"destination discovered first\"",
+            "before": "failed",
+            "after": "passed",
+            "status": "fixed"
+        },
+        {
+            "test": "testPreUpdateFailureRollsBackAndClosesManager",
+            "before": "passed",
+            "after": "passed",
+            "status": "not_reproduced"
+        },
+        {
+            "test": "testNestedFlushIsRejectedBeforeItCanWrite",
+            "before": "failed",
+            "after": "passed",
+            "status": "fixed"
+        }
+    ]
+}

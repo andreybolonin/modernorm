@@ -82,14 +82,20 @@ class ManyToManyPersister extends AbstractCollectionPersister
         }
 
         $persister = $this->uow->getEntityPersister($mapping->targetEntity);
-        $mappedKey = $mapping->isOwningSide()
-            ? $mapping->inversedBy
-            : $mapping->mappedBy;
-
-        assert($mappedKey !== null);
+        $sourceClass = $this->em->getClassMetadata($mapping->sourceEntity);
+        $owning = $this->em->getMetadataFactory()->getOwningSide($mapping);
+        $owningClass = $this->em->getClassMetadata($owning->sourceEntity);
+        $joinTable = $this->quoteStrategy->getJoinTableName($owning, $owningClass, $this->platform);
+        $joinColumns = $mapping->isOwningSide() ? $owning->joinTable->joinColumns : $owning->joinTable->inverseJoinColumns;
+        $identifier = $this->uow->getEntityIdentifier($collection->getOwner());
+        $criteria = [$mapping->indexBy() => $index];
+        foreach ($joinColumns as $column) {
+            $field = $sourceClass->getFieldForColumn($column->referencedColumnName);
+            $criteria[$joinTable . '.' . $this->quoteStrategy->getJoinColumnName($column, $sourceClass, $this->platform)] = $identifier[$field];
+        }
 
         return $persister->load(
-            [$mappedKey => $collection->getOwner(), $mapping->indexBy() => $index],
+            $criteria,
             null,
             $mapping,
             [],

@@ -14,6 +14,8 @@ One EntityManager owns an Identity Map, UnitOfWork, persisters and lazy-loading 
 
 Snapshot and explicit change tracking, cascades, orphan removal, callbacks and basic locking remain part of the supported persistence model. Not every combination of inherited extension points is covered; the [compatibility matrix](compatibility.md) defines the tested boundary.
 
+Association replacement now uses an internal membership planner that computes removed entities without SQL or write scheduling. UnitOfWork resolves orphan candidates against current association state before removal. This is a bounded extraction from UnitOfWork; [audit evidence and remaining limitations](persistence-audit.md) document its tested boundary.
+
 `#[Immutable]` skips entity field/FK UPDATE while retaining INSERT, DELETE and related-entity/collection operations. It does not exclude the table from SchemaTool or make PHP objects immutable. It is independent of L2 write policy. See [immutable entities](immutable-entities.md).
 
 ## SQL-first queries
