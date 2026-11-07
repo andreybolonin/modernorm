@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace ModernORM\Mapping;
 
 use Doctrine\DBAL\Platforms\AbstractPlatform;
-use ModernORM\Internal\SQLResultCasing;
+
+use function strtolower;
 
 /**
  * ANSI compliant quote strategy, this strategy does not apply any quote.
@@ -13,8 +14,6 @@ use ModernORM\Internal\SQLResultCasing;
  */
 class AnsiQuoteStrategy implements QuoteStrategy
 {
-    use SQLResultCasing;
-
     public function getColumnName(
         string $fieldName,
         ClassMetadata $class,
@@ -71,6 +70,6 @@ class AnsiQuoteStrategy implements QuoteStrategy
         AbstractPlatform $platform,
         ClassMetadata|null $class = null,
     ): string {
-        return $this->getSQLResultCasing($platform, $columnName . '_' . $counter);
+        return strtolower($columnName . '_' . $counter);
     }
 }

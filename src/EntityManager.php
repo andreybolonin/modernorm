@@ -40,17 +40,15 @@ use function method_exists;
  * Query Language and Repository API. The quickest way to obtain a fully
  * configured EntityManager is:
  *
- *     use ModernORM\Tools\ORMSetup;
+ *     use ModernORM\ORMSetup;
+ *     use Doctrine\DBAL\DriverManager;
  *     use ModernORM\EntityManager;
  *
  *     $paths = ['/path/to/entity/mapping/files'];
  *
  *     $config = ORMSetup::createAttributeMetadataConfig($paths);
- *     $connection = DriverManager::getConnection(['driver' => 'pdo_sqlite', 'memory' => true], $config);
+ *     $connection = DriverManager::getConnection(['driver' => 'pdo_pgsql', 'dbname' => 'app']);
  *     $entityManager = new EntityManager($connection, $config);
- *
- * For more information see
- * {@link http://docs.doctrine-project.org/projects/doctrine-orm/en/stable/reference/configuration.html}
  *
  * You should never attempt to inherit from the EntityManager: Inheritance
  * is not a valid extension point for the EntityManager. Instead you

@@ -6,12 +6,12 @@ namespace ModernORM\Query;
 
 use Doctrine\DBAL\Types\Type;
 use ModernORM\EntityManagerInterface;
-use ModernORM\Internal\SQLResultCasing;
 use ModernORM\Mapping\ClassMetadata;
 use ModernORM\Utility\PersisterHelper;
 use InvalidArgumentException;
 use Stringable;
 
+use function strtolower;
 use function in_array;
 use function sprintf;
 
@@ -20,8 +20,6 @@ use function sprintf;
  */
 class ResultSetMappingBuilder extends ResultSetMapping implements Stringable
 {
-    use SQLResultCasing;
-
     /**
      * Picking this rename mode will register entity columns as is,
      * as they are in the database. This can cause clashes when multiple
@@ -111,13 +109,12 @@ class ResultSetMappingBuilder extends ResultSetMapping implements Stringable
     protected function addAllClassFields(string $class, string $alias, array $columnAliasMap = []): void
     {
         $classMetadata = $this->em->getClassMetadata($class);
-        $platform      = $this->em->getConnection()->getDatabasePlatform();
 
         $classMetadata->assertSupportedMapping();
 
         foreach ($classMetadata->getColumnNames() as $columnName) {
             $propertyName = $classMetadata->getFieldName($columnName);
-            $columnAlias  = $this->getSQLResultCasing($platform, $columnAliasMap[$columnName]);
+            $columnAlias  = strtolower($columnAliasMap[$columnName]);
 
             if (isset($this->fieldMappings[$columnAlias])) {
                 throw new InvalidArgumentException(sprintf(
@@ -141,7 +138,7 @@ class ResultSetMappingBuilder extends ResultSetMapping implements Stringable
 
                 foreach ($associationMapping->joinColumns as $joinColumn) {
                     $columnName  = $joinColumn->name;
-                    $columnAlias = $this->getSQLResultCasing($platform, $columnAliasMap[$columnName]);
+                    $columnAlias = strtolower($columnAliasMap[$columnName]);
                     $columnType  = PersisterHelper::getTypeOfColumn($joinColumn->referencedColumnName, $targetClass, $this->em);
 
                     if (isset($this->metaMappings[$columnAlias])) {

@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace ModernORM\Mapping;
 
 use Doctrine\DBAL\Platforms\AbstractPlatform;
-use ModernORM\Internal\SQLResultCasing;
 
+use function strtolower;
 use function array_map;
 use function explode;
 use function implode;
@@ -20,8 +20,6 @@ use function substr;
  */
 class DefaultQuoteStrategy implements QuoteStrategy
 {
-    use SQLResultCasing;
-
     public function getColumnName(string $fieldName, ClassMetadata $class, AbstractPlatform $platform): string
     {
         return isset($class->fieldMappings[$fieldName]->quoted)
@@ -127,6 +125,6 @@ class DefaultQuoteStrategy implements QuoteStrategy
         $columnName  = preg_replace('/[^A-Za-z0-9_]/', '', $columnName);
         $columnName  = is_numeric($columnName) ? '_' . $columnName : $columnName;
 
-        return $this->getSQLResultCasing($platform, $columnName);
+        return strtolower($columnName);
     }
 }

@@ -596,7 +596,7 @@ abstract class AbstractHydrator
                 ];
         }
 
-        // this column is a left over, maybe from a LIMIT query hack for example in Oracle or DB2
+        // Ignore result columns that are not part of the result-set mapping.
         // maybe from an additional column that has not been defined in a NativeQuery ResultSetMapping.
         return null;
     }

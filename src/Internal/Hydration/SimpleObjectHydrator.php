@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace ModernORM\Internal\Hydration;
 
-use ModernORM\Internal\SQLResultCasing;
 use ModernORM\Mapping\ClassMetadata;
 use ModernORM\Exception\MappingException;
 use ModernORM\Query;
@@ -24,8 +23,6 @@ use function sprintf;
 
 class SimpleObjectHydrator extends AbstractHydrator
 {
-    use SQLResultCasing;
-
     private ClassMetadata|null $class = null;
 
     protected function prepare(): void

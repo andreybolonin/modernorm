@@ -31,3 +31,25 @@ PostgreSQL documents [RETURNING](https://www.postgresql.org/docs/17/dml-returnin
 This change does not replace generated-field refresh with RETURNING, remove custom type hooks, change generator preferences, batch identity inserts or alter UPDATE/DELETE lifecycle ordering.
 
 Validation of the final revision: **687 tests pass on PHP 8.5.12 and PHP 8.4.27**, with PostgreSQL and disposable Redis, without skipped tests. PHPStan and PSR-12 checks pass without new baseline suppressions. The six focused PostgreSQL write tests pass with 23 assertions.
+
+## Remaining platform-code cleanup
+
+A follow-up audit of ID generators, SchemaTool, result mapping and SQL builders found few remaining multi-database paths. Removed:
+
+- The internal `SQLResultCasing` trait, including Oracle/DB2 handling, generic fallback and obsolete DBAL 3 compatibility. Quote strategies and native result mapping now fold unquoted aliases with `strtolower`, matching PostgreSQL. The unused trait import in SimpleObjectHydrator is also gone.
+- `supportsSequences()` around schema-drop sequence handling: PostgreSQL supports sequences. The existing sequence discovery, missing-asset filtering and drop ordering are preserved.
+- Table-level `appendLockHint()` calls in entity SELECT and lock SQL: PostgreSQL uses the existing trailing `FOR SHARE` / `FOR UPDATE` clauses, not SQL Server table hints. Limit/offset handling stays in DBAL.
+- Unused identity-generator setup variables and outdated non-PostgreSQL examples/comments.
+
+Preserved intentionally:
+
+- AUTO generator preferences, explicit sequence generation/allocation, custom generators and replica-to-primary routing before sequence allocation.
+- DBAL platform hooks for quoting, type conversion, schema SQL and limits. A platform abstraction is not by itself an unsupported-database branch.
+- Compatibility branches for the supported DBAL versions, including the schema editor API and primary-key introspection. DBAL version compatibility is separate from multi-database support.
+- EntityManager's PostgreSQL platform guard and BulkExecutor's independent guard for EntityManagerInterface implementations.
+
+Three added PostgreSQL tests verify native hydration with mixed-case result aliases, AnsiQuoteStrategy hydration, and sequence allocation followed by repeated schema drop with absent assets. Together with the existing PostgreSQL write and locking tests, the same 19 tests pass before and after this cleanup. This preserves behavior rather than introducing new mapping or lock semantics.
+
+Further removal of platform abstractions would require changing supported customizations or duplicating DBAL functionality. The next useful stabilization boundary is flush queue state and cleanup in UnitOfWork, rather than continuing platform deletion for its own sake.
+
+Cleanup validation: **690 tests pass on PHP 8.5.12 and PHP 8.4.27**, with PostgreSQL and disposable Redis, without skipped tests. PHPStan, PSR-12 and diff whitespace checks pass. The source-only diff removes 98 lines and adds 37 (net reduction: 61 lines).

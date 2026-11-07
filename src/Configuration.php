@@ -62,8 +62,6 @@ class Configuration extends \Doctrine\DBAL\Configuration
 
     /**
      * @internal
-     *
-     * When releasing this, add an UPGRADE note about MySQL's foreign key name length issue
      */
     public function setUseDbalEditorApi(bool $useDbalEditorApi): void
     {

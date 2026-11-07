@@ -1056,35 +1056,33 @@ class SchemaTool
             }
         }
 
-        if ($this->platform->supportsSequences()) {
-            foreach ($schema->getSequences() as $sequence) {
-                if (! $deployedSchema->hasSequence($this->getAssetName($sequence))) {
-                    $schema->dropSequence($this->getAssetName($sequence));
-                }
+        foreach ($schema->getSequences() as $sequence) {
+            if (! $deployedSchema->hasSequence($this->getAssetName($sequence))) {
+                $schema->dropSequence($this->getAssetName($sequence));
+            }
+        }
+
+        foreach ($schema->getTables() as $table) {
+            if (method_exists($table, 'getPrimaryKeyConstraint')) {
+                $primaryKey = $table->getPrimaryKeyConstraint();
+            } else {
+                $primaryKey = $table->getPrimaryKey();
             }
 
-            foreach ($schema->getTables() as $table) {
-                if (method_exists($table, 'getPrimaryKeyConstraint')) {
-                    $primaryKey = $table->getPrimaryKeyConstraint();
-                } else {
-                    $primaryKey = $table->getPrimaryKey();
-                }
+            if ($primaryKey === null) {
+                continue;
+            }
 
-                if ($primaryKey === null) {
-                    continue;
-                }
+            if ($primaryKey instanceof PrimaryKeyConstraint) {
+                $columns = array_map(static fn (UnqualifiedName $name) => $name->toString(), $primaryKey->getColumnNames());
+            } else {
+                $columns = self::getIndexedColumns($primaryKey);
+            }
 
-                if ($primaryKey instanceof PrimaryKeyConstraint) {
-                    $columns = array_map(static fn (UnqualifiedName $name) => $name->toString(), $primaryKey->getColumnNames());
-                } else {
-                    $columns = self::getIndexedColumns($primaryKey);
-                }
-
-                if (count($columns) === 1) {
-                    $checkSequence = $this->getAssetName($table) . '_' . $columns[0] . '_seq';
-                    if ($deployedSchema->hasSequence($checkSequence) && ! $schema->hasSequence($checkSequence)) {
-                        $schema->createSequence($checkSequence);
-                    }
+            if (count($columns) === 1) {
+                $checkSequence = $this->getAssetName($table) . '_' . $columns[0] . '_seq';
+                if ($deployedSchema->hasSequence($checkSequence) && ! $schema->hasSequence($checkSequence)) {
+                    $schema->createSequence($checkSequence);
                 }
             }
         }

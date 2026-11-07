@@ -1000,9 +1000,8 @@ class BasicEntityPersister implements EntityPersister
         $from   = ' FROM ' . $tableName . ' ' . $tableAlias;
         $join   = $this->currentPersisterContext->selectJoinSql . $joinSql;
         $where  = ($conditionSql ? ' WHERE ' . $conditionSql : '');
-        $lock   = $this->platform->appendLockHint($from, $lockMode ?? LockMode::NONE);
         $query  = $select
-            . $lock
+            . $from
             . $join
             . $where
             . $orderBySql;
@@ -1420,12 +1419,9 @@ class BasicEntityPersister implements EntityPersister
      */
     protected function getLockTablesSql(LockMode|int $lockMode): string
     {
-        return $this->platform->appendLockHint(
-            'FROM '
+        return 'FROM '
             . $this->quoteStrategy->getTableName($this->class, $this->platform) . ' '
-            . $this->getSQLTableAlias($this->class->name),
-            $lockMode,
-        );
+            . $this->getSQLTableAlias($this->class->name);
     }
 
     public function getSelectConditionStatementSQL(

@@ -414,9 +414,7 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
         // Create & assign an appropriate ID generator instance
         switch ($class->generatorType) {
             case ClassMetadata::GENERATOR_TYPE_IDENTITY:
-                $sequenceName = null;
                 $fieldName    = $class->identifier ? $class->getSingleIdentifierFieldName() : null;
-                $platform     = $this->getTargetPlatform();
 
                 $generator = $fieldName && $class->fieldMappings[$fieldName]->type === 'bigint'
                     ? new BigIntegerIdentityGenerator()

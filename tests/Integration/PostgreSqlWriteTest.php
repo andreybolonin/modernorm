@@ -19,6 +19,8 @@ use LengthException;
 use ModernORM\EntityManager;
 use ModernORM\EntityManagerInterface;
 use ModernORM\Id\IdentityGenerator;
+use ModernORM\Mapping\AnsiQuoteStrategy;
+use ModernORM\Query\ResultSetMappingBuilder;
 use ModernORM\Mapping as ORM;
 use ModernORM\ORMSetup;
 use ModernORM\Statistics;
@@ -67,6 +69,14 @@ final class PostgreSqlGeneratedRecord
     public int $version;
 }
 
+#[ORM\Entity, ORM\Table(name: 'modernorm_test_pg_sequence')]
+final class PostgreSqlSequenceRecord
+{
+    #[ORM\Id, ORM\Column, ORM\GeneratedValue(strategy: 'SEQUENCE')]
+    #[ORM\SequenceGenerator(sequenceName: 'modernorm_test_pg_explicit_seq', allocationSize: 3)]
+    public ?int $id = null;
+}
+
 enum PostgreSqlAssignedId: string
 {
     case FIRST = 'first';
@@ -111,6 +121,7 @@ final class PostgreSqlWriteTest extends TestCase
         $metadata = array_map($this->em->getClassMetadata(...), [
             PostgreSqlWriteRecord::class, PostgreSqlEmptyRecord::class,
             PostgreSqlBigRecord::class, PostgreSqlGeneratedRecord::class, PostgreSqlAssignedRecord::class,
+            PostgreSqlSequenceRecord::class,
         ]);
         $schema = new SchemaTool($this->em);
         $schema->dropSchema($metadata);
@@ -123,9 +134,9 @@ final class PostgreSqlWriteTest extends TestCase
         while ($conn->isTransactionActive()) {
             $conn->rollBack();
         }
-        $conn->executeStatement('DROP TABLE IF EXISTS modernorm_test_pg_write, modernorm_test_pg_empty, modernorm_test_pg_big, modernorm_test_pg_generated, modernorm_test_pg_assigned CASCADE');
+        $conn->executeStatement('DROP TABLE IF EXISTS modernorm_test_pg_write, modernorm_test_pg_empty, modernorm_test_pg_big, modernorm_test_pg_generated, modernorm_test_pg_assigned, modernorm_test_pg_sequence CASCADE');
         $conn->executeStatement('DROP FUNCTION IF EXISTS modernorm_test_pg_write_trigger() CASCADE');
-        $conn->executeStatement('DROP SEQUENCE IF EXISTS modernorm_test_pg_audit_seq');
+        $conn->executeStatement('DROP SEQUENCE IF EXISTS modernorm_test_pg_audit_seq, modernorm_test_pg_explicit_seq');
         $conn->close();
     }
 
@@ -200,6 +211,49 @@ final class PostgreSqlWriteTest extends TestCase
         self::assertSame('db-value', $record->computed);
         self::assertSame(PostgreSqlAssignedId::FIRST, $record->id);
         self::assertSame($record, $this->em->find(PostgreSqlAssignedRecord::class, 'first'));
+    }
+
+    public function testSequenceAllocationAndRepeatedSchemaDrop(): void
+    {
+        $records = [];
+        for ($i = 0; $i < 4; ++$i) {
+            $records[] = $record = new PostgreSqlSequenceRecord();
+            $this->em->persist($record);
+        }
+        $this->em->flush();
+        self::assertSame([1, 2, 3, 4], array_map(static fn (PostgreSqlSequenceRecord $record): ?int => $record->id, $records));
+        $schema = new SchemaTool($this->em);
+        $metadata = [$this->em->getClassMetadata(PostgreSqlSequenceRecord::class)];
+        $schema->dropSchema($metadata);
+        self::assertSame([], $schema->getDropSchemaSQL($metadata));
+        $schema->dropSchema($metadata);
+        self::assertFalse($this->em->getConnection()->createSchemaManager()->introspectSchema()->hasSequence('modernorm_test_pg_explicit_seq'));
+    }
+
+    public function testMixedCaseNativeResultAliasHydratesEntity(): void
+    {
+        $record = new PostgreSqlEmptyRecord();
+        $this->em->persist($record);
+        $this->em->flush();
+        $this->em->clear();
+        $mapping = new ResultSetMappingBuilder($this->em);
+        $mapping->addRootEntityFromClassMetadata(PostgreSqlEmptyRecord::class, 'e', ['id' => 'MixedCaseId'], ResultSetMappingBuilder::COLUMN_RENAMING_CUSTOM);
+        $sql = 'SELECT ' . $mapping->generateSelectClause() . ' FROM modernorm_test_pg_empty e';
+        $loaded = $this->em->createNativeQuery($sql, $mapping)->getSingleResult();
+        self::assertInstanceOf(PostgreSqlEmptyRecord::class, $loaded);
+        self::assertSame($record->id, $loaded->id);
+    }
+
+    public function testAnsiQuoteStrategyAliasesHydrateOnPostgreSql(): void
+    {
+        $this->em->getConfiguration()->setQuoteStrategy(new AnsiQuoteStrategy());
+        $record = new PostgreSqlEmptyRecord();
+        $this->em->persist($record);
+        $this->em->flush();
+        $this->em->clear();
+        $loaded = $this->em->find(PostgreSqlEmptyRecord::class, $record->id);
+        self::assertInstanceOf(PostgreSqlEmptyRecord::class, $loaded);
+        self::assertSame($record->id, $loaded->id);
     }
 
     public function testSkippedInsertCannotReuseAnEarlierIdentity(): void
