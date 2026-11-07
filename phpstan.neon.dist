@@ -6,6 +6,7 @@ parameters:
     paths:
         - src
         - tests/Unit/ObjectHydrationTest.php
+        - tests/Unit/FlushOperationQueuesTest.php
         - tests/Unit/FieldChangeComparatorTest.php
         - tests/Unit/AssociationChangePlannerTest.php
         - tests/Unit/WriteOrderPlannerTest.php

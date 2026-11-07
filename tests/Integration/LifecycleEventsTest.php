@@ -268,6 +268,97 @@ final class LifecycleEventsTest extends TestCase
         self::assertSame('second-change', $loaded->note);
     }
 
+    public function testRemovingOrDetachingNewEntitiesCancelsPendingInsertions(): void
+    {
+        $removed = new EventRecord('removed');
+        $detached = new EventRecord('detached');
+        $this->em->persist($removed);
+        $this->em->persist($detached);
+        $this->em->remove($removed);
+        $this->em->detach($detached);
+        $uow = $this->em->getUnitOfWork();
+        self::assertSame([], $uow->getScheduledEntityInsertions());
+        self::assertSame([], $uow->getScheduledEntityDeletions());
+        $this->em->flush();
+        self::assertSame(0, (int) $this->em->getConnection()->fetchOne('SELECT count(*) FROM modernorm_test_event_records'));
+        self::assertNull($removed->id);
+        self::assertNull($detached->id);
+        $next = $this->seed();
+        self::assertNotNull($next->id);
+    }
+
+    public function testClearDiscardsAllEntityQueuesBeforeOnClearAndNextFlush(): void
+    {
+        $deleted = $this->seed();
+        $updated = $this->seed();
+        $updated->name = 'discarded-update';
+        $uow = $this->em->getUnitOfWork();
+        $uow->computeChangeSet($this->em->getClassMetadata(EventRecord::class), $updated);
+        $this->em->remove($deleted);
+        $this->em->persist(new EventRecord('discarded-insert'));
+        self::assertCount(1, $uow->getScheduledEntityInsertions());
+        self::assertCount(1, $uow->getScheduledEntityUpdates());
+        self::assertCount(1, $uow->getScheduledEntityDeletions());
+        $calls = 0;
+        $this->listen([Events::onClear], static function () use ($uow, &$calls): void {
+            ++$calls;
+            self::assertSame([], $uow->getScheduledEntityInsertions());
+            self::assertSame([], $uow->getScheduledEntityUpdates());
+            self::assertSame([], $uow->getScheduledEntityDeletions());
+        });
+        $this->em->clear();
+        self::assertSame(1, $calls);
+        $this->em->flush();
+        self::assertSame(['original', 'original'], $this->em->getConnection()->fetchFirstColumn('SELECT name FROM modernorm_test_event_records ORDER BY id'));
+        $this->seed();
+        self::assertSame(3, (int) $this->em->getConnection()->fetchOne('SELECT count(*) FROM modernorm_test_event_records'));
+    }
+
+    public function testExtraUpdatesMergeAndAreNotReplayedOnNextFlush(): void
+    {
+        $record = $this->seed();
+        $record->name = 'regular-update';
+        $uow = $this->em->getUnitOfWork();
+        $uow->scheduleExtraUpdate($record, ['note' => ['prepared', 'first']]);
+        $uow->scheduleExtraUpdate($record, ['note' => ['prepared', 'last'], 'optional' => [null, 'extra']]);
+        $this->em->flush();
+        self::assertSame(['name' => 'regular-update', 'note' => 'last', 'optional' => 'extra'], $this->em->getConnection()->fetchAssociative(
+            'SELECT name, note, optional FROM modernorm_test_event_records WHERE id = ?',
+            [$record->id],
+        ));
+        // A direct DB change makes an accidental replay of the extra update observable.
+        $this->em->getConnection()->executeStatement('UPDATE modernorm_test_event_records SET note = ? WHERE id = ?', ['external', $record->id]);
+        $this->em->flush();
+        self::assertSame('external', $this->em->getConnection()->fetchOne('SELECT note FROM modernorm_test_event_records WHERE id = ?', [$record->id]));
+        self::assertSame([], $uow->getEntityChangeSet($record));
+    }
+
+    public function testPersistingRemovedEntityCancelsDeletionAndAllowsLaterUpdate(): void
+    {
+        $record = $this->seed();
+        $id = $record->id;
+        $this->em->remove($record);
+        self::assertCount(1, $this->em->getUnitOfWork()->getScheduledEntityDeletions());
+        $this->em->persist($record);
+        self::assertSame([], $this->em->getUnitOfWork()->getScheduledEntityDeletions());
+        self::assertSame($record, $this->em->find(EventRecord::class, $id));
+        $record->name = 'retained';
+        $this->em->flush();
+        self::assertSame($id, $record->id);
+        self::assertSame('retained', $this->em->getConnection()->fetchOne('SELECT name FROM modernorm_test_event_records WHERE id = ?', [$id]));
+    }
+
+    public function testExtraUpdateAloneIsDiscardedByEmptyFlushCleanup(): void
+    {
+        $record = $this->seed();
+        $this->em->getUnitOfWork()->scheduleExtraUpdate($record, ['note' => ['prepared', 'unused']]);
+        $this->em->flush();
+        self::assertSame('prepared', $this->em->getConnection()->fetchOne('SELECT note FROM modernorm_test_event_records WHERE id = ?', [$record->id]));
+        $record->name = 'next-cycle';
+        $this->em->flush();
+        self::assertSame('prepared', $this->em->getConnection()->fetchOne('SELECT note FROM modernorm_test_event_records WHERE id = ?', [$record->id]));
+    }
+
     public function testFlushEventsAlsoRunWithoutPendingChanges(): void
     {
         $record = $this->seed();
