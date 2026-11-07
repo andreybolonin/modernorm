@@ -24,3 +24,18 @@ Changes to the beta API require an explanation of compatibility and documentatio
 A public issue or PR has no guaranteed response time. Contributors and maintainers may propose fixes independently of Doctrine; referencing an upstream issue is useful context, not a commitment to adopt its patch. Preserve existing MIT copyright and license notices for copied third-party code and identify its source.
 
 Report security-sensitive findings privately as described in [SECURITY.md](SECURITY.md). The local release-candidate and benchmark commands are documented in [the beta release checklist](docs/beta-release.md).
+
+New PHP source files (including classes, interfaces, traits and enums) must include this header immediately after the opening PHP tag, before `declare(strict_types=1)`:
+
+```php
+/*
+ * This file is part of the ModernORM package.
+ *
+ * (c) Andrey Bolonin <andreybolonin1989@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+```
+
+When moving or extracting Doctrine code, retain its attribution as an additional ` * (c) Doctrine Project` line. A new filename does not remove the original copyright or license obligations.
