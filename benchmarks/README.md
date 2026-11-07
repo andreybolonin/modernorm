@@ -60,3 +60,15 @@ The two UPDATE cases start with all targets already managed and, when enabled, a
 All ten cases warm up once, and measured order rotates. Statistics and cache counters are enabled. Output contains median/min/max milliseconds, all samples, SQL/hit/miss/put/eviction counts and PHP heap deltas. No timing thresholds or cross-ORM claims are used. The single benchmark process reuses a PostgreSQL connection and Redis client while rebuilding persistence contexts; this is not a PHP-FPM connection-startup or distributed-load benchmark.
 
 [Recorded run — 2026-11-05](results/l2-2026-11-05.json) contains 50 measured samples. With these small local rows, batched SQL was faster than Redis L2 even when warm. Use L2 measurements to decide where caching pays off rather than assuming that a hit is always faster than SQL.
+
+## Hydration
+
+```sh
+PGUSER=your_role PGDATABASE=modernorm_test php -d opcache.enable_cli=1 benchmarks/hydration.php > hydration-results.json
+```
+
+`hydration.php` uses PostgreSQL `generate_series` and literal JSON/date values; it creates no tables or schemas. Each scenario returns 10,000 driver rows: roots without a join, collection fetch joins with 1/10/100/1,000 children per root, an empty LEFT JOIN result shape, and array hydration with 100 children per root. The mapping includes JSON, two immutable dates and an integer foreign-key meta column. Statistics and L2 are disabled.
+
+Each case warms up twice, then measures `MODERNORM_BENCH_ITERATIONS` iterations (default 15, minimum 3). Every iteration uses a fresh EntityManager and hydrator, with metadata warmed before timing. The timed interval includes PDO row fetching, conversions and hydration; SQL execution and result checks are excluded. Root counts and the first collection size are checked outside timing. JSON contains sorted timing/peak-heap samples and medians; heap deltas exclude setup and are not total process memory or RSS.
+
+For a before/after comparison, run the same script, PHP settings and installed dependencies against both source revisions, sequentially without competing test workloads. The [recorded comparison](results/README.md#hydration) uses two sequential before/after pairs. Timing is observational and has no CI threshold; this is not a Doctrine comparison or an end-to-end application benchmark.

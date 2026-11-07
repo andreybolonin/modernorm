@@ -35,6 +35,13 @@ use function ksort;
  * Base class for all hydrators. A hydrator is a class that provides some form
  * of transformation of an SQL result set into another structure.
  *
+ * @phpstan-type RowMapping = array{
+ *     identifiers: array<array-key, string>,
+ *     identifierFallbacks: array<array-key, list<array-key>>,
+ *     entities: array<string, array<array-key, array<string, mixed>>>,
+ *     scalars: array<array-key, array<string, mixed>>,
+ *     newObjects: array<array-key, array<string, mixed>>
+ * }
  * @phpstan-consistent-constructor
  */
 abstract class AbstractHydrator
@@ -79,6 +86,9 @@ abstract class AbstractHydrator
      * @var array<string, mixed>
      */
     protected array $hints = [];
+
+    /** @var RowMapping|null */
+    private ?array $rowMapping = null;
 
     private readonly ?\ModernORM\Statistics $statistics;
     private ?\ModernORM\Statistics\HydrationMeasurement $hydrationMeasurement = null;
@@ -249,6 +259,7 @@ abstract class AbstractHydrator
         $this->rsm           = null;
         $this->cache         = [];
         $this->metadataCache = [];
+        $this->rowMapping    = null;
 
         $this
             ->em
@@ -309,6 +320,22 @@ abstract class AbstractHydrator
      */
     protected function gatherRowData(array $data, array &$id, array &$nonemptyComponents): array
     {
+        return $this->gatherMappedRow($data, $id, $nonemptyComponents, false);
+    }
+
+    /**
+     * Build scalar/DTO values eagerly; built-in object hydration can defer entity fields.
+     * A null entity chunk is resolved with gatherEntityRowData() only when needed.
+     *
+     * @internal
+     * @param mixed[] $data
+     * @param array<string, string> $id
+     * @param array<string, bool> $nonemptyComponents
+     * @return array<string, array>
+     */
+    final protected function gatherMappedRow(array $data, array &$id, array &$nonemptyComponents, bool $lazy): array
+    {
+        $this->rowMapping ??= $this->buildRowMapping($data);
         $rowData = ['data' => [], 'newObjects' => []];
 
         foreach ($this->rsm->newObjectMappings as $mapping) {
@@ -322,65 +349,40 @@ abstract class AbstractHydrator
             $rowData['newObjects'][$objIndex]['args']  = [];
         }
 
-        foreach ($data as $key => $value) {
-            $cacheKeyInfo = $this->hydrateColumnInfo($key);
-            if ($cacheKeyInfo === null) {
-                continue;
-            }
-
-            $fieldName = $cacheKeyInfo['fieldName'];
-
-            switch (true) {
-                case isset($cacheKeyInfo['isNewObjectParameter']):
-                    $argIndex = $cacheKeyInfo['argIndex'];
-                    $objIndex = $cacheKeyInfo['objIndex'];
-                    $type     = $cacheKeyInfo['type'];
-                    $value    = $type->convertToPHPValue($value, $this->platform);
-
-                    if ($value !== null && isset($cacheKeyInfo['enumType'])) {
-                        $value = $this->buildEnum($value, $cacheKeyInfo['enumType']);
-                    }
-
-                    $rowData['newObjects'][$objIndex]['args'][$argIndex] = $value;
-                    break;
-
-                case isset($cacheKeyInfo['isScalar']):
-                    $type  = $cacheKeyInfo['type'];
-                    $value = $type->convertToPHPValue($value, $this->platform);
-
-                    if ($value !== null && isset($cacheKeyInfo['enumType'])) {
-                        $value = $this->buildEnum($value, $cacheKeyInfo['enumType']);
-                    }
-
-                    $rowData['scalars'][$fieldName] = $value;
-
-                    break;
-
-                    //case (isset($cacheKeyInfo['isMetaColumn'])):
-                default:
-                    $resultAlias = $cacheKeyInfo['resultAlias'];
-                    $type     = $cacheKeyInfo['type'];
-
-                    // Preserve an already hydrated non-null value for a repeated field alias.
-                    if (isset($rowData['data'][$resultAlias][$fieldName])) {
+        foreach ($this->rowMapping['identifiers'] as $column => $alias) {
+            $value = $data[$column];
+            if ($value === null) {
+                foreach ($this->rowMapping['identifierFallbacks'][$column] ?? [] as $fallback) {
+                    $value = $data[$fallback];
+                    if ($value !== null) {
                         break;
                     }
-
-                    $rowData['data'][$resultAlias][$fieldName] = $type
-                        ? $type->convertToPHPValue($value, $this->platform)
-                        : $value;
-
-                    if ($rowData['data'][$resultAlias][$fieldName] !== null && isset($cacheKeyInfo['enumType'])) {
-                        $rowData['data'][$resultAlias][$fieldName] = $this->buildEnum($rowData['data'][$resultAlias][$fieldName], $cacheKeyInfo['enumType']);
-                    }
-
-                    if ($cacheKeyInfo['isIdentifier'] && $value !== null) {
-                        $id[$resultAlias]                .= '|' . $value;
-                        $nonemptyComponents[$resultAlias] = true;
-                    }
-
-                    break;
+                }
             }
+            if ($value !== null) {
+                $id[$alias] .= '|' . $value;
+                $nonemptyComponents[$alias] = true;
+            }
+        }
+
+        foreach ($this->rowMapping['newObjects'] as $column => $info) {
+            $value = $info['type']->convertToPHPValue($data[$column], $this->platform);
+            if ($value !== null && isset($info['enumType'])) {
+                $value = $this->buildEnum($value, $info['enumType']);
+            }
+            $rowData['newObjects'][$info['objIndex']]['args'][$info['argIndex']] = $value;
+        }
+
+        foreach ($this->rowMapping['scalars'] as $column => $info) {
+            $value = $info['type']->convertToPHPValue($data[$column], $this->platform);
+            if ($value !== null && isset($info['enumType'])) {
+                $value = $this->buildEnum($value, $info['enumType']);
+            }
+            $rowData['scalars'][$info['fieldName']] = $value;
+        }
+
+        foreach ($this->rowMapping['entities'] as $alias => $columns) {
+            $rowData['data'][$alias] = $lazy ? null : $this->gatherEntityRowData($data, $alias);
         }
 
         $nestedEntities = [];
@@ -393,7 +395,7 @@ abstract class AbstractHydrator
             } elseif (array_key_exists($argAlias, $rowData['data'])) {
                 if (! array_key_exists($argAlias, $nestedEntities)) {
                     $nestedEntities[$argAlias]  = '';
-                    $rowData['data'][$argAlias] = $this->hydrateNestedEntity($rowData['data'][$argAlias], $argAlias);
+                    $rowData['data'][$argAlias] = $this->hydrateNestedEntity($rowData['data'][$argAlias] ?? $this->gatherEntityRowData($data, $argAlias), $argAlias);
                 }
 
                 $rowData['newObjects'][$ownerIndex]['args'][$argIndex] = $rowData['data'][$argAlias];
@@ -414,6 +416,63 @@ abstract class AbstractHydrator
         }
 
         return $rowData;
+    }
+
+    /**
+     * @param mixed[] $data
+     * @return array<string, mixed>
+     */
+    final protected function gatherEntityRowData(array $data, string $alias): array
+    {
+        $entityData = [];
+        foreach ($this->rowMapping['entities'][$alias] as $column => $info) {
+            $field = $info['fieldName'];
+            // Keep the first non-null value when several columns map to the same field.
+            if (isset($entityData[$field])) {
+                continue;
+            }
+            $type = $info['type'];
+            $value = $type ? $type->convertToPHPValue($data[$column], $this->platform) : $data[$column];
+            if ($value !== null && isset($info['enumType'])) {
+                $value = $this->buildEnum($value, $info['enumType']);
+            }
+            $entityData[$field] = $value;
+        }
+        return $entityData;
+    }
+
+    /**
+     * @param mixed[] $data
+     * @return RowMapping
+     */
+    private function buildRowMapping(array $data): array
+    {
+        $mapping = ['identifiers' => [], 'identifierFallbacks' => [], 'entities' => [], 'scalars' => [], 'newObjects' => []];
+        $identifierFields = [];
+        foreach (array_keys($data) as $column) {
+            $info = $this->hydrateColumnInfo((string) $column);
+            if ($info === null) {
+                continue;
+            }
+            if (isset($info['isNewObjectParameter'])) {
+                $mapping['newObjects'][$column] = $info;
+            } elseif (isset($info['isScalar'])) {
+                $mapping['scalars'][$column] = $info;
+            } else {
+                $mapping['entities'][$info['resultAlias']][$column] = $info;
+                if ($info['isIdentifier']) {
+                    $alias = $info['resultAlias'];
+                    $field = $info['fieldName'];
+                    if (isset($identifierFields[$alias][$field])) {
+                        $mapping['identifierFallbacks'][$identifierFields[$alias][$field]][] = $column;
+                    } else {
+                        $identifierFields[$alias][$field] = $column;
+                        $mapping['identifiers'][$column] = $alias;
+                    }
+                }
+            }
+        }
+        return $mapping;
     }
 
     /** @param mixed[] $data pre-hydrated SQL Result Row. */

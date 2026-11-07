@@ -5,6 +5,8 @@ parameters:
     level: 5
     paths:
         - src
+        - tests/Unit/ObjectHydrationTest.php
+        - benchmarks/hydration.php
         - tests/Integration/TimestampableTest.php
         - tests/Integration/BlameableTest.php
         - tests/Integration/SoftDeleteTest.php

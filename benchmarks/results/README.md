@@ -74,3 +74,23 @@ PGUSER=your_role PGDATABASE=modernorm_test MODERNORM_BENCH_REDIS_DSN=redis://127
 ```
 
 The scripts emit JSON with environment and measurement details. Adjust `MODERNORM_BENCH_ROWS`, `MODERNORM_BENCH_ITERATIONS` and `MODERNORM_BENCH_ROUNDS` as needed. Bulk options and measurement boundaries are documented in [benchmarks](../README.md). [Verification report](../../docs/beta-verification.md).
+
+## Hydration
+
+Measured on **PHP 8.5.12 with CLI OPcache, DBAL 4.5.0, PostgreSQL 18.6 (Homebrew), macOS arm64**. Two sequential before/after pairs, each with two warm-ups and 15 measured iterations per scenario. Every scenario consumes 10,000 driver rows. The table shows the median milliseconds from each pair.
+
+| Scenario | Before 1 | After 1 | Before 2 | After 2 | Observed reduction |
+| --- | --- | --- | --- | --- | --- |
+| Roots without join | 91.74 | 87.61 | 91.16 | 87.29 | 4.2–4.5% |
+| Collection fetch join 1:1 | 125.89 | 123.10 | 125.91 | 122.37 | 2.2–2.8% |
+| Collection fetch join 1:10 | 88.85 | 60.75 | 92.63 | 60.33 | 31.6–34.9% |
+| Collection fetch join 1:100 | 85.50 | 53.03 | 86.17 | 53.09 | 38.0–38.4% |
+| Collection fetch join 1:1000 | 96.49 | 52.46 | 96.62 | 51.82 | 45.6–46.4% |
+| Empty LEFT JOIN shape | 83.45 | 75.88 | 83.60 | 75.98 | 9.1% |
+| Array hydration 1:100 | 49.48 | 43.64 | 49.41 | 44.50 | 9.9–11.8% |
+
+The baseline is ModernORM `618407b8128dd83b0aa706fa83831837cca90bef`. Both sides use the same benchmark script and installed dependencies; the before runs load the baseline AbstractHydrator and ObjectHydrator source files. The after runs use the adapted column plan, deferred object-field conversion and collection membership map inspired by [Doctrine ORM PR #12751](https://github.com/doctrine/orm/pull/12751). SimpleObjectHydrator needs no equivalent discriminator change because ModernORM does not support entity inheritance.
+
+The measured peak PHP heap delta rises by **8.7% for 1:1**, **3.9% for 1:10**, **5.0% for 1:100**, **2.6% for 1:1000** and **3.2% for empty collections**; root-only and array changes are below 0.1%. Membership maps trade memory for avoiding repeated linear collection searches. These percentages concern the additional heap during hydration, not total process memory or RSS.
+
+Repeated root rows avoid reconverting JSON/date fields once their result entity is known. This does not promise that every Identity Map hit skips conversion: distinct roots sharing a fetched to-one target can still gather its fields. SQL execution, metadata warm-up and correctness checks are outside timing; PDO row fetching is included. Statistics and L2 are disabled. Two local pairs do not establish production latency or a fixed gain for other data shapes. [All samples](hydration-2026-11-07.json) · [Methodology and reproduction](../README.md#hydration).

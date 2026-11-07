@@ -10,6 +10,7 @@ use ModernORM\Mapping\ClassMetadata;
 use ModernORM\PersistentCollection;
 use ModernORM\Query;
 use ModernORM\UnitOfWork;
+use ReflectionMethod;
 
 use function array_fill_keys;
 use function array_keys;
@@ -32,9 +33,6 @@ class ObjectHydrator extends AbstractHydrator
     private array $identifierMap = [];
 
     /** @var mixed[] */
-    private array $resultPointers = [];
-
-    /** @var mixed[] */
     private array $idTemplate = [];
 
     private int $resultCounter = 0;
@@ -51,8 +49,15 @@ class ObjectHydrator extends AbstractHydrator
     /** @var mixed[] */
     private array $existingCollections = [];
 
+    /** @var array<string, array<int, int|string>> Object id => actual collection key. */
+    private array $initializedCollectionElements = [];
+
+    private bool $customGatherRowData = false;
+
     protected function prepare(): void
     {
+        $this->customGatherRowData = (new ReflectionMethod($this, 'gatherRowData'))->getDeclaringClass()->name !== AbstractHydrator::class;
+
         if (! isset($this->hints[UnitOfWork::HINT_DEFEREAGERLOAD])) {
             $this->hints[UnitOfWork::HINT_DEFEREAGERLOAD] = true;
         }
@@ -114,11 +119,14 @@ class ObjectHydrator extends AbstractHydrator
 
         parent::cleanup();
 
-        $this->identifierMap            =
-        $this->initializedCollections   =
-        $this->uninitializedCollections =
-        $this->existingCollections      =
-        $this->resultPointers           = [];
+        $this->identifierMap                 =
+        $this->initializedCollections        =
+        $this->uninitializedCollections      =
+        $this->initializedCollectionElements =
+        $this->existingCollections           = [];
+
+        $this->rootAliases = $this->idTemplate = [];
+        $this->resultCounter = 0;
 
         if ($eagerLoad) {
             $this->uow->triggerEagerLoads();
@@ -129,11 +137,11 @@ class ObjectHydrator extends AbstractHydrator
 
     protected function cleanupAfterRowIteration(): void
     {
-        $this->identifierMap            =
-        $this->initializedCollections   =
-        $this->uninitializedCollections =
-        $this->existingCollections      =
-        $this->resultPointers           = [];
+        $this->identifierMap                 =
+        $this->initializedCollections        =
+        $this->uninitializedCollections      =
+        $this->initializedCollectionElements =
+        $this->existingCollections           = [];
     }
 
     /**
@@ -195,6 +203,10 @@ class ObjectHydrator extends AbstractHydrator
             $this->uow->setOriginalEntityProperty($oid, $fieldName, $value);
 
             $this->initializedCollections[$oid . $fieldName] = $value;
+            $this->initializedCollectionElements[$oid . $fieldName] = [];
+            foreach ($value->unwrap() as $key => $element) {
+                $this->initializedCollectionElements[$oid . $fieldName][spl_object_id($element)] = $key;
+            }
         } elseif (
             isset($this->hints[Query::HINT_REFRESH]) ||
             isset($this->hints['fetched'][$parentResultAlias][$fieldName]) &&
@@ -206,6 +218,7 @@ class ObjectHydrator extends AbstractHydrator
             $value->unwrap()->clear();
 
             $this->initializedCollections[$oid . $fieldName] = $value;
+            $this->initializedCollectionElements[$oid . $fieldName] = [];
         } else {
             // Is already PersistentCollection, and DON'T REFRESH or FETCH-JOIN!
             $this->existingCollections[$oid . $fieldName] = $value;
@@ -288,23 +301,27 @@ class ObjectHydrator extends AbstractHydrator
      */
     protected function hydrateRowData(array $row, array &$result): void
     {
+        $rsm = $this->resultSetMapping();
+
         // Initialize
         $id                 = $this->idTemplate; // initialize the id-memory
         $nonemptyComponents = [];
         // Split the row data into chunks of class data.
-        $rowData = $this->gatherRowData($row, $id, $nonemptyComponents);
+        $rowData = $this->customGatherRowData
+            ? $this->gatherRowData($row, $id, $nonemptyComponents)
+            : $this->gatherMappedRow($row, $id, $nonemptyComponents, true);
 
         // reset result pointers for each data row
-        $this->resultPointers = [];
+        $resultPointers = [];
 
         // Hydrate the data chunks
         foreach ($rowData['data'] as $resultAlias => $data) {
-            $entityName = $this->resultSetMapping()->aliasMap[$resultAlias];
+            $entityName = $rsm->aliasMap[$resultAlias];
 
-            if (isset($this->resultSetMapping()->parentAliasMap[$resultAlias])) {
+            if (isset($rsm->parentAliasMap[$resultAlias])) {
                 // It's a joined result
 
-                $parentAlias = $this->resultSetMapping()->parentAliasMap[$resultAlias];
+                $parentAlias = $rsm->parentAliasMap[$resultAlias];
                 // we need the $path to save into the identifier map which entities were already
                 // seen for this parent-child relationship
                 $path = $parentAlias . '.' . $resultAlias;
@@ -315,24 +332,24 @@ class ObjectHydrator extends AbstractHydrator
                     continue;
                 }
 
-                $parentClass   = $this->metadataCache[$this->resultSetMapping()->aliasMap[$parentAlias]];
-                $relationField = $this->resultSetMapping()->relationMap[$resultAlias];
+                $parentClass   = $this->metadataCache[$rsm->aliasMap[$parentAlias]];
+                $relationField = $rsm->relationMap[$resultAlias];
                 $relation      = $parentClass->associationMappings[$relationField];
                 $reflField     = $parentClass->propertyAccessors[$relationField];
 
                 // Get a reference to the parent object to which the joined element belongs.
-                if ($this->resultSetMapping()->isMixed && isset($this->rootAliases[$parentAlias])) {
-                    $objectClass  = $this->resultPointers[$parentAlias];
+                if ($rsm->isMixed && isset($this->rootAliases[$parentAlias])) {
+                    $objectClass  = $resultPointers[$parentAlias];
                     $parentObject = $objectClass[key($objectClass)];
-                } elseif (isset($this->resultPointers[$parentAlias])) {
-                    $parentObject = $this->resultPointers[$parentAlias];
+                } elseif (isset($resultPointers[$parentAlias])) {
+                    $parentObject = $resultPointers[$parentAlias];
                 } else {
                     // Parent object of relation not found, mark as not-fetched again
                     if (isset($nonemptyComponents[$resultAlias])) {
-                        $element = $this->getEntity($data, $resultAlias);
+                        $element = $this->getEntity($data ?? $this->gatherEntityRowData($row, $resultAlias), $resultAlias);
 
                         // Update result pointer and provide initial fetch data for parent
-                        $this->resultPointers[$resultAlias]               = $element;
+                        $resultPointers[$resultAlias]               = $element;
                         $rowData['data'][$parentAlias][$relationField] = $element;
                     } else {
                         $element = null;
@@ -365,34 +382,37 @@ class ObjectHydrator extends AbstractHydrator
                         if (! $indexExists || ! $indexIsValid) {
                             if (isset($this->existingCollections[$collKey])) {
                                 // Collection exists, only look for the element in the identity map.
-                                $element = $this->getEntityFromIdentityMap($entityName, $data);
+                                $element = $this->getEntityFromIdentityMap($entityName, $data ?? $this->gatherEntityRowData($row, $resultAlias));
                                 if ($element) {
-                                    $this->resultPointers[$resultAlias] = $element;
+                                    $resultPointers[$resultAlias] = $element;
                                 } else {
-                                    unset($this->resultPointers[$resultAlias]);
+                                    unset($resultPointers[$resultAlias]);
                                 }
                             } else {
-                                $element = $this->getEntity($data, $resultAlias);
+                                $element = $this->getEntity($data ?? $this->gatherEntityRowData($row, $resultAlias), $resultAlias);
 
-                                if (isset($this->resultSetMapping()->indexByMap[$resultAlias])) {
-                                    $indexValue = $row[$this->resultSetMapping()->indexByMap[$resultAlias]];
+                                if (isset($rsm->indexByMap[$resultAlias])) {
+                                    $indexValue = $row[$rsm->indexByMap[$resultAlias]];
                                     $reflFieldValue->hydrateSet($indexValue, $element);
+                                    $this->initializedCollectionElements[$collKey][spl_object_id($element)] = $indexValue;
                                     $this->identifierMap[$path][$id[$parentAlias]][$id[$resultAlias]] = $indexValue;
                                 } else {
-                                    if (! $reflFieldValue->contains($element)) {
+                                    $elementId = spl_object_id($element);
+                                    if (! isset($this->initializedCollectionElements[$collKey][$elementId])) {
                                         $reflFieldValue->hydrateAdd($element);
                                         $reflFieldValue->last();
+                                        $this->initializedCollectionElements[$collKey][$elementId] = $reflFieldValue->key();
                                     }
 
-                                    $this->identifierMap[$path][$id[$parentAlias]][$id[$resultAlias]] = $reflFieldValue->key();
+                                    $this->identifierMap[$path][$id[$parentAlias]][$id[$resultAlias]] = $this->initializedCollectionElements[$collKey][$elementId];
                                 }
 
                                 // Update result pointer
-                                $this->resultPointers[$resultAlias] = $element;
+                                $resultPointers[$resultAlias] = $element;
                             }
                         } else {
                             // Update result pointer
-                            $this->resultPointers[$resultAlias] = $reflFieldValue[$index];
+                            $resultPointers[$resultAlias] = $reflFieldValue[$index];
                         }
                     } elseif (! $reflFieldValue) {
                         $this->initRelatedCollection($parentObject, $parentClass, $relationField, $parentAlias);
@@ -407,7 +427,7 @@ class ObjectHydrator extends AbstractHydrator
                         // we only need to take action if this value is null,
                         // we refresh the entity or its an uninitialized proxy.
                         if (isset($nonemptyComponents[$resultAlias])) {
-                            $element = $this->getEntity($data, $resultAlias);
+                            $element = $this->getEntity($data ?? $this->gatherEntityRowData($row, $resultAlias), $resultAlias);
                             $reflField->setValue($parentObject, $element);
                             $this->uow->setOriginalEntityProperty($oid, $relationField, $element);
                             $targetClass = $this->metadataCache[$relation->targetEntity];
@@ -429,7 +449,7 @@ class ObjectHydrator extends AbstractHydrator
                             }
 
                             // Update result pointer
-                            $this->resultPointers[$resultAlias] = $element;
+                            $resultPointers[$resultAlias] = $element;
                         } else {
                             $this->uow->setOriginalEntityProperty($oid, $relationField, null);
                             $reflField->setValue($parentObject, null);
@@ -437,17 +457,17 @@ class ObjectHydrator extends AbstractHydrator
                         // else leave $reflFieldValue null for single-valued associations
                     } else {
                         // Update result pointer
-                        $this->resultPointers[$resultAlias] = $reflFieldValue;
+                        $resultPointers[$resultAlias] = $reflFieldValue;
                     }
                 }
             } else {
                 // PATH C: Its a root result element
                 $this->rootAliases[$resultAlias] = true; // Mark as root alias
-                $entityKey                    = $this->resultSetMapping()->entityMappings[$resultAlias] ?: 0;
+                $entityKey                    = $rsm->entityMappings[$resultAlias] ?: 0;
 
                 // if this row has a NULL value for the root result id then make it a null result.
                 if (! isset($nonemptyComponents[$resultAlias])) {
-                    if ($this->resultSetMapping()->isMixed) {
+                    if ($rsm->isMixed) {
                         $result[] = [$entityKey => null];
                     } else {
                         $result[] = null;
@@ -460,14 +480,14 @@ class ObjectHydrator extends AbstractHydrator
 
                 // check for existing result from the iterations before
                 if (! isset($this->identifierMap[$resultAlias][$id[$resultAlias]])) {
-                    $element = $this->getEntity($data, $resultAlias);
+                    $element = $this->getEntity($data ?? $this->gatherEntityRowData($row, $resultAlias), $resultAlias);
 
-                    if ($this->resultSetMapping()->isMixed) {
+                    if ($rsm->isMixed) {
                         $element = [$entityKey => $element];
                     }
 
-                    if (isset($this->resultSetMapping()->indexByMap[$resultAlias])) {
-                        $resultKey = $row[$this->resultSetMapping()->indexByMap[$resultAlias]];
+                    if (isset($rsm->indexByMap[$resultAlias])) {
+                        $resultKey = $row[$rsm->indexByMap[$resultAlias]];
 
                         if (isset($this->hints['collection'])) {
                             $this->hints['collection']->hydrateSet($resultKey, $element);
@@ -488,11 +508,11 @@ class ObjectHydrator extends AbstractHydrator
                     $this->identifierMap[$resultAlias][$id[$resultAlias]] = $resultKey;
 
                     // Update result pointer
-                    $this->resultPointers[$resultAlias] = $element;
+                    $resultPointers[$resultAlias] = $element;
                 } else {
                     // Update result pointer
                     $index                           = $this->identifierMap[$resultAlias][$id[$resultAlias]];
-                    $this->resultPointers[$resultAlias] = $result[$index];
+                    $resultPointers[$resultAlias] = $result[$index];
                     $resultKey                       = $index;
                 }
             }
@@ -509,8 +529,8 @@ class ObjectHydrator extends AbstractHydrator
         // Append scalar values to mixed result sets
         if (isset($rowData['scalars'])) {
             if (! isset($resultKey)) {
-                $resultKey = isset($this->resultSetMapping()->indexByMap['scalars'])
-                    ? $row[$this->resultSetMapping()->indexByMap['scalars']]
+                $resultKey = isset($rsm->indexByMap['scalars'])
+                    ? $row[$rsm->indexByMap['scalars']]
                     : $this->resultCounter - 1;
             }
 
