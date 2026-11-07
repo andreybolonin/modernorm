@@ -99,6 +99,8 @@ Eight isolated queue tests cover object identity/order, snapshot isolation, extr
 
 Extra updates and collection synchronization alone still do not start a flush transaction; an otherwise empty flush discards extra updates during cleanup. This extraction records that existing internal contract rather than changing it. No new recovery/retry semantics or public queue API are introduced. Full regression validation after the queue extraction passes 703 tests on PHP 8.5.12 and PHP 8.4.27 with PostgreSQL and disposable Redis, without skipped tests. PHPStan and PSR-12 pass without new baseline suppressions.
 
+`Internal/UnitOfWork/IdentityMap` subsequently owns canonical-object storage under ready class/identifier keys. UnitOfWork keeps metadata/identifier normalization, entity-state transitions and loading/visibility policy. Exact-instance membership/removal fixes a separately reproduced inherited bug: a rejected duplicate object could previously evict the canonical object through removal or detach. The three failing-before/passing-after cases, preserved lookup/snapshot contracts and loading coverage are recorded in the [Identity Map audit](identity-map-audit.md).
+
 These are local extractions, not a full UnitOfWork redesign. A future write-plan/executor split should preserve these tests plus the existing lifecycle, optimistic-locking, cache and rollback contracts. Moving methods between classes without explicit data and phase boundaries would retain the same coupling.
 
 ## Reproduction and scope

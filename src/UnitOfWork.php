@@ -43,6 +43,7 @@ use ModernORM\Internal\UnitOfWork\AssociationChangePlanner;
 use ModernORM\Internal\UnitOfWork\AssociationMembership;
 use ModernORM\Internal\UnitOfWork\FieldChangeComparator;
 use ModernORM\Internal\UnitOfWork\FlushOperationQueues;
+use ModernORM\Internal\UnitOfWork\IdentityMap;
 use ModernORM\Internal\UnitOfWork\OrphanRemovalReason;
 use ModernORM\Mapping\AssociationMapping;
 use ModernORM\Mapping\ClassMetadata;
@@ -71,8 +72,6 @@ use function array_flip;
 use function array_intersect_key;
 use function array_key_exists;
 use function array_keys;
-use function array_map;
-use function array_sum;
 use function array_values;
 use function assert;
 use function count;
@@ -132,15 +131,7 @@ class UnitOfWork implements PropertyChangedListener
      */
     public const HINT_DEFEREAGERLOAD = 'deferEagerLoad';
 
-    /**
-     * The identity map that holds references to all managed entities that have
-     * an identity. The entities are grouped by their class name.
-     * Since all classes in a hierarchy must share the same identifier set,
-     * we always take the root class name of the hierarchy.
-     *
-     * @var array<class-string, array<string, object>>
-     */
-    private array $identityMap = [];
+    private readonly IdentityMap $identityMap;
 
     /**
      * Map of all identifiers of managed entities.
@@ -295,6 +286,7 @@ class UnitOfWork implements PropertyChangedListener
         $this->associationChangePlanner = new AssociationChangePlanner();
         $this->writeOrderPlanner = new WriteOrderPlanner();
         $this->flushQueues = new FlushOperationQueues();
+        $this->identityMap = new IdentityMap();
         $this->statistics = $em->getStatistics();
         $this->lazyCollectionQueue = new LazyCollectionQueue($em);
         $this->eventDispatcher          = $em->getEventManager();
@@ -937,7 +929,7 @@ class UnitOfWork implements PropertyChangedListener
         $this->computeScheduleInsertsChangeSets();
 
         // Compute changes for other MANAGED entities. Change tracking policies take effect here.
-        foreach ($this->identityMap as $className => $entities) {
+        foreach ($this->identityMap->all() as $className => $entities) {
             $class = $this->em->getClassMetadata($className);
 
             // Read-only scalar state needs no dirty check; associations still participate.
@@ -1569,8 +1561,7 @@ class UnitOfWork implements PropertyChangedListener
     /**
      * INTERNAL:
      * Registers an entity in the identity map.
-     * Note that entities in a hierarchy are registered with the class name of
-     * the root entity.
+     * Entities are registered under their mapped class name.
      *
      * @return bool TRUE if the registration was successful, FALSE if the identity of
      * the entity in question is already managed.
@@ -1586,17 +1577,7 @@ class UnitOfWork implements PropertyChangedListener
         $idHash        = $this->getIdHashByEntity($entity);
         $className     = $classMetadata->name;
 
-        if (isset($this->identityMap[$className][$idHash])) {
-            if ($this->identityMap[$className][$idHash] !== $entity) {
-                throw EntityIdentityCollisionException::create($this->identityMap[$className][$idHash], $entity, $idHash);
-            }
-
-            return false;
-        }
-
-        $this->identityMap[$className][$idHash] = $entity;
-
-        return true;
+        return $this->identityMap->add($className, $idHash, $entity);
     }
 
     /**
@@ -1726,7 +1707,7 @@ class UnitOfWork implements PropertyChangedListener
     /**
      * INTERNAL:
      * Removes an entity from the identity map. This effectively detaches the
-     * entity from the persistence management of Doctrine.
+     * entity from the persistence management of ModernORM.
      *
      * @throws ORMInvalidArgumentException
      *
@@ -1744,8 +1725,8 @@ class UnitOfWork implements PropertyChangedListener
 
         $className = $classMetadata->name;
 
-        if (isset($this->identityMap[$className][$idHash])) {
-            unset($this->identityMap[$className][$idHash], $this->readOnlyObjects[$oid]);
+        if ($this->identityMap->remove($className, $idHash, $entity)) {
+            unset($this->readOnlyObjects[$oid]);
             $this->em->getProxyFactory()->getBatchQueue()->remove($entity);
             $this->lazyCollectionQueue->removeOwner($entity);
 
@@ -1765,7 +1746,7 @@ class UnitOfWork implements PropertyChangedListener
      */
     public function getByIdHash(string $idHash, string $rootClassName): object|null
     {
-        return $this->identityMap[$rootClassName][$idHash];
+        return $this->identityMap->get($rootClassName, $idHash);
     }
 
     /**
@@ -1783,7 +1764,7 @@ class UnitOfWork implements PropertyChangedListener
     {
         $stringIdHash = (string) $idHash;
 
-        return $this->identityMap[$rootClassName][$stringIdHash] ?? false;
+        return $this->identityMap->get($rootClassName, $stringIdHash) ?? false;
     }
 
     /**
@@ -1800,7 +1781,7 @@ class UnitOfWork implements PropertyChangedListener
         $classMetadata = $this->em->getClassMetadata($entity::class);
         $idHash        = self::getIdHashByIdentifier($this->entityIdentifiers[$oid]);
 
-        return isset($this->identityMap[$classMetadata->name][$idHash]);
+        return $this->identityMap->contains($classMetadata->name, $idHash, $entity);
     }
 
     /**
@@ -2351,7 +2332,7 @@ class UnitOfWork implements PropertyChangedListener
         $this->em->getProxyFactory()->getBatchQueue()->clear();
         $this->lazyCollectionQueue->clear();
         $this->flushQueues->clear();
-        $this->identityMap                      =
+        $this->identityMap->clear();
         $this->entityIdentifiers                =
         $this->originalEntityData               =
         $this->entityChangeSets                 =
@@ -2461,8 +2442,9 @@ class UnitOfWork implements PropertyChangedListener
         // in originalEntityData for correct changeset computation.
         $existingData = [];
 
-        if (isset($this->identityMap[$class->name][$idHash])) {
-            $entity = $this->identityMap[$class->name][$idHash];
+        $managedEntity = $this->identityMap->get($class->name, $idHash);
+        if ($managedEntity !== null) {
+            $entity = $managedEntity;
             $oid    = spl_object_id($entity);
 
             if (
@@ -2664,8 +2646,8 @@ class UnitOfWork implements PropertyChangedListener
                     $relatedIdHash = self::getIdHashByIdentifier($associatedId);
 
                     switch (true) {
-                        case isset($this->identityMap[$targetClass->name][$relatedIdHash]):
-                            $newValue = $this->identityMap[$targetClass->name][$relatedIdHash];
+                        case ($managedAssociation = $this->identityMap->get($targetClass->name, $relatedIdHash)) !== null:
+                            $newValue = $managedAssociation;
 
                             // If this is an uninitialized proxy, we are deferring eager loads,
                             // this association is marked as eager fetch, and its an uninitialized proxy (wtf!)
@@ -2926,7 +2908,7 @@ class UnitOfWork implements PropertyChangedListener
      */
     public function getIdentityMap(): array
     {
-        return $this->identityMap;
+        return $this->identityMap->all();
     }
 
     /**
@@ -2998,7 +2980,7 @@ class UnitOfWork implements PropertyChangedListener
      * this UnitOfWork.
      *
      * @param mixed        $id            The entity identifier to look for.
-     * @param class-string $rootClassName The name of the root class of the mapped entity hierarchy.
+     * @param class-string $rootClassName The mapped entity class name.
      *
      * @return object|false Returns the entity with the specified identifier if it exists in
      *                      this UnitOfWork, FALSE otherwise.
@@ -3007,7 +2989,7 @@ class UnitOfWork implements PropertyChangedListener
     {
         $idHash = self::getIdHashByIdentifier((array) $id);
 
-        return $this->identityMap[$rootClassName][$idHash] ?? false;
+        return $this->identityMap->get($rootClassName, $idHash) ?? false;
     }
 
     /**
@@ -3036,7 +3018,7 @@ class UnitOfWork implements PropertyChangedListener
      */
     public function size(): int
     {
-        return array_sum(array_map('count', $this->identityMap));
+        return $this->identityMap->size();
     }
 
     /**
