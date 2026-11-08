@@ -289,11 +289,12 @@ class UnitOfWork implements PropertyChangedListener
      *
      * The operations are executed in the following order:
      *
-     * 1) All entity insertions
-     * 2) All entity updates
-     * 3) All collection deletions
-     * 4) All collection updates
-     * 5) All entity deletions
+     * 1) All collection deletions
+     * 2) All entity insertions
+     * 3) All entity updates
+     * 4) All extra entity updates
+     * 5) All collection updates
+     * 6) All entity deletions
      *
      * @throws Exception
      */

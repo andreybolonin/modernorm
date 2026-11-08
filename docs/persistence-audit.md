@@ -101,6 +101,8 @@ Extra updates and collection synchronization alone still do not start a flush tr
 
 `Internal/UnitOfWork/IdentityMap` subsequently owns canonical-object storage under ready class/identifier keys. UnitOfWork keeps metadata/identifier normalization, entity-state transitions and loading/visibility policy. Exact-instance membership/removal fixes a separately reproduced inherited bug: a rejected duplicate object could previously evict the canonical object through removal or detach. The three failing-before/passing-after cases, preserved lookup/snapshot contracts and loading coverage are recorded in the [Identity Map audit](identity-map-audit.md).
 
+`Internal/UnitOfWork/PartialLoadTracker` subsequently owns the loaded-scalar-field projection for partial objects, using weak object keys. Snapshot mutation, hydration and refresh decisions remain in UnitOfWork. The extraction also fixes two reproduced ModernORM regressions: re-registration during lazy hydration overwrote a selected DateTime baseline, and tracking left after fallback proxy reconciliation caused repeated UPDATEs. The seven-case before/after comparison and lifecycle boundaries are documented in the [partial-load audit](partial-load-audit.md).
+
 These are local extractions, not a full UnitOfWork redesign. A future write-plan/executor split should preserve these tests plus the existing lifecycle, optimistic-locking, cache and rollback contracts. Moving methods between classes without explicit data and phase boundaries would retain the same coupling.
 
 ## Reproduction and scope
@@ -116,3 +118,7 @@ composer quality
 The per-scenario comparison used PHP 8.5.12. To repeat the baseline comparison, run the same final test file against the recorded baseline sources with the same dependencies; these cases are expected to fail there. The normal test suite contains no expected-failure skips. Full regression checks also cover supported cache/Redis behavior; this audit adds no collection L2 and does not certify concurrency or all subscriber/association combinations.
 
 Final regression validation: **625 tests on PHP 8.5.12 and PHP 8.4.27**, with PostgreSQL and disposable Redis and no skipped tests; PHPStan and PSR-12 checks pass. The PHP 8.4 run was repeated after an initial `RedisException: OOM` in the existing artificial-memory-pressure fixture (`RedisL2EnduranceTest::testActualMemoryPressureCausesSafeMisses`, allkeys-lru). The repeat passed without changing the Redis fixture. This transient failure is recorded separately from the deterministic persistence findings; it does not establish that the pressure test is free of flakiness.
+
+## Follow-up component-boundary audit
+
+The [flush boundary audit](flush-boundary-audit.md) maps existing coverage and adds seven combined PostgreSQL checks across callbacks, changesets, lazy initialization, snapshots, queues and failure cleanup. No new runtime defect was reproduced in those cases. The matrix distinguishes SQL-only preUpdate overrides, pre-write retry, write rollback and post-commit callback failure.

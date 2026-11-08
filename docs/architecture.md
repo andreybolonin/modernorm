@@ -26,6 +26,8 @@ Flush completion stays inside UnitOfWork, with explicit methods for committing i
 
 `#[Immutable]` skips entity field/FK UPDATE while retaining INSERT, DELETE and related-entity/collection operations. It does not exclude the table from SchemaTool or make PHP objects immutable. It is independent of L2 write policy. See [immutable entities](immutable-entities.md).
 
+The [flush boundary audit](flush-boundary-audit.md) records cross-component lifecycle, snapshot and recovery checks after the local extractions.
+
 ## SQL-first queries
 
 DBAL QueryBuilder supplies SQL construction. ModernORM adds entity projections and explicit ResultSetMapping hydration. DQL parsing, AST walkers, association-path translation and DQL pagination are not part of the system.

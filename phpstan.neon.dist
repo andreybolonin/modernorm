@@ -7,6 +7,7 @@ parameters:
         - src
         - tests/Unit/ObjectHydrationTest.php
         - tests/Unit/PartialLoadTrackerTest.php
+        - tests/Integration/FlushBoundaryAuditTest.php
         - tests/Integration/PartialLoadTrackingTest.php
         - tests/Unit/IdentityMapTest.php
         - tests/Integration/IdentityMapTest.php
