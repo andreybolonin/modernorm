@@ -65,3 +65,5 @@ ModernORMBundle owns Symfony services, lifecycle reset, Profiler and optional SQ
 Local persistence checks, dependency resolution, clean-consumer ZIP installation and diagnostic benchmarks are documented in [beta verification](beta-verification.md). Local checks do not substitute for Linux CI, a public package installation or production-backend certification. Performance comparisons require reproducible measurements; PostgreSQL specialization or removing DQL alone does not establish a speed advantage over Doctrine.
 
 The [beta contract](beta-release.md) defines the intended public API and release gates. The [roadmap](../roadmap.md) distinguishes implemented behavior from future proposals. MIT and original provenance notices remain part of the distribution.
+
+Schema convergence, long-lived contexts and current core/bundle compatibility results are recorded in the [stabilization pass](stabilization-pass.md). See the [lifecycle contract](lifecycle-contract.md) for mutation and recovery boundaries.

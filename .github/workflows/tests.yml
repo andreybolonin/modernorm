@@ -30,7 +30,7 @@ jobs:
       - run: composer install --no-interaction --prefer-dist --no-progress
       - run: composer quality
   integration:
-    name: PHP ${{ matrix.php }} / ${{ matrix.dependencies }}
+    name: PHP ${{ matrix.php }} / PostgreSQL ${{ matrix.postgresql }} / ${{ matrix.dependencies }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
@@ -38,6 +38,7 @@ jobs:
       matrix:
         php: ['8.4', '8.5']
         dependencies: ['locked', 'latest', 'lowest']
+        postgresql: ['17', '18', '19rc1']
     env:
       COMPOSER_ROOT_VERSION: 0.1.0-beta.4
       PGHOST: 127.0.0.1
@@ -57,7 +58,7 @@ jobs:
           --health-timeout 5s
           --health-retries 10
       postgres:
-        image: postgres:17
+        image: postgres:${{ matrix.postgresql }}
         env:
           POSTGRES_DB: modernorm_test
           POSTGRES_USER: postgres
@@ -112,9 +113,12 @@ jobs:
         if: matrix.dependencies == 'lowest'
         run: composer update --prefer-lowest --prefer-stable --no-interaction --prefer-dist --no-progress
       - run: composer check-platform-reqs
+      - name: Record PostgreSQL server version
+        run: php -r '$pdo = new PDO("pgsql:host=127.0.0.1;port=5432;dbname=modernorm_test", getenv("PGUSER"), getenv("PGPASSWORD")); echo $pdo->query("SHOW server_version")->fetchColumn(), PHP_EOL;'
       - name: Run test suites
         env:
           MODERNORM_L2_SOAK_REPORT: ${{ runner.temp }}/l2-soak.json
+          MODERNORM_WORKER_EVIDENCE: ${{ runner.temp }}/worker-context.json
         run: composer test -- --fail-on-skipped
       - name: Clean consumer from release ZIP
         if: matrix.dependencies == 'locked'
@@ -126,6 +130,7 @@ jobs:
         run: |
           php benchmarks/statistics.php > "$RUNNER_TEMP/statistics-benchmark.json"
           php benchmarks/batching.php > "$RUNNER_TEMP/batching-benchmark.json"
+          php -d memory_limit=1G benchmarks/hydration.php > "$RUNNER_TEMP/hydration-benchmark.json"
           php benchmarks/l2.php > "$RUNNER_TEMP/l2-benchmark.json"
           MODERNORM_BENCH_SIZES=1000 php -d memory_limit=1G benchmarks/bulk.php > "$RUNNER_TEMP/bulk-benchmark.json"
       - run: composer install --no-dev --no-interaction --prefer-dist --no-progress
@@ -135,11 +140,12 @@ jobs:
         if: always() && matrix.dependencies == 'locked'
         uses: actions/upload-artifact@v4
         with:
-          name: release-evidence-php-${{ matrix.php }}
+          name: release-evidence-php-${{ matrix.php }}-postgresql-${{ matrix.postgresql }}
           path: |
             ${{ runner.temp }}/modernorm-release/dist/*.zip
             ${{ runner.temp }}/modernorm-release/report.json
             ${{ runner.temp }}/*-benchmark.json
             ${{ runner.temp }}/l2-soak.json
+            ${{ runner.temp }}/worker-context.json
           if-no-files-found: ignore
           retention-days: 7

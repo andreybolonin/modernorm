@@ -1048,7 +1048,7 @@ class SchemaTool
     {
         $schema = $this->getSchemaFromMetadata($classes);
 
-        $deployedSchema = $this->schemaManager->introspectSchema();
+        $deployedSchema = $this->normalizeIntrospectedSchema($this->schemaManager->introspectSchema());
 
         foreach ($schema->getTables() as $table) {
             if (! $deployedSchema->hasTable($this->getAssetName($table))) {
@@ -1087,7 +1087,14 @@ class SchemaTool
             }
         }
 
-        return $schema->toDropSql($this->platform);
+        // The editor API allows unnamed metadata FKs; PostgreSQL assigns their real names.
+        // Use deployed constraints when dropping mapped tables instead of emitting an empty name.
+        $deployedTables = [];
+        foreach ($schema->getTables() as $table) {
+            $deployedTables[] = $deployedSchema->getTable($this->getAssetName($table));
+        }
+        $dropSchema = new Schema($deployedTables, $schema->getSequences(), $this->schemaManager->createSchemaConfig());
+        return $dropSchema->toDropSql($this->platform);
     }
 
     /**
@@ -1117,6 +1124,7 @@ class SchemaTool
     {
         $toSchema   = $this->getSchemaFromMetadata($classes);
         $fromSchema = $this->createSchemaForComparison($toSchema);
+        $this->normalizeEquivalentIndexPredicates($fromSchema, $toSchema);
 
         if (class_exists(ComparatorConfig::class)) {
             $comparator = $this->schemaManager->createComparator((new ComparatorConfig())->withReportModifiedIndexes(false));
@@ -1141,23 +1149,87 @@ class SchemaTool
         $previousFilter = $config->getSchemaAssetsFilter();
 
         if ($previousFilter === null) {
-            return $this->schemaManager->introspectSchema();
+            return $this->normalizeIntrospectedSchema($this->schemaManager->introspectSchema());
         }
 
         // whitelist assets we already know about in $toSchema, use the existing filter otherwise
         $getAssetName = $this->getAssetName(...);
-        $config->setSchemaAssetsFilter(static function ($asset) use ($previousFilter, $toSchema, $getAssetName): bool {
+        $platform = $this->platform;
+        $quotedNames = [];
+        foreach ([...$toSchema->getTables(), ...$toSchema->getSequences()] as $asset) {
+            if ($asset instanceof NamedObject) {
+                $quotedNames[$asset->getObjectName()->toSQL($platform)] = true;
+            }
+        }
+        $config->setSchemaAssetsFilter(static function ($asset) use ($previousFilter, $toSchema, $getAssetName, $quotedNames, $platform): bool {
             $assetName = $asset instanceof AbstractAsset ? $getAssetName($asset) : $asset;
-
-            return $toSchema->hasTable($assetName) || $toSchema->hasSequence($assetName) || $previousFilter($asset);
+            if ($toSchema->hasTable($assetName) || $toSchema->hasSequence($assetName)) {
+                return true;
+            }
+            // DBAL's legacy schema lookup does not normalize mixed quoting (schema."Table").
+            // Use the parsed name API when present, retaining DBAL 4.3 compatibility otherwise.
+            if ($quotedNames !== []) {
+                $name = $asset instanceof NamedObject
+                    ? $asset->getObjectName()
+                    : (new Table($assetName))->getObjectName();
+                if (isset($quotedNames[$name->toSQL($platform)])) {
+                    return true;
+                }
+            }
+            return $previousFilter($asset);
         });
 
         try {
-            return $this->schemaManager->introspectSchema();
+            return $this->normalizeIntrospectedSchema($this->schemaManager->introspectSchema());
         } finally {
             // restore schema assets filter
             $config->setSchemaAssetsFilter($previousFilter);
         }
+    }
+
+    /** PostgreSQL wraps simple predicates in parentheses during introspection. */
+    private function normalizeEquivalentIndexPredicates(Schema $fromSchema, Schema $toSchema): void
+    {
+        foreach ($toSchema->getTables() as $table) {
+            $name = $this->getAssetName($table);
+            if (! $fromSchema->hasTable($name)) {
+                continue;
+            }
+            $fromTable = $fromSchema->getTable($name);
+            foreach ($table->getIndexes() as $indexName => $index) {
+                if (! $index->hasOption('where') || ! $fromTable->hasIndex($indexName)) {
+                    continue;
+                }
+                $fromIndex = $fromTable->getIndex($indexName);
+                if (! $fromIndex->hasOption('where')) {
+                    continue;
+                }
+                $predicate = $index->getOption('where');
+                $actual = $fromIndex->getOption('where');
+                if (! is_string($predicate) || $actual !== '(' . $predicate . ')') {
+                    continue;
+                }
+                $options = $index->getOptions();
+                $options['where'] = $actual;
+                $table->dropIndex($indexName);
+                if ($index->isUnique()) {
+                    $table->addUniqueIndex(self::getIndexedColumns($index), $indexName, $options);
+                } else {
+                    $table->addIndex(self::getIndexedColumns($index), $indexName, $index->getFlags(), $options);
+                }
+            }
+        }
+    }
+
+    /** Normalize DBAL's mixed quoted-name display before legacy Schema key comparison. */
+    private function normalizeIntrospectedSchema(Schema $schema): Schema
+    {
+        foreach ($schema->getTables() as $table) {
+            if ($table instanceof NamedObject) {
+                $schema->renameTable($table->getName(), $table->getObjectName()->toSQL($this->platform));
+            }
+        }
+        return $schema;
     }
 
     /** @param non-empty-array<non-empty-string> $primaryKeyColumns */

@@ -4,7 +4,7 @@ Release line: **0.1 beta**, beginning with **0.1.0-beta.1**. [Local verification
 
 ## Supported beta scope
 
-- PHP 8.4/8.5; PostgreSQL 17 through pdo_pgsql. Other PostgreSQL/PHP versions are not part of this verification matrix.
+- PHP 8.4/8.5 through pdo_pgsql. The configured CI matrix targets PostgreSQL 17, 18 and 19rc1 (pre-release compatibility). A configured target is not a passing verification result; see the [stabilization report](stabilization-pass.md).
 - Attributes, one scalar entity PK, concrete entities/MappedSuperclass, the documented association and lifecycle contracts, Identity Map and UnitOfWork.
 - SQL-first query/hydration API and explicit SQL pagination; lazy batching for ManyToOne/OneToMany/ManyToMany.
 - Bulk BYPASS/CLEAR and connection-scoped Statistics. No bulk SYNC/COPY, DQL, inheritance mappings, composite entity IDs, Criteria SQL matching or ORM Filters.
@@ -36,6 +36,9 @@ The CI dependency modes are locked, latest-allowed and lowest-allowed. A red low
 Benchmarks report the environment, iteration count, wall time and PHP memory, with no timing pass/fail threshold and no claim of superiority over Doctrine. Compare runs on the same host/database after warm-up; do not interpret one noisy microbenchmark as production capacity.
 
 ## Release gates
+
+- [ ] New candidate passes all 18 PHP/dependency/PostgreSQL 17/18/19rc1 integration jobs. Historical results below do not certify the new candidate.
+- [ ] Bundle compatibility CI pins and verifies the final committed core candidate.
 
 - [x] Linux GitHub Actions passed all six PHP 8.4/8.5 × locked/latest/lowest jobs for the published candidate: [run](https://github.com/andreybolonin/modernorm/actions/runs/41999592523). Release tags must point to tested code.
 - [ ] Archive and clean-consumer checks green for exactly the release candidate.
