@@ -1,0 +1,51 @@
+{
+  "php": "8.5.12",
+  "postgresql": "17.11 (Homebrew)",
+  "dbal": "4.5.0",
+  "configuration": "pg_catalog.russian",
+  "native_dbal_introspection": {
+    "mapped_type": "Doctrine\\DBAL\\Types\\TextType",
+    "column_definition": null,
+    "index_flags": [],
+    "index_options": {
+      "lengths": [
+        null
+      ]
+    }
+  },
+  "native_dbal_diff": [
+    "DROP INDEX prototype_schema.idx_product_search",
+    "ALTER TABLE prototype_schema.products DROP search_vector"
+  ],
+  "create_sql": [
+    "CREATE SCHEMA prototype_schema",
+    "CREATE TABLE prototype_schema.products (id INT NOT NULL, \"ProductName\" TEXT NOT NULL, description TEXT DEFAULT NULL, PRIMARY KEY (id))",
+    "ALTER TABLE \"prototype_schema\".\"products\" ADD COLUMN \"search_vector\" tsvector GENERATED ALWAYS AS (setweight(to_tsvector('pg_catalog.russian'::regconfig, coalesce(\"ProductName\"::text, ''::text)), 'A'::\"char\") || setweight(to_tsvector('pg_catalog.russian'::regconfig, coalesce(\"description\"::text, ''::text)), 'B'::\"char\")) STORED",
+    "CREATE INDEX \"idx_product_search\" ON \"prototype_schema\".\"products\" USING GIN (\"search_vector\")"
+  ],
+  "repeat_diff": [],
+  "weight_change_sql": [
+    "ALTER TABLE \"prototype_schema\".\"products\" ALTER COLUMN \"search_vector\" SET EXPRESSION AS (setweight(to_tsvector('pg_catalog.russian'::regconfig, coalesce(\"ProductName\"::text, ''::text)), 'B'::\"char\") || setweight(to_tsvector('pg_catalog.russian'::regconfig, coalesce(\"description\"::text, ''::text)), 'A'::\"char\"))"
+  ],
+  "ranking_before": [
+    1,
+    2
+  ],
+  "ranking_after": [
+    2,
+    1
+  ],
+  "ordinary_mapping_change_sql": [
+    "ALTER TABLE prototype_schema.products ALTER description SET DEFAULT 'pending'"
+  ],
+  "missing_index_sql": [
+    "CREATE INDEX \"idx_product_search\" ON \"prototype_schema\".\"products\" USING GIN (\"search_vector\")"
+  ],
+  "missing_column_sql": [
+    "ALTER TABLE \"prototype_schema\".\"products\" ADD COLUMN \"search_vector\" tsvector GENERATED ALWAYS AS (setweight(to_tsvector('pg_catalog.russian'::regconfig, coalesce(\"ProductName\"::text, ''::text)), 'B'::\"char\") || setweight(to_tsvector('pg_catalog.russian'::regconfig, coalesce(\"description\"::text, ''::text)), 'A'::\"char\")) STORED",
+    "CREATE INDEX \"idx_product_search\" ON \"prototype_schema\".\"products\" USING GIN (\"search_vector\")"
+  ],
+  "final_diff": [],
+  "transaction_policy": "All changes, including the random schema, are rolled back.",
+  "prototype_limit": "Expected expressions are normalized using temporary DDL; this is not a production schema-diff API."
+}
