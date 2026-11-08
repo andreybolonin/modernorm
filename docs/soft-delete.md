@@ -130,6 +130,10 @@ A normal unique constraint still includes deleted rows. For uniqueness among act
 )]
 ```
 
-Restoration can conflict if another active row reused the same value. The database rejects the UPDATE, the transaction rolls back and the failed EntityManager must be discarded. ModernORM does not rename conflicting values or silently delete the replacement row.
+Restoration can conflict if another active row reused the same value. PostgreSQL constraints are authoritative: ModernORM propagates DBAL `UniqueConstraintViolationException`, without a race-prone uniqueness precheck, automatic renaming or deletion of the replacement row.
+
+For `restore()` followed by `flush()`, a write failure rolls back the flush transaction and closes/clears the EntityManager. Rollback does not rewind PHP properties: the object passed to `restore()` can still have a null deletion timestamp. Discard that manager and reload the deleted row through a new manager before resolving the conflict and retrying. The database row remains deleted; L2 must not expose it as active.
+
+For `bulk()->restore()` with its own transaction, a constraint conflict rolls back the entire statement, including non-conflicting rows. CLEAR is applied only after success: on this failure the manager stays open and managed objects retain their previous state. Resolve the conflict explicitly, then retry; a successful CLEAR detaches those objects. BYPASS retains its usual stale-object contract. An outer transaction remains the caller's responsibility; a PostgreSQL statement error requires rollback before further SQL. Commit/rollback or cache failures have separate recovery rules in the [bulk API](bulk-api.md).
 
 When adopting this mapping, clear/version query-plan caches and restart workers. Metadata cache salt V11 separates the new metadata contract from earlier releases.

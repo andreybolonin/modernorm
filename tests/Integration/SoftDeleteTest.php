@@ -257,8 +257,29 @@ final class SoftDeleteTest extends TestCase
         $this->em->persist($second);
         $this->em->flush();
         $this->em->restore($first);
-        $this->expectException(UniqueConstraintViolationException::class);
+        try {
+            $this->em->flush();
+            self::fail('Expected restore conflict');
+        } catch (UniqueConstraintViolationException) {
+        }
+        self::assertFalse($this->em->isOpen());
+        self::assertFalse($this->em->contains($first));
+        self::assertFalse($this->em->getConnection()->isTransactionActive());
+        // Rollback does not rewind the PHP object changed by restore().
+        self::assertFalse($first->isDeleted());
+        $this->em->getConnection()->close();
+        $this->em = $this->manager();
+        self::assertNull($this->em->find(SoftItem::class, $first->id));
+        self::assertNotNull($this->em->find(SoftItem::class, $second->id));
+        $deleted = $this->em->findIncludingDeleted(SoftItem::class, $first->id);
+        self::assertTrue($deleted->isDeleted());
+        // Resolve the conflict explicitly; retry with freshly loaded state.
+        $deleted->name = 'restored-item';
+        $this->em->restore($deleted);
         $this->em->flush();
+        $this->em->clear();
+        self::assertSame('restored-item', $this->em->find(SoftItem::class, $first->id)->name);
+        self::assertSame('item', $this->em->find(SoftItem::class, $second->id)->name);
     }
 
     public function testBulkDeleteRemainsPhysicalAndInvalidatesL2(): void
@@ -494,6 +515,54 @@ final class SoftDeleteTest extends TestCase
         } finally {
             $reader->getConnection()->close();
         }
+    }
+
+    public function testUniqueRestoreConflictKeepsL2DeletedUntilSuccessfulRetry(): void
+    {
+        $db = $this->em->getConnection();
+        $db->executeStatement('CREATE UNIQUE INDEX modernorm_test_sd_cached_active_version ON modernorm_test_sd_cached (version) WHERE deleted_at IS NULL');
+        $item = new SoftCachedItem();
+        $this->em->persist($item);
+        $this->em->flush();
+        $id = $item->id;
+        $this->em->remove($item);
+        $this->em->flush();
+        $replacement = new SoftCachedItem();
+        $replacement->name = 'replacement';
+        // Restore increments the deleted item's version from 2 to 3.
+        $this->em->persist($replacement);
+        $this->em->flush();
+        $replacementId = $replacement->id;
+        // Version fields are initialized by PostgreSQL on INSERT.
+        $db->executeStatement('UPDATE modernorm_test_sd_cached SET version = 3 WHERE id = ?', [$replacementId]);
+        $this->em->clear();
+        $this->em->find(SoftCachedItem::class, $replacementId);
+        self::assertTrue($this->em->getCache()->contains(SoftCachedItem::class, $replacementId));
+        $item = $this->em->findIncludingDeleted(SoftCachedItem::class, $id);
+        $this->em->restore($item);
+        try {
+            $this->em->flush();
+            self::fail('Expected unique restore conflict');
+        } catch (UniqueConstraintViolationException) {
+        }
+        self::assertFalse($this->em->isOpen());
+        self::assertFalse($db->isTransactionActive());
+        $db->close();
+        $this->em = $this->manager();
+        self::assertNull($this->em->find(SoftCachedItem::class, $id));
+        self::assertNull($this->em->getReference(SoftCachedItem::class, $id));
+        self::assertFalse($this->em->getCache()->contains(SoftCachedItem::class, $id));
+        self::assertSame('replacement', $this->em->find(SoftCachedItem::class, $replacementId)->name);
+        $item = $this->em->findIncludingDeleted(SoftCachedItem::class, $id);
+        self::assertTrue($item->isDeleted());
+        self::assertSame(2, $item->version);
+        $this->em->remove($this->em->find(SoftCachedItem::class, $replacementId));
+        $this->em->flush();
+        $this->em->restore($item);
+        $this->em->flush();
+        $this->em->clear();
+        self::assertSame(3, $this->em->find(SoftCachedItem::class, $id)->version);
+        self::assertTrue($this->em->getCache()->contains(SoftCachedItem::class, $id));
     }
 
     public function testFailedRestoreLeavesDeletedRowHiddenAndUncached(): void

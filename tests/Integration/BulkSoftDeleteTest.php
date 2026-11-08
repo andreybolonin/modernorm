@@ -258,7 +258,13 @@ final class BulkSoftDeleteTest extends TestCase
         self::assertSame(0, $this->em->getRepository(BulkSoftItem::class)->count([]));
     }
 
-    public function testUniqueConflictRollsBackWholeRestoreWithoutClearing(): void
+    public static function restoreConflictPolicies(): array
+    {
+        return [[BulkPolicy::CLEAR], [BulkPolicy::BYPASS]];
+    }
+
+    #[DataProvider('restoreConflictPolicies')]
+    public function testUniqueConflictRollsBackWholeRestoreWithoutClearing(BulkPolicy $policy): void
     {
         $this->em->bulk()->softDelete(BulkSoftItem::class, 'TRUE', BulkPolicy::CLEAR);
         $replacement = new BulkSoftItem();
@@ -268,7 +274,7 @@ final class BulkSoftDeleteTest extends TestCase
         $this->em->flush();
         $deleted = $this->em->findIncludingDeleted(BulkSoftItem::class, 2);
         try {
-            $this->em->bulk()->restore(BulkSoftItem::class, 'TRUE', BulkPolicy::CLEAR);
+            $this->em->bulk()->restore(BulkSoftItem::class, 'TRUE', $policy);
             self::fail('Expected unique conflict');
         } catch (UniqueConstraintViolationException) {
         }
@@ -279,6 +285,22 @@ final class BulkSoftDeleteTest extends TestCase
         self::assertSame(BulkOperation::RESTORE, $this->observer->events[1]->bulk->operation);
         self::assertTrue($this->observer->events[1]->failed);
         self::assertNull($this->observer->events[1]->bulk->affectedRows);
+        self::assertTrue($this->em->isOpen());
+        self::assertSame($deleted, $this->em->findIncludingDeleted(BulkSoftItem::class, 2));
+        self::assertSame(1, $this->em->getRepository(BulkSoftItem::class)->count([]));
+
+        $replacement->code = 'replacement';
+        $this->em->flush();
+        $result = $this->em->bulk()->restore(BulkSoftItem::class, 'TRUE', $policy);
+        self::assertSame(3, $result->affectedRows);
+        self::assertTrue($result->databaseCommitted);
+        self::assertSame($policy === BulkPolicy::BYPASS, $this->em->contains($deleted));
+        if ($policy === BulkPolicy::BYPASS) {
+            self::assertTrue($deleted->isDeleted());
+            $this->em->clear();
+        }
+        self::assertSame(4, $this->em->getRepository(BulkSoftItem::class)->count([]));
+        self::assertFalse($this->em->find(BulkSoftItem::class, 2)->isDeleted());
     }
 
     public static function stateOperations(): array
