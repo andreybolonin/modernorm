@@ -16,7 +16,6 @@ namespace ModernORM\Bulk;
 use BackedEnum;
 use DateTimeImmutable;
 use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
-use Doctrine\DBAL\Types\Type;
 use ModernORM\EntityManagerInterface;
 use ModernORM\Exception\BulkOperationException;
 use ModernORM\Mapping\ClassMetadata;
@@ -228,7 +227,7 @@ final class BulkExecutor
 
     private function placeholder(ClassMetadata $metadata, string $field, string $placeholder): string
     {
-        return Type::getType($metadata->getTypeOfField($field))->convertToDatabaseValueSQL($placeholder, $this->em->getConnection()->getDatabasePlatform());
+        return $this->em->getConnection()->getConfiguration()->getTypeProvider()->get($metadata->getTypeOfField($field))->convertToDatabaseValueSQL($placeholder, $this->em->getConnection()->getDatabasePlatform());
     }
 
     private function returning(ClassMetadata $metadata, array $fields): string

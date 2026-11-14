@@ -36,19 +36,25 @@ final class EntityResultPlan
         if ($metadata->isMappedSuperclass || $metadata->isEmbeddedClass) {
             throw new MappingException('SQL entity results require a concrete Entity, not MappedSuperclass or Embeddable.');
         }
+        $platform = $em->getConnection()->getDatabasePlatform();
+        $quote = $em->getConfiguration()->getQuoteStrategy();
+        // Shared plan caches must distinguish connection-specific SQL conversions.
+        $typeSql = [];
+        foreach ($metadata->fieldMappings as $field => $fieldMapping) {
+            $type = $em->getConnection()->getConfiguration()->getTypeProvider()->get($fieldMapping->type);
+            $typeSql[$field] = $type->convertToPHPValueSQL('__modernorm_type__', $platform);
+        }
         $cache = $em->getConfiguration()->getQueryCache();
-        $item = $cache?->getItem('sql_entity_v3_' . hash('sha256', $class . ':' . $alias));
+        $item = $cache?->getItem('sql_entity_v4_' . hash('sha256', serialize([$class, $alias, $typeSql])));
         if ($item?->isHit() && $item->get() instanceof self) {
             return $item->get();
         }
         $plan = new self();
-        $platform = $em->getConnection()->getDatabasePlatform();
-        $quote = $em->getConfiguration()->getQuoteStrategy();
         $plan->table = $quote->getTableName($metadata, $platform);
         foreach ($metadata->fieldMappings as $field => $fieldMapping) {
             $expression = $alias . '.' . $quote->getColumnName($field, $metadata, $platform);
             $column = $alias . '__f' . count($plan->fields);
-            $type = \Doctrine\DBAL\Types\Type::getType($fieldMapping->type);
+            $type = $em->getConnection()->getConfiguration()->getTypeProvider()->get($fieldMapping->type);
             $plan->select[] = $type->convertToPHPValueSQL($expression, $platform) . ' AS ' . $column;
             $plan->fields[] = [$column, $field, $metadata->name, $fieldMapping->enumType];
             $plan->columns[$field] = $expression;

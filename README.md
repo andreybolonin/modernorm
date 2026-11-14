@@ -153,7 +153,8 @@ These behaviors were reproduced on ModernORM before the persistence, PostgreSQL 
 
 ## Install & get started
 
-Requires **PHP 8.4+**, PostgreSQL and `pdo_pgsql`.
+Requires **PHP 8.4+**, **DBAL 4.6+** (4.x), PostgreSQL and `pdo_pgsql`.
+Custom types can be scoped to each connection: [DBAL type providers](docs/dbal-types.md).
 
 ```sh
 composer require 'andreybolonin/modernorm:^0.1@beta'

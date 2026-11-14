@@ -13,7 +13,6 @@ declare(strict_types=1);
 
 namespace ModernORM\Cache;
 
-use Doctrine\DBAL\Types\Type;
 use ModernORM\EntityManagerInterface;
 use ModernORM\Mapping\ClassMetadata;
 use ModernORM\Query;
@@ -58,7 +57,7 @@ final class ReadOnlyEntityHydrator
         $data = [];
         $platform = $this->em->getConnection()->getDatabasePlatform();
         foreach ($metadata->fieldMappings as $field => $mapping) {
-            $data[$field] = Type::getType($mapping->type)->convertToPHPValue($entry->data[$field], $platform);
+            $data[$field] = $this->em->getConnection()->getConfiguration()->getTypeProvider()->get($mapping->type)->convertToPHPValue($entry->data[$field], $platform);
         }
         if ($metadata->softDeleteField !== null && $data[$metadata->softDeleteField] !== null) {
             return null;

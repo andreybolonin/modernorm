@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace ModernORM;
 
 use Doctrine\DBAL\ParameterType;
-use Doctrine\DBAL\Types\Type;
 use ModernORM\Cache\CacheConfiguration;
 use ModernORM\Cache\EntityCacheKey;
 use ModernORM\Cache\Persister\Entity\CachedEntityPersister;
@@ -65,7 +64,7 @@ final class Cache
             throw new \LogicException('Entity L2 caching supports entities without declared associations only.');
         }
         foreach ($metadata->fieldMappings as $field) {
-            if (in_array(Type::getType($field->type)->getBindingType(), [ParameterType::BINARY, ParameterType::LARGE_OBJECT], true)) {
+            if (in_array($this->em->getConnection()->getConfiguration()->getTypeProvider()->get($field->type)->getBindingType(), [ParameterType::BINARY, ParameterType::LARGE_OBJECT], true)) {
                 throw new \LogicException('Entity L2 caching does not support binary/resource fields.');
             }
         }

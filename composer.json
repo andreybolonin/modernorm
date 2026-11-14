@@ -8,7 +8,7 @@
         "ext-pdo": "*",
         "ext-pdo_pgsql": "*",
         "ext-ctype": "*",
-        "doctrine/dbal": "^4.3",
+        "doctrine/dbal": "^4.6",
         "doctrine/collections": "^3.1",
         "doctrine/persistence": "^4",
         "doctrine/event-manager": "^2.1.1",

@@ -13,7 +13,6 @@ declare(strict_types=1);
 
 namespace ModernORM\Batch;
 
-use Doctrine\DBAL\Types\Type;
 use ModernORM\EntityManagerInterface;
 use ModernORM\Mapping\AssociationMapping;
 use ModernORM\Mapping\ManyToManyAssociationMapping;
@@ -54,7 +53,7 @@ final class ManyToManyBatchLoader
         $uow = $this->em->getUnitOfWork();
         $persister = $uow->getEntityPersister($mapping->targetEntity);
         $sql = $persister->getSelectSQL([$ownerColumn => $ids], $mapping);
-        $ownerExpression = Type::getType($type)->convertToPHPValueSQL($ownerColumn, $platform);
+        $ownerExpression = $this->em->getConnection()->getConfiguration()->getTypeProvider()->get($type)->convertToPHPValueSQL($ownerColumn, $platform);
         $sql = 'SELECT ' . $ownerExpression . ' AS orm_batch_owner, ' . substr($sql, 7);
         $resultMapping = clone $persister->getResultSetMapping();
         $resultMapping->addScalarResult('orm_batch_owner', 'orm_batch_owner', $type);

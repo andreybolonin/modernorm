@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Require DBAL 4.6 and resolve mapped types through the connection type provider across persistence, hydration, SQL generation, validation and L2 caching. Preserve DBAL Type parameter instances and isolate cached SQL projections by their type-specific SQL.
+
 - Add executed INSERT/UPDATE/DELETE attempts, errors, timings and known affected-row aggregates at the DBAL driver boundary; annotate existing SQL events without retaining SQL text or claiming transaction commit.
 
 - Add bulk `softDelete()` / `restore()` with guarded state transitions, typed scalar audit values, RETURNING, existing BYPASS/CLEAR and L2/transaction protocols, and distinct bulk Statistics events. Bulk operations do not run entity callbacks or automatically update versions/actors.

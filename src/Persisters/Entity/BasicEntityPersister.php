@@ -11,7 +11,6 @@ use Doctrine\DBAL\LockMode;
 use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Result;
-use Doctrine\DBAL\Types\Type;
 use Doctrine\DBAL\Types\Types;
 use ModernORM\EntityManagerInterface;
 use ModernORM\Id\IdentityGenerator;
@@ -282,7 +281,7 @@ class BasicEntityPersister implements EntityPersister
         $values = $this->fetchVersionAndNotUpsertableValues($this->class, $id);
 
         foreach ($values as $field => $value) {
-            $value = Type::getType($this->class->fieldMappings[$field]->type)->convertToPHPValue($value, $this->platform);
+            $value = $this->conn->getConfiguration()->getTypeProvider()->get($this->class->fieldMappings[$field]->type)->convertToPHPValue($value, $this->platform);
 
             $this->class->setFieldValue($entity, $field, $value);
         }
@@ -389,7 +388,7 @@ class BasicEntityPersister implements EntityPersister
                     $column    = $this->quoteStrategy->getColumnName($fieldName, $this->class, $this->platform);
 
                     if (isset($this->class->fieldMappings[$fieldName])) {
-                        $type        = Type::getType($this->columnTypes[$columnName]);
+                        $type        = $this->conn->getConfiguration()->getTypeProvider()->get($this->columnTypes[$columnName]);
                         $placeholder = $type->convertToDatabaseValueSQL('?', $this->platform);
                     }
 
@@ -1273,7 +1272,7 @@ class BasicEntityPersister implements EntityPersister
                 && isset($this->columnTypes[$this->class->fieldNames[$column]])
                 && isset($this->class->fieldMappings[$this->class->fieldNames[$column]])
             ) {
-                $type        = Type::getType($this->columnTypes[$this->class->fieldNames[$column]]);
+                $type        = $this->conn->getConfiguration()->getTypeProvider()->get($this->columnTypes[$this->class->fieldNames[$column]]);
                 $placeholder = $type->convertToDatabaseValueSQL('?', $this->platform);
             }
 
@@ -1359,7 +1358,7 @@ class BasicEntityPersister implements EntityPersister
             $this->currentPersisterContext->rsm->addEnumResult($columnAlias, $fieldMapping->enumType);
         }
 
-        $type = Type::getType($fieldMapping->type);
+        $type = $this->conn->getConfiguration()->getTypeProvider()->get($fieldMapping->type);
         $sql  = $type->convertToPHPValueSQL($sql, $this->platform);
 
         return $sql . ' AS ' . $columnAlias;
@@ -1445,7 +1444,7 @@ class BasicEntityPersister implements EntityPersister
             $placeholder = '?';
 
             if (isset($this->class->fieldMappings[$field])) {
-                $type        = Type::getType($this->class->fieldMappings[$field]->type);
+                $type        = $this->conn->getConfiguration()->getTypeProvider()->get($this->class->fieldMappings[$field]->type);
                 $placeholder = $type->convertToDatabaseValueSQL($placeholder, $this->platform);
             }
 

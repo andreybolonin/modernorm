@@ -215,7 +215,7 @@ final class CachedEntityPersister extends AbstractEntityPersister
                 $this->assertCacheReadTransaction();
             }
             $mapping = $this->persister->getResultSetMapping();
-            $idType = \Doctrine\DBAL\Types\Type::getType($this->class->getTypeOfField($field));
+            $idType = $this->manager->getConnection()->getConfiguration()->getTypeProvider()->get($this->class->getTypeOfField($field));
             foreach ($rows as $row) {
                 $raw = [];
                 foreach ($mapping->fieldMappings as $column => $name) {

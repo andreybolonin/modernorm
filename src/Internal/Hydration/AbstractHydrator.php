@@ -8,7 +8,6 @@ use ModernORM\Exception\HydrationException;
 use BackedEnum;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Result;
-use Doctrine\DBAL\Types\Type;
 use ModernORM\EntityManagerInterface;
 use ModernORM\Events;
 use ModernORM\Mapping\ClassMetadata;
@@ -546,7 +545,7 @@ abstract class AbstractHydrator
                 $columnInfo    = [
                     'isIdentifier' => in_array($fieldName, $classMetadata->identifier, true),
                     'fieldName'    => $fieldName,
-                    'type'         => Type::getType($fieldMapping->type),
+                    'type'         => $this->em->getConnection()->getConfiguration()->getTypeProvider()->get($fieldMapping->type),
                     'resultAlias'     => $ownerMap,
                     'enumType'     => $this->rsm->enumMappings[$key] ?? null,
                 ];
@@ -561,7 +560,7 @@ abstract class AbstractHydrator
                     'isScalar'             => true,
                     'isNewObjectParameter' => true,
                     'fieldName'            => $this->rsm->scalarMappings[$key],
-                    'type'                 => Type::getType($this->rsm->typeMappings[$key]),
+                    'type'                 => $this->em->getConnection()->getConfiguration()->getTypeProvider()->get($this->rsm->typeMappings[$key]),
                     'argIndex'             => $mapping['argIndex'],
                     'objIndex'             => $mapping['objIndex'],
                     'enumType'             => $this->rsm->enumMappings[$key] ?? null,
@@ -571,7 +570,7 @@ abstract class AbstractHydrator
                 return $this->cache[$key] = [
                     'isScalar'  => true,
                     'fieldName' => $this->rsm->scalarMappings[$key],
-                    'type'      => Type::getType($this->rsm->typeMappings[$key]),
+                    'type'      => $this->em->getConnection()->getConfiguration()->getTypeProvider()->get($this->rsm->typeMappings[$key]),
                     'enumType'  => $this->rsm->enumMappings[$key] ?? null,
                 ];
 
@@ -580,7 +579,7 @@ abstract class AbstractHydrator
                 $fieldName = $this->rsm->metaMappings[$key];
                 $resultAlias  = $this->rsm->columnOwnerMap[$key];
                 $type      = isset($this->rsm->typeMappings[$key])
-                    ? Type::getType($this->rsm->typeMappings[$key])
+                    ? $this->em->getConnection()->getConfiguration()->getTypeProvider()->get($this->rsm->typeMappings[$key])
                     : null;
 
                 // Cache metadata fetch

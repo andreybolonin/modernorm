@@ -184,9 +184,6 @@ class QueryBuilder extends SqlQueryBuilder
             ->setFirstResult($this->getFirstResult())->setMaxResults($this->getMaxResults());
         foreach ($this->getParameters() as $name => $value) {
             $type = $this->getParameterType($name);
-            if ($type instanceof \Doctrine\DBAL\Types\Type) {
-                $type = \Doctrine\DBAL\Types\Type::lookupName($type);
-            }
             $query->setParameter($name, $value, $type);
         }
         return $query;

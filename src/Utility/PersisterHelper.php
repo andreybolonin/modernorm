@@ -8,7 +8,7 @@ use BackedEnum;
 use DateTimeInterface;
 use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\ParameterType;
-use Doctrine\DBAL\Types\Type;
+use Doctrine\DBAL\Types\TypeProvider;
 use Doctrine\DBAL\Types\Types;
 use ModernORM\EntityManagerInterface;
 use ModernORM\Mapping\ClassMetadata;
@@ -175,7 +175,7 @@ class PersisterHelper
         $types = self::normalizeDateTimeTypesForValue($types, $value);
 
         if (is_array($value)) {
-            return array_map(self::getArrayBindingType(...), $types);
+            return array_map(static fn ($type) => self::getArrayBindingType($type, $em->getConnection()->getConfiguration()->getTypeProvider()), $types);
         }
 
         return $types;
@@ -206,10 +206,10 @@ class PersisterHelper
     }
 
     /** @phpstan-return ArrayParameterType::* */
-    private static function getArrayBindingType(ParameterType|int|string $type): ArrayParameterType|int
+    private static function getArrayBindingType(ParameterType|int|string $type, TypeProvider $typeProvider): ArrayParameterType|int
     {
         if (! $type instanceof ParameterType) {
-            $type = Type::getType((string) $type)->getBindingType();
+            $type = $typeProvider->get((string) $type)->getBindingType();
         }
 
         return match ($type) {

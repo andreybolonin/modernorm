@@ -5,6 +5,8 @@ parameters:
     level: 5
     paths:
         - src
+        - tests/Unit/ConnectionTypeProviderTest.php
+        - tests/Integration/ConnectionTypeProviderTest.php
         - tests/Unit/ObjectHydrationTest.php
         - tests/Unit/PartialLoadTrackerTest.php
         - tests/Integration/SchemaRoundTripTest.php

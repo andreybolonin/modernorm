@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace ModernORM\Query;
 
-use Doctrine\DBAL\Types\Type;
 use ModernORM\EntityManagerInterface;
 use ModernORM\Mapping\ClassMetadata;
 use ModernORM\Utility\PersisterHelper;
@@ -237,7 +236,7 @@ class ResultSetMappingBuilder extends ResultSetMapping implements Stringable
                 $classFieldMapping = $class->fieldMappings[$fieldName];
                 $columnSql         = $tableAlias . '.' . $classFieldMapping->columnName;
 
-                $type      = Type::getType($classFieldMapping->type);
+                $type      = $this->em->getConnection()->getConfiguration()->getTypeProvider()->get($classFieldMapping->type);
                 $columnSql = $type->convertToPHPValueSQL($columnSql, $this->em->getConnection()->getDatabasePlatform());
 
                 $sql .= $columnSql;
