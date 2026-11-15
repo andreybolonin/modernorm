@@ -32,19 +32,4 @@ abstract class AbstractCollectionPersister implements CollectionPersister
         $this->quoteStrategy = $em->getConfiguration()->getQuoteStrategy();
     }
 
-    /**
-     * Check if entity is in a valid state for operations.
-     */
-    protected function isValidEntityState(object $entity): bool
-    {
-        $entityState = $this->uow->getEntityState($entity, UnitOfWork::STATE_NEW);
-
-        if ($entityState === UnitOfWork::STATE_NEW) {
-            return false;
-        }
-
-        // If Entity is scheduled for inclusion, it is not in this collection.
-        // We can assure that because it would have return true before on array check
-        return ! ($entityState === UnitOfWork::STATE_MANAGED && $this->uow->isScheduledForInsert($entity));
-    }
 }

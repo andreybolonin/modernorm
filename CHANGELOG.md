@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Remove EXTRA_LAZY mappings, constant/builder API and partial-read collection persister SQL. Use LAZY collections and Association Query API for explicit database queries. Reject removed fetch modes in mappings, overrides, listeners and cached metadata. Metadata cache salt is V14; restart workers and invalidate deployment caches.
+
 - Exclude non-updatable fields from managed entity UPDATE change sets and recomputation, preventing phantom updates/events for generated-only local edits while retaining INSERT permissions.
 
 - Skip transient and pending-insert association members during cascade refresh while restoring the owner from the database. Preserve explicit pending inserts, managed recursive refresh, cycle protection and detached-entity rejection.

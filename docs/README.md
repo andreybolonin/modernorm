@@ -36,6 +36,7 @@ Start with the [project README](../README.md) for key features, installation and
 
 ## Release and participation
 
+- [EXTRA_LAZY removal and migration](extra-lazy-removal.md)
 - [Beta contract and release gates](beta-release.md)
 - [Local verification evidence](beta-verification.md)
 - [Roadmap](../roadmap.md)

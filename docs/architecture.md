@@ -38,7 +38,7 @@ SQL predicates use column names; `column(alias, field)` resolves a mapped proper
 
 Association attributes choose `batchSize`; a missing value inherits the configuration default of 1. ManyToOne references are grouped by target class and effective size. OneToMany and ManyToMany queues are grouped by association role and size.
 
-Reading one queued reference or collection loads compatible peers with one SQL IN query. Identity Map objects and pending changes are preserved. Queues use weak references and follow detach/clear/close. Streaming cannot batch future rows that have not been discovered. EAGER and EXTRA_LAZY operations keep their own documented paths. See [batch fetching](batch-fetching.md).
+Reading one queued reference or collection loads compatible peers with one SQL IN query. Identity Map objects and pending changes are preserved. Queues use weak references and follow detach/clear/close. Streaming cannot batch future rows that have not been discovered. EAGER keeps its documented loading path. EXTRA_LAZY is removed; explicit association queries are separate from collection initialization. See [batch fetching](batch-fetching.md).
 
 ## Bulk writes
 

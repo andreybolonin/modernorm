@@ -31,9 +31,9 @@ final class CollectionBatchOwner
     public Collection $items;
     #[ORM\OneToMany(mappedBy: 'reviewer', targetEntity: CollectionBatchItem::class, indexBy: 'code', batchSize: 3)]
     public Collection $reviews;
-    #[ORM\OneToMany(mappedBy: 'owner', targetEntity: CollectionBatchItem::class, fetch: 'EXTRA_LAZY', indexBy: 'code', batchSize: 3)]
+    #[ORM\OneToMany(mappedBy: 'owner', targetEntity: CollectionBatchItem::class, fetch: 'LAZY', indexBy: 'code', batchSize: 3)]
     #[ORM\OrderBy(['rank' => 'ASC'])]
-    public Collection $extraItems;
+    public Collection $indexedItems;
     #[ORM\OneToMany(mappedBy: 'owner', targetEntity: CollectionBatchItem::class, batchSize: 1)]
     public Collection $disabledItems;
     #[ORM\OneToMany(mappedBy: 'owner', targetEntity: CollectionBatchItem::class)]
@@ -235,20 +235,19 @@ final class CollectionBatchFetchingTest extends TestCase
         self::assertFalse($this->em->getConnection()->fetchOne('SELECT id FROM modernorm_test_collection_batch_items WHERE id = 12'));
     }
 
-    public function testExtraLazyCountContainsAndSliceDoNotInitializePeers(): void
+    public function testCountContainsAndSliceUseOrdinaryBatchInitialization(): void
     {
         $owners = $this->owners();
         $this->reset();
-        self::assertCount(2, $owners[0]->extraItems);
-        self::assertTrue($owners[0]->extraItems->containsKey('a'));
-        self::assertCount(1, $owners[0]->extraItems->slice(0, 1));
-        foreach ($owners as $owner) {
-            self::assertFalse($owner->extraItems->isInitialized());
+        self::assertCount(2, $owners[0]->indexedItems);
+        self::assertTrue($owners[0]->indexedItems->containsKey('a'));
+        self::assertCount(1, $owners[0]->indexedItems->slice(0, 1));
+        foreach ($owners as $index => $owner) {
+            self::assertSame($index < 3, $owner->indexedItems->isInitialized());
         }
-        $this->reset();
-        self::assertSame(['a', 'b'], $owners[0]->extraItems->getKeys());
-        self::assertTrue($owners[1]->extraItems->isInitialized());
-        self::assertTrue($owners[2]->extraItems->isInitialized());
+        self::assertSame(['a', 'b'], $owners[0]->indexedItems->getKeys());
+        self::assertTrue($owners[1]->indexedItems->isInitialized());
+        self::assertTrue($owners[2]->indexedItems->isInitialized());
         self::assertSame(1, $this->statistics->snapshot()->sqlCount);
     }
 

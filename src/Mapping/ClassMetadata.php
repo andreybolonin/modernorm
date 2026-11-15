@@ -159,13 +159,6 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     public const FETCH_EAGER = 3;
 
     /**
-     * Specifies that an association is to be fetched lazy (on first access) and that
-     * commands such as Collection#count, Collection#slice are issued directly against
-     * the database if the collection is not yet initialized.
-     */
-    public const FETCH_EXTRA_LAZY = 4;
-
-    /**
      * Identifies a one-to-one association.
      */
     public const ONE_TO_ONE = 1;
@@ -1205,6 +1198,9 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
         if (! isset($mapping['fetch'])) {
             $mapping['fetch'] = self::FETCH_LAZY;
         }
+        if (! in_array($mapping['fetch'], [self::FETCH_LAZY, self::FETCH_EAGER], true)) {
+            throw MappingException::invalidFetchMode($this->name, (string) $mapping['fetch']);
+        }
 
         // Cascades
         $cascades = isset($mapping['cascade']) ? array_map('strtolower', $mapping['cascade']) : [];
@@ -1538,6 +1534,9 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
             throw new MappingException('Entity caching requires concrete Cacheable metadata with a nonnegative TTL and a CacheWritePolicy: ' . $this->name);
         }
         foreach ($this->associationMappings as $association) {
+            if (! in_array($association->fetch, [self::FETCH_LAZY, self::FETCH_EAGER], true)) {
+                throw MappingException::invalidFetchMode($this->name, (string) $association->fetch);
+            }
             if ($association instanceof ManyToOneAssociationMapping || $association->isToMany()) {
                 $association->assertValidBatchSize();
             }
@@ -1563,7 +1562,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     /**
      * Sets the association to override association mapping of property for an entity relationship.
      *
-     * @phpstan-param array{joinColumns?: array, inversedBy?: ?string, joinTable?: array, fetch?: ?string, cascade?: string[]} $overrideMapping
+     * @phpstan-param array{joinColumns?: array, inversedBy?: ?string, joinTable?: array, fetch?: ClassMetadata::FETCH_*|null, cascade?: string[]} $overrideMapping
      *
      * @throws MappingException
      */

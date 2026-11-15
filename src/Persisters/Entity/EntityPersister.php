@@ -218,18 +218,6 @@ interface EntityPersister
     ): array;
 
     /**
-     * Gets (sliced or full) elements of the given collection.
-     *
-     * @return mixed[]
-     */
-    public function getManyToManyCollection(
-        AssociationMapping $assoc,
-        object $sourceEntity,
-        int|null $offset = null,
-        int|null $limit = null,
-    ): array;
-
-    /**
      * Loads a collection of entities of a many-to-many association.
      *
      * @param AssociationMapping   $assoc        The association mapping of the association being loaded.
@@ -262,18 +250,6 @@ interface EntityPersister
      * @phpstan-param LockMode::* $lockMode
      */
     public function lock(array $criteria, LockMode|int $lockMode): void;
-
-    /**
-     * Returns an array with (sliced or full list) of elements in the specified collection.
-     *
-     * @return mixed[]
-     */
-    public function getOneToManyCollection(
-        AssociationMapping $assoc,
-        object $sourceEntity,
-        int|null $offset = null,
-        int|null $limit = null,
-    ): array;
 
     /**
      * Checks whether the given managed entity exists in the database.

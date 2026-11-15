@@ -31,7 +31,7 @@ final class Team
     public string $name = 'team';
 
     /** @var Collection<int, Member> */
-    #[ORM\OneToMany(mappedBy: 'team', targetEntity: Member::class, cascade: ['persist', 'remove'], orphanRemoval: true, fetch: 'EXTRA_LAZY')]
+    #[ORM\OneToMany(mappedBy: 'team', targetEntity: Member::class, cascade: ['persist', 'remove'], orphanRemoval: true, fetch: 'LAZY')]
     public Collection $members;
 
     public function __construct()
@@ -190,7 +190,7 @@ final class AssociationsTest extends TestCase
         self::assertCount(2, $this->queries->sql);
     }
 
-    public function testExtraLazyCountAndCollectionInitialization(): void
+    public function testCountInitializesCollectionOnce(): void
     {
         [$teamId] = $this->seed();
         $team = $this->em->find(Team::class, $teamId);
@@ -199,16 +199,16 @@ final class AssociationsTest extends TestCase
         self::assertCount(1, $this->queries->sql);
         self::assertCount(2, $team->members);
         self::assertCount(2, $this->queries->sql);
-        self::assertFalse($team->members->isInitialized());
+        self::assertTrue($team->members->isInitialized());
         $members = $team->members->toArray();
         self::assertCount(2, $members);
-        self::assertCount(3, $this->queries->sql);
+        self::assertCount(2, $this->queries->sql);
         self::assertTrue($team->members->isInitialized());
         foreach ($members as $member) {
             self::assertSame($team, $member->team);
             self::assertSame($member, $this->em->find(Member::class, $member->id));
         }
-        self::assertCount(3, $this->queries->sql);
+        self::assertCount(2, $this->queries->sql);
     }
 
     public function testOrphanRemovalAndCascadeRemove(): void

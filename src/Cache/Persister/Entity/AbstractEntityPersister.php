@@ -73,24 +73,6 @@ abstract class AbstractEntityPersister implements EntityPersister, CachedPersist
         return $this->persister->getClassMetadata();
     }
 
-    public function getManyToManyCollection(
-        AssociationMapping $assoc,
-        object $sourceEntity,
-        int|null $offset = null,
-        int|null $limit = null,
-    ): array {
-        return $this->persister->getManyToManyCollection($assoc, $sourceEntity, $offset, $limit);
-    }
-
-    public function getOneToManyCollection(
-        AssociationMapping $assoc,
-        object $sourceEntity,
-        int|null $offset = null,
-        int|null $limit = null,
-    ): array {
-        return $this->persister->getOneToManyCollection($assoc, $sourceEntity, $offset, $limit);
-    }
-
     public function getOwningTable(string $fieldName): string
     {
         return $this->persister->getOwningTable($fieldName);

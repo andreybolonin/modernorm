@@ -25,10 +25,10 @@ class AuditOwner
     #[ORM\Id, ORM\Column, ORM\GeneratedValue]
     public ?int $id = null;
     /** @var Collection<int, AuditChild> */
-    #[ORM\OneToMany(mappedBy: 'owner', targetEntity: AuditChild::class, cascade: ['persist'], orphanRemoval: true, fetch: 'EXTRA_LAZY', indexBy: 'id')]
+    #[ORM\OneToMany(mappedBy: 'owner', targetEntity: AuditChild::class, cascade: ['persist'], orphanRemoval: true, fetch: 'LAZY', indexBy: 'id')]
     public Collection $children;
     /** @var Collection<int, AuditTag> */
-    #[ORM\ManyToMany(targetEntity: AuditTag::class, cascade: ['persist'], fetch: 'EXTRA_LAZY', indexBy: 'id')]
+    #[ORM\ManyToMany(targetEntity: AuditTag::class, cascade: ['persist'], fetch: 'LAZY', indexBy: 'id')]
     #[ORM\JoinTable(name: 'modernorm_audit_owner_tags')]
     public Collection $tags;
     public function __construct()
@@ -60,7 +60,7 @@ class AuditGroup
     #[ORM\Column]
     public string $code = 'member';
     /** @var Collection<int, AuditTag> */
-    #[ORM\ManyToMany(targetEntity: AuditTag::class, inversedBy: 'groups', cascade: ['persist'], fetch: 'EXTRA_LAZY', indexBy: 'id')]
+    #[ORM\ManyToMany(targetEntity: AuditTag::class, inversedBy: 'groups', cascade: ['persist'], fetch: 'LAZY', indexBy: 'id')]
     #[ORM\JoinTable(name: 'modernorm_audit_group_tags')]
     public Collection $tags;
     public function __construct()
@@ -77,7 +77,7 @@ class AuditTag
     #[ORM\Column]
     public string $code = 'member';
     /** @var Collection<int, AuditGroup> */
-    #[ORM\ManyToMany(targetEntity: AuditGroup::class, mappedBy: 'tags', fetch: 'EXTRA_LAZY', indexBy: 'id')]
+    #[ORM\ManyToMany(targetEntity: AuditGroup::class, mappedBy: 'tags', fetch: 'LAZY', indexBy: 'id')]
     public Collection $groups;
     public function __construct()
     {
@@ -279,7 +279,7 @@ final class PersistenceAuditTest extends TestCase
         self::assertNotNull($this->em->find(AuditChild::class, $new->id));
     }
 
-    public function testExtraLazyOneToManyLookupChecksOwnerEvenForManagedTarget(): void
+    public function testIndexedOneToManyLookupChecksOwnerEvenForManagedTarget(): void
     {
         [$first, $firstIds] = $this->owner();
         $firstId = $first->id;
@@ -290,7 +290,8 @@ final class PersistenceAuditTest extends TestCase
         self::assertNull($first->children->get($foreign->id));
         self::assertSame($firstIds[0], $first->children->get($firstIds[0])->id);
         self::assertNull($first->children->get(999999));
-        $this->assertUninitialized($first->children);
+        self::assertInstanceOf(PersistentCollection::class, $first->children);
+        self::assertTrue($first->children->isInitialized());
     }
 
     public static function manyToManySides(): iterable
@@ -303,7 +304,7 @@ final class PersistenceAuditTest extends TestCase
     }
 
     #[DataProvider('manyToManySides')]
-    public function testExtraLazyManyToManyLookupChecksJoinTable(string $side, string $index): void
+    public function testIndexedManyToManyLookupChecksJoinTable(string $side, string $index): void
     {
         $first = $side === 'unidirectional' ? new AuditOwner() : new AuditGroup();
         $second = $side === 'unidirectional' ? new AuditOwner() : new AuditGroup();
@@ -336,7 +337,8 @@ final class PersistenceAuditTest extends TestCase
         self::assertNull($collection->get($index === 'id' ? $target->id : 'foreign'));
         self::assertSame($member, $collection->get($index === 'id' ? $member : 'member')->id);
         self::assertNull($collection->get(999999));
-        $this->assertUninitialized($collection);
+        self::assertInstanceOf(PersistentCollection::class, $collection);
+        self::assertTrue($collection->isInitialized());
     }
 
     private function assertUninitialized(Collection $collection): void

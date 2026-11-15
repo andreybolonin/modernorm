@@ -54,6 +54,6 @@ Cursor tokens contain position values; they do not authenticate association owne
 
 ModernORM's single scalar primary-key contract applies to owner and target. Association queries require single-column joins referencing those primary keys. OneToOne/ManyToOne entry points, composite or association identifiers, and non-primary-key joins are unsupported.
 
-## Collections and EXTRA_LAZY
+## Ordinary collections
 
-Use this API for explicit database counts, membership checks, filtered queries and cursor pages. Ordinary collection iteration and modification continue to use the existing collection and batch-loading behavior. EXTRA_LAZY remains supported for compatibility; adding this API does not remove it or change its methods. This API also does not introduce collection L2 caching.
+Use this API for explicit database counts, membership checks, filtered queries and cursor pages. Ordinary collection iteration and modification continue to use the existing collection and batch-loading behavior. EXTRA_LAZY is removed; see the [migration guide](extra-lazy-removal.md). Association queries use database membership, while ordinary collections retain their in-memory pending changes. This API also does not introduce collection L2 caching.

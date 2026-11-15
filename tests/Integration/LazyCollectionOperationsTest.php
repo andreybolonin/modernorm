@@ -12,6 +12,7 @@ use Doctrine\DBAL\Logging\Middleware;
 use ModernORM\EntityManager;
 use ModernORM\Mapping as ORM;
 use ModernORM\ORMSetup;
+use ModernORM\PersistentCollection;
 use ModernORM\Tools\SchemaTool;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\AbstractLogger;
@@ -25,7 +26,7 @@ final class LazyFolder
     public ?int $id = null;
 
     /** @var Collection<string, LazyEntry> */
-    #[ORM\OneToMany(mappedBy: 'folder', targetEntity: LazyEntry::class, cascade: ['persist'], orphanRemoval: true, fetch: 'EXTRA_LAZY', indexBy: 'slug')]
+    #[ORM\OneToMany(mappedBy: 'folder', targetEntity: LazyEntry::class, cascade: ['persist'], orphanRemoval: true, fetch: 'LAZY', indexBy: 'slug')]
     #[ORM\OrderBy(['slug' => 'ASC'])]
     public Collection $entries;
 
@@ -57,10 +58,15 @@ final class LazyEntry
     }
 }
 
-final class ExtraLazyQueryRecorder extends AbstractLogger
+final class LazyCollectionQueryRecorder extends AbstractLogger
 {
     /** @var list<string> */
     public array $sql = [];
+
+    public function firstSql(): string
+    {
+        return $this->sql[0] ?? '';
+    }
 
     public function log($level, string|Stringable $message, array $context = []): void
     {
@@ -70,14 +76,20 @@ final class ExtraLazyQueryRecorder extends AbstractLogger
     }
 }
 
-final class ExtraLazyTest extends TestCase
+final class LazyCollectionOperationsTest extends TestCase
 {
     private EntityManager $em;
-    private ExtraLazyQueryRecorder $queries;
+    private LazyCollectionQueryRecorder $queries;
+
+    private function assertInitialization(Collection $collection, bool $initialized): void
+    {
+        self::assertInstanceOf(PersistentCollection::class, $collection);
+        self::assertSame($initialized, $collection->isInitialized());
+    }
 
     protected function setUp(): void
     {
-        $this->queries = new ExtraLazyQueryRecorder();
+        $this->queries = new LazyCollectionQueryRecorder();
         $config = new DBALConfiguration();
         $config->setMiddlewares([new Middleware($this->queries)]);
         $connection = DriverManager::getConnection([
@@ -127,18 +139,18 @@ final class ExtraLazyTest extends TestCase
         return [$folder, $alphaId, $foreignId];
     }
 
-    public function testContainsChecksMembershipWithoutInitializingCollection(): void
+    public function testContainsInitializesCollectionAndChecksMembership(): void
     {
         [$folder, $alphaId, $foreignId] = $this->seed();
         $alpha = $this->em->getReference(LazyEntry::class, $alphaId);
         $foreign = $this->em->getReference(LazyEntry::class, $foreignId);
         self::assertTrue($folder->entries->contains($alpha));
         self::assertFalse($folder->entries->contains($foreign));
-        self::assertCount(2, $this->queries->sql);
+        self::assertCount(1, $this->queries->sql);
         self::assertFalse($folder->entries->contains(new LazyEntry('new', $folder)));
-        self::assertCount(2, $this->queries->sql);
-        self::assertFalse($folder->entries->isInitialized());
-        self::assertTrue($this->em->isUninitializedObject($alpha));
+        self::assertCount(1, $this->queries->sql);
+        $this->assertInitialization($folder->entries, true);
+        self::assertFalse($this->em->isUninitializedObject($alpha));
     }
 
     public function testIndexedLookupUsesOwnerAndPreservesIdentityMap(): void
@@ -147,19 +159,19 @@ final class ExtraLazyTest extends TestCase
         self::assertTrue($folder->entries->containsKey('alpha'));
         self::assertFalse($folder->entries->containsKey('foreign'));
         self::assertFalse($folder->entries->containsKey('missing'));
-        self::assertCount(3, $this->queries->sql);
+        self::assertCount(1, $this->queries->sql);
         $entry = $folder->entries->get('alpha');
         self::assertSame($alphaId, $entry->id);
         self::assertSame($folder, $entry->folder);
         self::assertSame($entry, $this->em->find(LazyEntry::class, $alphaId));
-        self::assertCount(4, $this->queries->sql);
+        self::assertCount(1, $this->queries->sql);
         self::assertNull($folder->entries->get('foreign'));
         self::assertNull($folder->entries->get('missing'));
-        self::assertCount(6, $this->queries->sql);
-        self::assertFalse($folder->entries->isInitialized());
+        self::assertCount(1, $this->queries->sql);
+        $this->assertInitialization($folder->entries, true);
     }
 
-    public function testSliceAndFirstRespectOrderAndKeepCollectionUninitialized(): void
+    public function testSliceAndFirstInitializeOnceAndRespectOrder(): void
     {
         [$folder, $alphaId] = $this->seed();
         $slice = $folder->entries->slice(1, 1);
@@ -169,15 +181,15 @@ final class ExtraLazyTest extends TestCase
         $first = $folder->entries->first();
         self::assertSame($alphaId, $first->id);
         self::assertSame($first, $this->em->find(LazyEntry::class, $alphaId));
-        self::assertCount(2, $this->queries->sql);
+        self::assertCount(1, $this->queries->sql);
         self::assertSame([], $folder->entries->slice(10, 2));
-        self::assertCount(3, $this->queries->sql);
-        self::assertFalse($folder->entries->isInitialized());
+        self::assertCount(1, $this->queries->sql);
+        $this->assertInitialization($folder->entries, true);
         self::assertSame(['bravo', 'charlie'], array_keys($folder->entries->slice(1)));
-        self::assertCount(4, $this->queries->sql);
+        self::assertCount(1, $this->queries->sql);
     }
 
-    public function testEmptyCollectionQueriesDoNotInitializeIt(): void
+    public function testEmptyCollectionInitializesOnce(): void
     {
         [$folder] = $this->seed();
         self::assertFalse($folder->entries->isEmpty());
@@ -188,26 +200,26 @@ final class ExtraLazyTest extends TestCase
         self::assertTrue($empty->entries->isEmpty());
         self::assertFalse($empty->entries->first());
         self::assertSame([], $empty->entries->slice(0, 2));
-        self::assertCount(3, $this->queries->sql);
-        self::assertFalse($empty->entries->isInitialized());
+        self::assertCount(1, $this->queries->sql);
+        $this->assertInitialization($empty->entries, true);
     }
 
-    public function testPendingAdditionCountsWithoutLoadingThenSliceInitializes(): void
+    public function testPendingAdditionSurvivesCollectionInitialization(): void
     {
         [$folder] = $this->seed();
         $new = $folder->add('delta');
         self::assertCount(0, $this->queries->sql);
-        self::assertFalse($folder->entries->isInitialized());
+        $this->assertInitialization($folder->entries, false);
         self::assertTrue($folder->entries->contains($new));
         self::assertFalse($folder->entries->isEmpty());
-        self::assertCount(0, $this->queries->sql);
+        self::assertCount(1, $this->queries->sql);
         self::assertSame(4, $folder->entries->count());
         self::assertCount(1, $this->queries->sql);
         $slice = $folder->entries->slice(0, 10);
         self::assertCount(4, $slice);
         self::assertContains($new, $slice);
-        self::assertTrue($folder->entries->isInitialized());
-        self::assertCount(2, $this->queries->sql);
+        $this->assertInitialization($folder->entries, true);
+        self::assertCount(1, $this->queries->sql);
         $this->em->flush();
         $id = $folder->id;
         $this->em->clear();
@@ -221,9 +233,9 @@ final class ExtraLazyTest extends TestCase
         [$folder, $alphaId] = $this->seed();
         $alpha = $this->em->getReference(LazyEntry::class, $alphaId);
         self::assertTrue($folder->entries->removeElement($alpha));
-        self::assertTrue($folder->entries->isInitialized());
+        $this->assertInitialization($folder->entries, true);
         self::assertCount(1, $this->queries->sql);
-        self::assertStringStartsWith('SELECT', $this->queries->sql[0]);
+        self::assertStringStartsWith('SELECT', $this->queries->firstSql());
         self::assertSame(2, $folder->entries->count());
         self::assertFalse($folder->entries->removeElement($alpha));
         self::assertCount(1, $this->queries->sql);

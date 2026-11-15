@@ -501,7 +501,7 @@ class AttributeDriver implements MappingDriver
 
                 // Check for `fetch`
                 if ($associationOverride->fetch) {
-                    $override['fetch'] = constant(ClassMetadata::class . '::FETCH_' . $associationOverride->fetch);
+                    $override['fetch'] = $this->getFetchMode($className, $associationOverride->fetch);
                 }
 
                 $metadata->setAssociationOverride($fieldName, $override);

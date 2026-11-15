@@ -22,7 +22,7 @@ The local core suite passed **418 tests / 2170 assertions** on PHP **8.4.27 and 
 | ManyToOne batching | Bounded | Scalar/string IDs, shared identities/sizes, size-one opt-out, missing/partial peers, lifecycle; cached targets combine L2 hits with one SQL IN for misses; transactional reads bypass L2 |
 | OneToMany batching | Bounded | FK IN, empty owners, role queues, OrderBy/indexBy, string PKs, pending work, orphan removal, immutable owners, retry/lifecycle and fetch-mode/L2 fallback; [contract](collection-batch-fetching.md) |
 | ManyToMany batching | Bounded | Owning/inverse, shared/self-referencing targets, memberships, ordering/indexing, empty owners and pending changes; [contract](many-to-many-batch-fetching.md) |
-| EXTRA_LAZY | Bounded | Both collection sides, count/contains/containsKey/get/first/slice/isEmpty and pending changes; indexBy-ID variants not separately certified; no Criteria matching/filters |
+| EXTRA_LAZY | Removed | LAZY/EAGER mappings only; use [Association Query API](association-query-api.md) for explicit database operations. [Migration](extra-lazy-removal.md) |
 | SQL QueryBuilder/Query | Verified cases | Concrete projections, mapped columns, parameters/arrays, entity/scalar/mixed/array hydration, CTE, cloned bindings/hints and plain streaming |
 | Explicit association fetch | Bounded | To-one/to-many joins, root deduplication, empty collections and Identity Map; filtered collections must not be represented as complete automatically |
 | Collection pagination | Verified cases | Explicit root-ID builder, count/offset/empty page/bindings/full collections; one scalar ID and application-managed scope/order |
@@ -53,4 +53,4 @@ The local core suite passed **418 tests / 2170 assertions** on PHP **8.4.27 and 
 
 MIT and Doctrine copyright notices remain in [LICENSE](../LICENSE) and [licenses](../licenses/Doctrine-ORM-MIT.txt). Maintenance follows community issues/PRs without an automatic upstream patching commitment. The [beta contract](beta-release.md) defines release and compatibility expectations.
 
-The [persistence audit](persistence-audit.md) records collection replacement/orphan removal, owner-scoped EXTRA_LAZY lookups, UNIQUE/FK ordering, callback mutations, nested flush rejection and rollback boundaries with per-scenario before/after evidence.
+The [persistence audit](persistence-audit.md) records collection replacement/orphan removal, historical owner-scoped EXTRA_LAZY lookup fixes (the mode is now removed), UNIQUE/FK ordering, callback mutations, nested flush rejection and rollback boundaries with per-scenario before/after evidence.

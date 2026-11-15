@@ -77,14 +77,6 @@ class AssociationBuilder
     }
 
     /** @return $this */
-    public function fetchExtraLazy(): static
-    {
-        $this->mapping['fetch'] = ClassMetadata::FETCH_EXTRA_LAZY;
-
-        return $this;
-    }
-
-    /** @return $this */
     public function fetchEager(): static
     {
         $this->mapping['fetch'] = ClassMetadata::FETCH_EAGER;

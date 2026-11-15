@@ -3,8 +3,13 @@ includes:
 
 parameters:
     level: 5
+    scanFiles:
+        - tests/Fixtures/RemovedFetchModes.php
     paths:
         - src
+        - tests/Unit/FetchModeScopeTest.php
+        - tests/Integration/LazyCollectionOperationsTest.php
+        - tests/Integration/LazyManyToManyOperationsTest.php
         - tests/Integration/GeneratedFieldTrackingRegressionTest.php
         - tests/Integration/CascadeRefreshRegressionTest.php
         - tests/Integration/P1ReadonlyHookRegressionTest.php

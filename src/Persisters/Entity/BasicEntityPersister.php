@@ -836,41 +836,6 @@ class BasicEntityPersister implements EntityPersister
     }
 
     /**
-     * {@inheritDoc}
-     */
-    public function getManyToManyCollection(
-        AssociationMapping $assoc,
-        object $sourceEntity,
-        int|null $offset = null,
-        int|null $limit = null,
-    ): array {
-        assert($assoc->isManyToMany());
-        $this->switchPersisterContext($offset, $limit);
-
-        $stmt = $this->getManyToManyStatement($assoc, $sourceEntity, $offset, $limit);
-
-        return $this->loadArrayFromResult($assoc, $stmt);
-    }
-
-    /**
-     * Loads an array of entities from a given DBAL statement.
-     *
-     * @return mixed[]
-     */
-    private function loadArrayFromResult(AssociationMapping $assoc, Result $stmt): array
-    {
-        $rsm   = $this->currentPersisterContext->rsm;
-        $hints = [UnitOfWork::HINT_DEFEREAGERLOAD => true];
-
-        if ($assoc->isIndexed()) {
-            $rsm = clone $this->currentPersisterContext->rsm; // this is necessary because the "default rsm" should be changed.
-            $rsm->addIndexBy('r', $assoc->indexBy());
-        }
-
-        return $this->em->newHydrator(Query::HYDRATE_OBJECT)->hydrateAll($stmt, $rsm, $hints);
-    }
-
-    /**
      * Hydrates a collection from a given DBAL statement.
      *
      * @return mixed[]
@@ -909,10 +874,8 @@ class BasicEntityPersister implements EntityPersister
     private function getManyToManyStatement(
         AssociationMapping&ManyToManyAssociationMapping $assoc,
         object $sourceEntity,
-        int|null $offset = null,
-        int|null $limit = null,
     ): Result {
-        $this->switchPersisterContext($offset, $limit);
+        $this->switchPersisterContext(null, null);
 
         $sourceClass = $this->em->getClassMetadata($assoc->sourceEntity);
         $class       = $sourceClass;
@@ -952,7 +915,7 @@ class BasicEntityPersister implements EntityPersister
             ];
         }
 
-        $sql              = $this->getSelectSQL($criteria, $assoc, null, $limit, $offset);
+        $sql              = $this->getSelectSQL($criteria, $assoc);
         [$params, $types] = $this->expandToManyParameters($parameters);
 
         return $this->conn->executeQuery($sql, $params, $types);
@@ -1628,23 +1591,6 @@ class BasicEntityPersister implements EntityPersister
         return implode(' AND ', $conditions);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    public function getOneToManyCollection(
-        AssociationMapping $assoc,
-        object $sourceEntity,
-        int|null $offset = null,
-        int|null $limit = null,
-    ): array {
-        assert($assoc instanceof OneToManyAssociationMapping);
-        $this->switchPersisterContext($offset, $limit);
-
-        $stmt = $this->getOneToManyStatement($assoc, $sourceEntity, $offset, $limit);
-
-        return $this->loadArrayFromResult($assoc, $stmt);
-    }
-
     public function loadOneToManyCollection(
         AssociationMapping $assoc,
         object $sourceEntity,
@@ -1660,10 +1606,8 @@ class BasicEntityPersister implements EntityPersister
     private function getOneToManyStatement(
         OneToManyAssociationMapping $assoc,
         object $sourceEntity,
-        int|null $offset = null,
-        int|null $limit = null,
     ): Result {
-        $this->switchPersisterContext($offset, $limit);
+        $this->switchPersisterContext(null, null);
 
         $criteria    = [];
         $parameters  = [];
@@ -1686,7 +1630,7 @@ class BasicEntityPersister implements EntityPersister
             ];
         }
 
-        $sql              = $this->getSelectSQL($criteria, $assoc, null, $limit, $offset);
+        $sql              = $this->getSelectSQL($criteria, $assoc);
         [$params, $types] = $this->expandToManyParameters($parameters);
 
         return $this->conn->executeQuery($sql, $params, $types);

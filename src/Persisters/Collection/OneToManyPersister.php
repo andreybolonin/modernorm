@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace ModernORM\Persisters\Collection;
 
-use BadMethodCallException;
 use Doctrine\DBAL\Exception as DBALException;
 use ModernORM\Exception\EntityNotFoundException;
 use ModernORM\Exception\MappingException;
@@ -13,7 +12,6 @@ use ModernORM\PersistentCollection;
 use ModernORM\Utility\PersisterHelper;
 
 use function assert;
-use function count;
 use function implode;
 use function is_int;
 
@@ -45,76 +43,6 @@ class OneToManyPersister extends AbstractCollectionPersister
         // For owning side one to many, it is required to have a join table,
         // then classifying it as a ManyToManyPersister.
         return;
-    }
-
-    public function get(PersistentCollection $collection, mixed $index): object|null
-    {
-        $mapping = $this->getMapping($collection);
-
-        if (! $mapping->isIndexed()) {
-            throw new BadMethodCallException('Selecting a collection by index is only supported on indexed collections.');
-        }
-
-        $persister = $this->uow->getEntityPersister($mapping->targetEntity);
-
-        return $persister->load(
-            [
-                $mapping->mappedBy  => $collection->getOwner(),
-                $mapping->indexBy() => $index,
-            ],
-            null,
-            $mapping,
-            [],
-            null,
-            1,
-        );
-    }
-
-    public function count(PersistentCollection $collection): int
-    {
-        $mapping   = $this->getMapping($collection);
-        $persister = $this->uow->getEntityPersister($mapping->targetEntity);
-
-        return $persister->count([$mapping->mappedBy => $collection->getOwner()]);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    public function slice(PersistentCollection $collection, int $offset, int|null $length = null): array
-    {
-        $mapping   = $this->getMapping($collection);
-        $persister = $this->uow->getEntityPersister($mapping->targetEntity);
-
-        return $persister->getOneToManyCollection($mapping, $collection->getOwner(), $offset, $length);
-    }
-
-    public function containsKey(PersistentCollection $collection, mixed $key): bool
-    {
-        $mapping = $this->getMapping($collection);
-
-        if (! $mapping->isIndexed()) {
-            throw new BadMethodCallException('Selecting a collection by index is only supported on indexed collections.');
-        }
-
-        $persister = $this->uow->getEntityPersister($mapping->targetEntity);
-
-        return (bool) $persister->count([
-            $mapping->mappedBy => $collection->getOwner(),
-            $mapping->indexBy() => $key,
-        ]);
-    }
-
-    public function contains(PersistentCollection $collection, object $element): bool
-    {
-        if (! $this->isValidEntityState($element)) {
-            return false;
-        }
-
-        $mapping   = $this->getMapping($collection);
-        $persister = $this->uow->getEntityPersister($mapping->targetEntity);
-
-        return $persister->exists($element, [$mapping->mappedBy => $collection->getOwner()]);
     }
 
     /**

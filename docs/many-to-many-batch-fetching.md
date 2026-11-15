@@ -56,7 +56,7 @@ Schema foreign keys, onDelete behavior, cascades, and orphan removal retain thei
 
 ## Fetch modes, lifecycle, and limits
 
-EXTRA_LAZY count/contains/containsKey/get/first/slice keep their existing partial operations; a full collection initialization starts batching. EAGER keeps its existing loading strategy.
+LAZY collection reads use ordinary initialization and batching. EAGER keeps its existing loading strategy. EXTRA_LAZY is [removed](extra-lazy-removal.md); use Association Query API for queries without collection initialization.
 
 When L2 is enabled, uncached target classes continue batching on both owning and inverse sides. Cacheable targets keep the ordinary per-collection SQL loader, even if entity-by-ID L2 entries are warm; peers remain uninitialized. This preserves existing collection behavior and Identity Map without introducing collection L2 caching or combining entity cache hits with batched misses.
 
@@ -66,6 +66,6 @@ Streaming can batch only owners discovered so far. SQL/flush and batch timings/c
 
 ## Verification
 
-`ManyToManyBatchFetchingTest` covers owning/inverse queries, shared identities and memberships, empty collections, ordering/indexBy, integer/string IDs, role/size isolation, self-referencing joins, pending writes/deletes, SQL retry, lifecycle cleanup with/without L2, manager isolation, immutable owners, EAGER/EXTRA_LAZY, PostLoad, and uncached batching under L2. `L2BatchFetchingTest` verifies mixed cached/uncached targets, cached-target collection fallback, pending changes and Identity Map in an L2-enabled manager.
+`ManyToManyBatchFetchingTest` covers owning/inverse queries, shared identities and memberships, empty collections, ordering/indexBy, integer/string IDs, role/size isolation, self-referencing joins, pending writes/deletes, SQL retry, lifecycle cleanup with/without L2, manager isolation, immutable owners, EAGER and indexed LAZY collections, PostLoad, and uncached batching under L2. `L2BatchFetchingTest` verifies mixed cached/uncached targets, cached-target collection fallback, pending changes and Identity Map in an L2-enabled manager.
 
 `ManyToManyBatchMappingTest` covers owning/inverse metadata, MappedSuperclass, serialized caches, invalid attributes/sizes, and cache validation. [OneToMany batching](collection-batch-fetching.md) and [ManyToOne batching](batch-fetching.md) remain separate loading paths within the shared lazy-batching configuration.

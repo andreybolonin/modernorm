@@ -349,59 +349,6 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
         return $removed;
     }
 
-    public function containsKey(mixed $key): bool
-    {
-        if (
-            ! $this->initialized && $this->getMapping()->fetch === ClassMetadata::FETCH_EXTRA_LAZY
-            && isset($this->getMapping()->indexBy)
-        ) {
-            $persister = $this->getUnitOfWork()->getCollectionPersister($this->getMapping());
-
-            return $this->unwrap()->containsKey($key) || $persister->containsKey($this, $key);
-        }
-
-        return parent::containsKey($key);
-    }
-
-    public function contains(mixed $element): bool
-    {
-        if (! $this->initialized && $this->getMapping()->fetch === ClassMetadata::FETCH_EXTRA_LAZY) {
-            $persister = $this->getUnitOfWork()->getCollectionPersister($this->getMapping());
-
-            return $this->unwrap()->contains($element) || $persister->contains($this, $element);
-        }
-
-        return parent::contains($element);
-    }
-
-    public function get(string|int $key): mixed
-    {
-        if (
-            ! $this->initialized
-            && $this->getMapping()->fetch === ClassMetadata::FETCH_EXTRA_LAZY
-            && isset($this->getMapping()->indexBy)
-        ) {
-            if ($this->unwrap()->containsKey($key)) {
-                return $this->unwrap()->get($key);
-            }
-
-            return $this->getUnitOfWork()->getCollectionPersister($this->getMapping())->get($this, $key);
-        }
-
-        return parent::get($key);
-    }
-
-    public function count(): int
-    {
-        if (! $this->initialized && $this->association !== null && $this->getMapping()->fetch === ClassMetadata::FETCH_EXTRA_LAZY) {
-            $persister = $this->getUnitOfWork()->getCollectionPersister($this->association);
-
-            return $persister->count($this) + ($this->isDirty ? $this->unwrap()->count() : 0);
-        }
-
-        return parent::count();
-    }
-
     public function set(string|int $key, mixed $value): void
     {
         $previous = parent::get($key);
@@ -520,39 +467,6 @@ final class PersistentCollection extends AbstractLazyCollection implements Selec
     public function __wakeup(): void
     {
         $this->em = null;
-    }
-
-    /** {@inheritDoc} */
-    public function first(): mixed
-    {
-        if (! $this->initialized && ! $this->isDirty && $this->getMapping()->fetch === ClassMetadata::FETCH_EXTRA_LAZY) {
-            $persister = $this->getUnitOfWork()->getCollectionPersister($this->getMapping());
-
-            return array_values($persister->slice($this, 0, 1))[0] ?? false;
-        }
-
-        return parent::first();
-    }
-
-    /**
-     * Extracts a slice of $length elements starting at position $offset from the Collection.
-     *
-     * If $length is null it returns all elements from $offset to the end of the Collection.
-     * Keys have to be preserved by this method. Calling this method will only return the
-     * selected slice and NOT change the elements contained in the collection slice is called on.
-     *
-     * @return mixed[]
-     * @phpstan-return array<TKey,T>
-     */
-    public function slice(int $offset, int|null $length = null): array
-    {
-        if (! $this->initialized && ! $this->isDirty && $this->getMapping()->fetch === ClassMetadata::FETCH_EXTRA_LAZY) {
-            $persister = $this->getUnitOfWork()->getCollectionPersister($this->getMapping());
-
-            return $persister->slice($this, $offset, $length);
-        }
-
-        return parent::slice($offset, $length);
     }
 
     /**

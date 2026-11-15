@@ -12,7 +12,7 @@ final class OneToOne implements MappingAttribute
     /**
      * @param class-string|null  $targetEntity
      * @param array<string>|null $cascade
-     * @phpstan-param 'LAZY'|'EAGER'|'EXTRA_LAZY' $fetch
+     * @phpstan-param 'LAZY'|'EAGER' $fetch
      */
     public function __construct(
         public readonly string|null $targetEntity = null,

@@ -12,6 +12,7 @@ use Doctrine\DBAL\Logging\Middleware;
 use ModernORM\EntityManager;
 use ModernORM\Mapping as ORM;
 use ModernORM\ORMSetup;
+use ModernORM\PersistentCollection;
 use ModernORM\Tools\SchemaTool;
 use PHPUnit\Framework\TestCase;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -26,7 +27,7 @@ final class LazyPlaylist
     public ?int $id = null;
 
     /** @var Collection<string, LazyTrack> */
-    #[ORM\ManyToMany(targetEntity: LazyTrack::class, inversedBy: 'playlists', cascade: ['persist'], fetch: 'EXTRA_LAZY', indexBy: 'slug')]
+    #[ORM\ManyToMany(targetEntity: LazyTrack::class, inversedBy: 'playlists', cascade: ['persist'], fetch: 'LAZY', indexBy: 'slug')]
     #[ORM\JoinTable(name: 'modernorm_test_lazy_playlist_tracks')]
     #[ORM\OrderBy(['slug' => 'ASC'])]
     public Collection $tracks;
@@ -44,7 +45,7 @@ final class LazyTrack
     public ?int $id = null;
 
     /** @var Collection<string, LazyPlaylist> */
-    #[ORM\ManyToMany(targetEntity: LazyPlaylist::class, mappedBy: 'tracks', fetch: 'EXTRA_LAZY', indexBy: 'slug')]
+    #[ORM\ManyToMany(targetEntity: LazyPlaylist::class, mappedBy: 'tracks', fetch: 'LAZY', indexBy: 'slug')]
     #[ORM\OrderBy(['slug' => 'ASC'])]
     public Collection $playlists;
 
@@ -59,6 +60,11 @@ final class ManyToManyQueryRecorder extends AbstractLogger
     /** @var list<string> */
     public array $sql = [];
 
+    public function firstSql(): string
+    {
+        return $this->sql[0] ?? '';
+    }
+
     public function log($level, string|Stringable $message, array $context = []): void
     {
         if (isset($context['sql'])) {
@@ -67,10 +73,16 @@ final class ManyToManyQueryRecorder extends AbstractLogger
     }
 }
 
-final class ExtraLazyManyToManyTest extends TestCase
+final class LazyManyToManyOperationsTest extends TestCase
 {
     private EntityManager $em;
     private ManyToManyQueryRecorder $queries;
+
+    private function assertInitialization(Collection $collection, bool $initialized): void
+    {
+        self::assertInstanceOf(PersistentCollection::class, $collection);
+        self::assertSame($initialized, $collection->isInitialized());
+    }
 
     protected function setUp(): void
     {
@@ -147,7 +159,7 @@ final class ExtraLazyManyToManyTest extends TestCase
     }
 
     #[DataProvider('sides')]
-    public function testCountContainsAndEmptyWithoutCollectionInitialization(bool $owning): void
+    public function testCountContainsAndEmptyInitializeCollectionsOnce(bool $owning): void
     {
         [$collection, $class, $ids, $empty] = $this->collections($owning);
         $member = $this->em->getReference($class, $ids['alpha']);
@@ -156,16 +168,16 @@ final class ExtraLazyManyToManyTest extends TestCase
         self::assertTrue($collection->contains($member));
         self::assertFalse($collection->contains($foreign));
         self::assertFalse($collection->isEmpty());
-        self::assertCount(4, $this->queries->sql);
+        self::assertCount(1, $this->queries->sql);
         self::assertFalse($collection->contains(new $class('new')));
-        self::assertCount(4, $this->queries->sql);
-        self::assertFalse($collection->isInitialized());
-        self::assertTrue($this->em->isUninitializedObject($member));
+        self::assertCount(1, $this->queries->sql);
+        $this->assertInitialization($collection, true);
+        self::assertFalse($this->em->isUninitializedObject($member));
         self::assertTrue($empty->isEmpty());
         self::assertFalse($empty->first());
         self::assertSame([], $empty->slice(0, 2));
-        self::assertCount(7, $this->queries->sql);
-        self::assertFalse($empty->isInitialized());
+        self::assertCount(2, $this->queries->sql);
+        $this->assertInitialization($empty, true);
     }
 
     #[DataProvider('sides')]
@@ -175,24 +187,24 @@ final class ExtraLazyManyToManyTest extends TestCase
         self::assertTrue($collection->containsKey('alpha'));
         self::assertFalse($collection->containsKey('foreign'));
         self::assertFalse($collection->containsKey('missing'));
-        self::assertCount(3, $this->queries->sql);
+        self::assertCount(1, $this->queries->sql);
         $member = $collection->get('alpha');
         self::assertSame($ids['alpha'], $member->id);
         self::assertSame($member, $this->em->find($class, $ids['alpha']));
-        self::assertCount(4, $this->queries->sql);
+        self::assertCount(1, $this->queries->sql);
         self::assertNull($collection->get('foreign'));
         self::assertNull($collection->get('missing'));
-        self::assertCount(6, $this->queries->sql);
+        self::assertCount(1, $this->queries->sql);
         self::assertSame($member, $collection->first());
-        self::assertCount(7, $this->queries->sql);
+        self::assertCount(1, $this->queries->sql);
         $slice = $collection->slice(1, 1);
         self::assertSame(['bravo'], array_keys($slice));
         self::assertSame($ids['bravo'], $slice['bravo']->id);
         self::assertSame($slice['bravo'], $this->em->find($class, $ids['bravo']));
-        self::assertCount(8, $this->queries->sql);
+        self::assertCount(1, $this->queries->sql);
         self::assertSame([], $collection->slice(20, 1));
-        self::assertCount(9, $this->queries->sql);
-        self::assertFalse($collection->isInitialized());
+        self::assertCount(1, $this->queries->sql);
+        $this->assertInitialization($collection, true);
     }
 
     public function testOwningAdditionPersistsNewTargetAndJoinWithoutLoadingCollection(): void
@@ -202,15 +214,14 @@ final class ExtraLazyManyToManyTest extends TestCase
         $this->queries->sql = [];
         $new = new LazyTrack('delta');
         $playlist->tracks->add($new);
-        self::assertTrue($playlist->tracks->contains($new));
+        self::assertInstanceOf(PersistentCollection::class, $playlist->tracks);
+        self::assertTrue($playlist->tracks->unwrap()->contains($new));
         self::assertCount(0, $this->queries->sql);
-        self::assertSame(4, $playlist->tracks->count());
-        self::assertCount(1, $this->queries->sql);
-        self::assertFalse($playlist->tracks->isInitialized());
+        $this->assertInitialization($playlist->tracks, false);
         $this->queries->sql = [];
         $this->em->flush();
         self::assertNotNull($new->id);
-        self::assertFalse($playlist->tracks->isInitialized());
+        $this->assertInitialization($playlist->tracks, false);
         self::assertCount(0, array_filter($this->queries->sql, static fn (string $sql): bool => str_starts_with($sql, 'SELECT')));
         $this->em->clear();
         $playlist = $this->em->find(LazyPlaylist::class, $playlistIds['alpha']);
@@ -229,7 +240,7 @@ final class ExtraLazyManyToManyTest extends TestCase
         $playlist->tracks->add($foreign);
         self::assertCount(0, $this->queries->sql);
         self::assertCount(4, $playlist->tracks->slice(0, 10));
-        self::assertTrue($playlist->tracks->isInitialized());
+        $this->assertInitialization($playlist->tracks, true);
         self::assertTrue($playlist->tracks->contains($foreign));
         self::assertCount(1, $this->queries->sql);
         $this->em->flush();
@@ -245,9 +256,9 @@ final class ExtraLazyManyToManyTest extends TestCase
         $track = $this->em->getReference(LazyTrack::class, $trackIds['alpha']);
         $this->queries->sql = [];
         self::assertTrue($playlist->tracks->removeElement($track));
-        self::assertTrue($playlist->tracks->isInitialized());
+        $this->assertInitialization($playlist->tracks, true);
         self::assertCount(1, $this->queries->sql);
-        self::assertStringStartsWith('SELECT', $this->queries->sql[0]);
+        self::assertStringStartsWith('SELECT', $this->queries->firstSql());
         $connection = $this->em->getConnection();
         self::assertSame(6, (int) $connection->fetchOne('SELECT COUNT(*) FROM modernorm_test_lazy_playlist_tracks'));
         $this->em->flush();
@@ -268,7 +279,7 @@ final class ExtraLazyManyToManyTest extends TestCase
         $track->playlists->add($foreign);
         self::assertCount(0, $this->queries->sql);
         self::assertSame(4, $track->playlists->count());
-        self::assertFalse($track->playlists->isInitialized());
+        $this->assertInitialization($track->playlists, true);
         $this->em->flush();
         $this->em->clear();
         $track = $this->em->find(LazyTrack::class, $trackIds['alpha']);
@@ -276,8 +287,8 @@ final class ExtraLazyManyToManyTest extends TestCase
         self::assertFalse($track->playlists->contains($this->em->getReference(LazyPlaylist::class, $playlistIds['foreign'])));
         $this->queries->sql = [];
         self::assertTrue($track->playlists->removeElement($this->em->getReference(LazyPlaylist::class, $playlistIds['alpha'])));
-        self::assertTrue($track->playlists->isInitialized());
-        self::assertCount(1, $this->queries->sql);
+        $this->assertInitialization($track->playlists, true);
+        self::assertCount(0, $this->queries->sql);
         $this->em->flush();
         $this->em->clear();
         self::assertSame(3, $this->em->find(LazyTrack::class, $trackIds['alpha'])->playlists->count());

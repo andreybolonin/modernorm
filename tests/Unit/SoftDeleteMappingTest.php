@@ -86,14 +86,6 @@ class CascadeSoftMappingSource
     public ?SoftMappingEntity $target = null;
 }
 
-#[ORM\Entity]
-class ExtraLazySoftMappingSource
-{
-    #[ORM\Id, ORM\Column] public int $id;
-    #[ORM\ManyToMany(targetEntity: SoftMappingEntity::class, fetch: 'EXTRA_LAZY')]
-    public \Doctrine\Common\Collections\Collection $targets;
-}
-
 #[ORM\Entity, ORM\SoftDelete]
 class SoftMappingLinkedEntity
 {
@@ -135,7 +127,6 @@ final class SoftDeleteMappingTest extends TestCase
             [RequiredSoftMappingSource::class, 'nullable to-one'],
             [RequiredPhpSoftMappingSource::class, 'nullable PHP'],
             [CascadeSoftMappingSource::class, 'cascade remove or orphanRemoval'],
-            [ExtraLazySoftMappingSource::class, 'EXTRA_LAZY'],
         ];
     }
 

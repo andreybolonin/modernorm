@@ -40,7 +40,7 @@ Instead of issuing one collection SELECT per owner, ModernORM queries compatible
 - Larger values override the global default, including when it is 1.
 - The global default is **1**, shared by lazy ManyToOne, OneToMany, and ManyToMany. Configure it before loading entities.
 - Sizes must be between 1 and 65535. A batch size counts **owner collections**, not child rows.
-- EAGER loading keeps its existing strategy. For EXTRA_LAZY, count/contains/containsKey/get/first/slice retain their existing partial-query paths; batching runs when the collection is fully initialized.
+- EAGER loading keeps its existing strategy. LAZY collection reads initialize through the ordinary batching pipeline. EXTRA_LAZY is [removed](extra-lazy-removal.md); use Association Query API for explicit database queries.
 
 The attribute uses ModernORM Mapping, including inherited MappedSuperclass associations. Doctrine Mapping aliases are not provided. Serialized metadata retains batchSize. Current metadata cache salt: `__MODERNORM_TYPED_MAPPING_V10__`; applications must still version their namespaces after mapping changes.
 
@@ -71,10 +71,10 @@ PostLoad callbacks run during child hydration. If a callback explicitly initiali
 ## Scope
 
 - Scalar owner PKs, including integer and string identifiers.
-- Lazy OneToMany and full initialization of EXTRA_LAZY OneToMany.
+- Lazy OneToMany, including indexed collections.
 - Enabling L2 does not disable batching for uncached target classes. Cached targets retain their ordinary loader; batching cached targets is separate future work. The current flat entity-cache scope excludes cached entities with declared associations, including the child's OneToMany back reference. This does not introduce collection L2 caching.
 - ManyToMany uses a [separate join-table batch loader](many-to-many-batch-fetching.md).
 - Streaming can only batch collections whose owners have already been discovered.
 - SQL/flush and batch Statistics use the existing middleware: attempts, durations, errors, selected collections and fallback reasons, plus optional completion events. See [Batch statistics](batch-statistics.md). Per-entity/row counters and latency/memory benchmarks remain separate work.
 
-See `CollectionBatchFetchingTest` for query counts, role isolation, ordering/indexBy, empty results, Identity Map, pending additions/FK changes/deletes, orphan removal, immutable owners, lifecycle cleanup with/without L2, SQL retry, EAGER/EXTRA_LAZY, PostLoad reentry, string IDs, and uncached batching under L2. `L2BatchFetchingTest` covers cached references alongside uncached collections, pending writes and shared-pool manager isolation. `CollectionBatchMappingTest` covers attributes, metadata cache, invalid sizes, and MappedSuperclass mappings.
+See `CollectionBatchFetchingTest` for query counts, role isolation, ordering/indexBy, empty results, Identity Map, pending additions/FK changes/deletes, orphan removal, immutable owners, lifecycle cleanup with/without L2, SQL retry, EAGER and indexed LAZY collections, PostLoad reentry, string IDs, and uncached batching under L2. `L2BatchFetchingTest` covers cached references alongside uncached collections, pending writes and shared-pool manager isolation. `CollectionBatchMappingTest` covers attributes, metadata cache, invalid sizes, and MappedSuperclass mappings.

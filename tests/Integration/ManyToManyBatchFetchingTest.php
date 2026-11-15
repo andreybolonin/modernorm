@@ -31,9 +31,9 @@ final class ManyBatchGroup
     #[ORM\ManyToMany(targetEntity: ManyBatchRole::class, inversedBy: 'favoredBy', batchSize: 2)]
     #[ORM\JoinTable(name: 'modernorm_test_m2m_batch_favorites', joinColumns: [new ORM\JoinColumn(name: 'group_id')], inverseJoinColumns: [new ORM\JoinColumn(name: 'role_id', onDelete: 'CASCADE')])]
     #[ORM\OrderBy(['position' => 'DESC'])] public Collection $favorites;
-    #[ORM\ManyToMany(targetEntity: ManyBatchRole::class, inversedBy: 'extraGroups', fetch: 'EXTRA_LAZY', indexBy: 'name', batchSize: 3)]
+    #[ORM\ManyToMany(targetEntity: ManyBatchRole::class, inversedBy: 'indexedGroups', fetch: 'LAZY', indexBy: 'name', batchSize: 3)]
     #[ORM\JoinTable(name: 'modernorm_test_m2m_batch_extra', joinColumns: [new ORM\JoinColumn(name: 'group_id')], inverseJoinColumns: [new ORM\JoinColumn(name: 'role_id', onDelete: 'CASCADE')])]
-    #[ORM\OrderBy(['position' => 'ASC'])] public Collection $extraRoles;
+    #[ORM\OrderBy(['position' => 'ASC'])] public Collection $indexedRoles;
     #[ORM\ManyToMany(targetEntity: ManyBatchRole::class)]
     #[ORM\JoinTable(name: 'modernorm_test_m2m_batch_defaults', joinColumns: [new ORM\JoinColumn(name: 'group_id')], inverseJoinColumns: [new ORM\JoinColumn(name: 'role_id', onDelete: 'CASCADE')])]
     public Collection $defaultRoles;
@@ -54,8 +54,8 @@ final class ManyBatchRole
     #[ORM\ManyToMany(targetEntity: ManyBatchGroup::class, mappedBy: 'roles', indexBy: 'name', batchSize: 3)]
     #[ORM\OrderBy(['name' => 'ASC'])] public Collection $groups;
     #[ORM\ManyToMany(targetEntity: ManyBatchGroup::class, mappedBy: 'favorites', batchSize: 2)] public Collection $favoredBy;
-    #[ORM\ManyToMany(targetEntity: ManyBatchGroup::class, mappedBy: 'extraRoles', fetch: 'EXTRA_LAZY', indexBy: 'name', batchSize: 3)]
-    #[ORM\OrderBy(['name' => 'ASC'])] public Collection $extraGroups;
+    #[ORM\ManyToMany(targetEntity: ManyBatchGroup::class, mappedBy: 'indexedRoles', fetch: 'LAZY', indexBy: 'name', batchSize: 3)]
+    #[ORM\OrderBy(['name' => 'ASC'])] public Collection $indexedGroups;
 }
 
 #[ORM\Entity, ORM\Table(name: 'modernorm_test_m2m_batch_nodes')]
@@ -265,28 +265,26 @@ final class ManyToManyBatchFetchingTest extends TestCase
     }
 
     #[DataProvider('sides')]
-    public function testExtraLazyOperationsStayPartialUntilFullInitialization(bool $owning): void
+    public function testIndexedOperationsUseOrdinaryBatchInitialization(bool $owning): void
     {
         if ($owning) {
             $owners = $this->loadGroups();
-            $collections = array_map(static fn ($group) => $group->extraRoles, $owners);
+            $collections = array_map(static fn ($group) => $group->indexedRoles, $owners);
             $trigger = $collections[0];
             $key = 'a';
             $count = 3;
         } else {
             $owners = $this->loadRoles();
-            $collections = array_values(array_map(static fn ($role) => $role->extraGroups, $owners));
-            $trigger = $owners['a b']->extraGroups;
+            $collections = array_values(array_map(static fn ($role) => $role->indexedGroups, $owners));
+            $trigger = $owners['a b']->indexedGroups;
             $key = 'group-1';
             $count = 2;
         }
+        $this->reset();
         self::assertCount($count, $trigger);
         self::assertTrue($trigger->containsKey($key));
         self::assertCount(1, $trigger->slice(0, 1));
-        foreach ($collections as $collection) {
-            self::assertFalse($collection->isInitialized());
-        }
-        $this->reset();
+        self::assertTrue($trigger->isInitialized());
         self::assertCount($count, $trigger->toArray());
         self::assertTrue($collections[0]->isInitialized());
         self::assertTrue($collections[1]->isInitialized());

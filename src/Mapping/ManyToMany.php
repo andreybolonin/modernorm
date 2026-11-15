@@ -12,7 +12,7 @@ final class ManyToMany implements MappingAttribute
     /**
      * @param class-string  $targetEntity
      * @param string[]|null $cascade
-     * @phpstan-param 'LAZY'|'EAGER'|'EXTRA_LAZY' $fetch
+     * @phpstan-param 'LAZY'|'EAGER' $fetch
      */
     public function __construct(
         public readonly string $targetEntity,

@@ -50,9 +50,6 @@ final class SoftDeletePolicy
             if (! $softTarget) {
                 continue;
             }
-            if ($association->fetch === ClassMetadata::FETCH_EXTRA_LAZY) {
-                throw new MappingException('SoftDelete targets do not support EXTRA_LAZY associations: ' . $class->name . '::' . $association->fieldName);
-            }
             if ($association->isToOne()) {
                 if ($association->isToOneOwningSide()) {
                     foreach ($association->joinColumns as $column) {

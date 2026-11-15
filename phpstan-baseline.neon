@@ -187,30 +187,6 @@ parameters:
 			path: src/PersistentCollection.php
 
 		-
-			message: '#^Call to function assert\(\) with true will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: src/Persisters/Collection/ManyToManyPersister.php
-
-		-
-			message: '#^Call to method ModernORM\\Mapping\\AssociationMapping\:\:isIndexed\(\) will always evaluate to true\.$#'
-			identifier: method.alreadyNarrowedType
-			count: 2
-			path: src/Persisters/Collection/ManyToManyPersister.php
-
-		-
-			message: '#^Instanceof between ModernORM\\Mapping\\InverseSideMapping&ModernORM\\Mapping\\ManyToManyAssociationMapping and ModernORM\\Mapping\\InverseSideMapping will always evaluate to true\.$#'
-			identifier: instanceof.alwaysTrue
-			count: 1
-			path: src/Persisters/Collection/ManyToManyPersister.php
-
-		-
-			message: '#^PHPDoc tag @param references unknown parameter\: \$useAlias$#'
-			identifier: parameter.notFound
-			count: 1
-			path: src/Persisters/Collection/ManyToManyPersister.php
-
-		-
 			message: '#^Call to function is_array\(\) with array\<mixed, mixed\> will always evaluate to true\.$#'
 			identifier: function.alreadyNarrowedType
 			count: 1

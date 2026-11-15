@@ -1,5 +1,8 @@
 # Persistence lifecycle audit — 2026-11-07
 
+This report retains historical EXTRA_LAZY findings. That mode and its partial-read SQL are now [removed](extra-lazy-removal.md). Owner-scoped indexed lookup regressions remain covered by ordinary LAZY collections in `PersistenceAuditTest`; initialization expectations have changed accordingly.
+
+
 This audit checks selected inherited collection and UnitOfWork behavior against local PostgreSQL. It is not a claim that all Doctrine issues have been reviewed or that all persistence combinations are certified.
 
 The same **36 test scenarios** ran against baseline ModernORM `203e165eee7b9296dae15f0a192d55103b7b5006` and the changes accompanying this report. **23 scenarios failed before; all 36 pass after.** These are data-provider cases, not 23 independent bugs. Tests for documented limitations pass by asserting the expected failure or state boundary. [Per-scenario results](evidence/persistence-audit-2026-11-07.json) · [Test suite](../tests/Integration/PersistenceAuditTest.php).
@@ -18,10 +21,10 @@ Statuses: **fixed** means reproduced on the recorded baseline and passing after 
 | Replace an indexed element using `set()` | Fixed | Only the displaced entity is orphaned; another entity held under a second key survives removal of one occurrence. `testReplacingIndexedMemberOrphansOnlyTheDisplacedEntity` |
 | `clear()` followed by re-adding a kept child and a new child | Not reproduced | Kept/new children survive and genuinely removed children disappear. `testClearAndReaddPreservesKeptChildAndInsertsNewChild` |
 | Explicit transfer between owners with wholesale replacement | Fixed | Update the owning side and both collections in the same flush. Both source-first and destination-first discovery are tested. `testExplicitTransferWithCollectionReplacementSurvivesRegardlessOfDiscoveryOrder` |
-| EXTRA_LAZY OneToMany `get(id)` | Fixed | Checks the owner even when a foreign target is already managed; missing/foreign IDs return null without initializing the collection. `testExtraLazyOneToManyLookupChecksOwnerEvenForManagedTarget` |
-| EXTRA_LAZY ManyToMany `get(id)`, owning and inverse sides | Fixed | Lookup checks join-table membership instead of calling `find()` for an arbitrary target ID. `testExtraLazyManyToManyLookupChecksJoinTable` |
-| EXTRA_LAZY bidirectional ManyToMany indexed by a non-ID field | Not reproduced | Owner-scoped lookup already worked and remains covered. Same provider, `owning/inverse by code` |
-| EXTRA_LAZY unidirectional ManyToMany indexed by ID or another field | Fixed | Does not require an inverse property to scope the query. Same provider, `unidirectional` |
+| EXTRA_LAZY OneToMany `get(id)` | Removed | Ordinary indexed reads initialize the owner-scoped LAZY collection; foreign/missing IDs still return null. `testIndexedOneToManyLookupChecksOwnerEvenForManagedTarget` |
+| EXTRA_LAZY ManyToMany `get(id)`, owning and inverse sides | Removed | Ordinary indexed reads initialize owner-scoped LAZY collections; membership regressions remain covered. `testIndexedManyToManyLookupChecksJoinTable` |
+| EXTRA_LAZY bidirectional ManyToMany indexed by a non-ID field | Removed | Owner-scoped indexed lookup remains covered on ordinary LAZY collections. Same provider, `owning/inverse by code` |
+| EXTRA_LAZY unidirectional ManyToMany indexed by ID or another field | Removed | Ordinary indexed LAZY collection loading does not require an inverse property. Same provider, `unidirectional` |
 | Remove an entity and insert a replacement with the same immediate UNIQUE value in one flush | Documented limitation | INSERT precedes entity DELETE; PostgreSQL rejects the insert and the flush rolls back/closes the manager. `testImmediateUniqueReplacementInOneFlushFailsAndRollsBack` |
 | Swap two immediate UNIQUE values in one flush | Documented limitation | Sequential UPDATEs can violate the intermediate constraint; the transaction rolls back. `testImmediateUniqueSwapInOneFlushIsDocumentedLimitation` |
 | Two flushes inside one transaction for UNIQUE replacement | Verified workaround | Delete/flush, then insert/flush, then commit. `testTwoFlushesWithinTransactionReplaceUniqueValueAtomically` |
@@ -48,7 +51,7 @@ For OneToMany orphan removal, changing the collection container is not a request
 
 Update the owning FK and inverse collections together for an explicit transfer. Loading the inverse collection preserves an already modified owning-side value. This does not synchronize arbitrary inconsistent graphs or permit multiple owners for a single OneToMany child. Detached copies of entities must be resolved to managed instances first.
 
-EXTRA_LAZY indexed lookup includes association membership in its SQL. A managed target alone does not prove membership. Locally pending indexed values are returned from the collection's current contents; database lookups keep the collection uninitialized.
+Historically, EXTRA_LAZY indexed lookup included association membership in its SQL. With that mode removed, indexed collection reads initialize through the normal loader and operate on owner-scoped in-memory contents. Association Query API supplies explicit database membership queries.
 
 ## Flush and transaction contract
 

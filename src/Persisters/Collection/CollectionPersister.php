@@ -21,33 +21,4 @@ interface CollectionPersister
      * by inserting, updating and deleting individual elements.
      */
     public function update(PersistentCollection $collection): void;
-
-    /**
-     * Counts the size of this persistent collection.
-     *
-     * @return non-negative-int
-     */
-    public function count(PersistentCollection $collection): int;
-
-    /**
-     * Slices elements.
-     *
-     * @return mixed[]
-     */
-    public function slice(PersistentCollection $collection, int $offset, int|null $length = null): array;
-
-    /**
-     * Checks for existence of an element.
-     */
-    public function contains(PersistentCollection $collection, object $element): bool;
-
-    /**
-     * Checks for existence of a key.
-     */
-    public function containsKey(PersistentCollection $collection, mixed $key): bool;
-
-    /**
-     * Gets an element by key.
-     */
-    public function get(PersistentCollection $collection, mixed $index): mixed;
 }

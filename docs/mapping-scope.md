@@ -8,7 +8,7 @@ Each entity has one scalar field PK: integer, string or UUID through the appropr
 
 Use a surrogate scalar PK and a multi-column UNIQUE constraint when replacing a natural composite entity key. Associations reference the entity PK. `find()` and `getReference()` accept a scalar or an array containing the single named identifier; an entity object is not an identifier. Assigned, IDENTITY, SEQUENCE and custom generation remain available within the tested scope.
 
-`findBy()` and `count()` accept array conditions for equality, IN and NULL. Use SQL QueryBuilder for complex predicates. Criteria visitors, repository matching, LazyCriteriaCollection and ORM Filters are removed. `PersistentCollection::matching()` retains the inherited interface signature but rejects the operation without initializing the collection. EXTRA_LAZY count/contains/containsKey/get/slice retain their owner-based loading paths.
+`findBy()` and `count()` accept array conditions for equality, IN and NULL. Use SQL QueryBuilder for complex predicates. Criteria visitors, repository matching, LazyCriteriaCollection and ORM Filters are removed. `PersistentCollection::matching()` retains the inherited interface signature but rejects the operation without initializing the collection. Only LAZY/EAGER fetch modes are supported. EXTRA_LAZY is removed; use [Association Query API](association-query-api.md) for database queries without loading collections.
 
 Applications supply tenant/access predicates for every read/write path; automatic tenant isolation is not provided. Proxy generation, proxy directories/namespaces, alternate lazy-object switches and optional ID-collision compatibility switches are removed. PHP native lazy objects and Identity Map collision checks are always used.
 
@@ -66,7 +66,7 @@ A MappedSuperclass shares fields, associations and callbacks but has no table an
 
 ## Cache formats and migration
 
-Current internal salts are `__MODERNORM_TYPED_MAPPING_V10__` for metadata and `sql_entity_v3_` for entity projection plans. They reject old internal formats; they are not an automatic mapping fingerprint. Applications must version metadata/query cache namespaces and create new EntityManagers when their own mappings change.
+Current internal salts are `__MODERNORM_TYPED_MAPPING_V14__` for metadata and `sql_entity_v3_` for entity projection plans. They reject old internal formats; they are not an automatic mapping fingerprint. Applications must version metadata/query cache namespaces and create new EntityManagers when their own mappings change.
 
 Move XML/programmatic sources to attributes. Removing inheritance attributes alone does not migrate an inheritance schema: choose concrete models/composition and explicitly migrate their tables/data. A discriminator column may remain as an ordinary business field, but no automatic PHP subclass dispatch occurs. Separate entities are not a polymorphic Identity Map substitute.
 
