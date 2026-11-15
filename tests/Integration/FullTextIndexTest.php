@@ -194,6 +194,65 @@ final class FullTextIndexTest extends TestCase
         $this->assertConverged($tool);
     }
 
+    public function testMigrationPlanCreatesAndReversesFtsAssets(): void
+    {
+        $tool = new SchemaTool($this->em);
+        $plan = $tool->getSchemaMigrationSql([$this->metadata]);
+        self::assertStringContainsString('USING GIN', implode("\n", $plan['up']));
+        $this->apply($plan['up']);
+        self::assertSame(['up' => [], 'down' => []], $tool->getSchemaMigrationSql([$this->metadata]));
+        $this->apply($plan['down']);
+        self::assertNull($this->em->getConnection()->fetchOne('SELECT to_regclass(?)', [$this->table]));
+    }
+
+    public function testMigrationDownRestoresWeightsAndQualifiedConfigurationWithOrdinaryChanges(): void
+    {
+        $tool = $this->create();
+        $old = $this->metadata->fullTextIndexes;
+        $this->em->getConnection()->executeStatement('CREATE TEXT SEARCH CONFIGURATION "' . $this->schema . '".russian (COPY = pg_catalog.simple)');
+        $this->em->getConnection()->executeStatement('SET search_path TO "' . $this->schema . '", pg_catalog');
+        $this->metadata->fullTextIndexes = [new ORM\FullTextIndex('ProductSearch', ['name' => 'B', 'description' => 'A'], 'pg_catalog.simple', 'SearchVector')];
+        $this->metadata->fieldMappings['note']->options['default'] = 'pending';
+        $plan = $tool->getSchemaMigrationSql([$this->metadata]);
+        self::assertCount(2, $plan['up']);
+        self::assertCount(2, $plan['down']);
+        self::assertStringContainsString('pg_catalog', $plan['down'][0]);
+        $this->apply($plan['up']);
+        self::assertSame(['up' => [], 'down' => []], $tool->getSchemaMigrationSql([$this->metadata]));
+        $this->apply($plan['down']);
+        $this->metadata->fullTextIndexes = $old;
+        unset($this->metadata->fieldMappings['note']->options['default']);
+        self::assertSame(['up' => [], 'down' => []], $tool->getSchemaMigrationSql([$this->metadata]));
+    }
+
+    public function testMigrationPlanCanRepairAndReverseMissingTechnicalAssets(): void
+    {
+        $tool = $this->create();
+        $connection = $this->em->getConnection();
+        $connection->executeStatement('DROP INDEX "' . $this->schema . '"."ProductSearch"');
+        $plan = $tool->getSchemaMigrationSql([$this->metadata]);
+        self::assertCount(2, $plan['up']);
+        self::assertCount(1, $plan['down']);
+        $this->apply($plan['up']);
+        $this->apply($plan['down']);
+        $connection->executeStatement('ALTER TABLE ' . $this->table . ' DROP COLUMN "SearchVector"');
+        $plan = $tool->getSchemaMigrationSql([$this->metadata]);
+        self::assertCount(4, $plan['up']);
+        self::assertCount(1, $plan['down']);
+        $this->apply($plan['up']);
+        $this->apply($plan['down']);
+        self::assertCount(4, $tool->getSchemaMigrationSql([$this->metadata])['up']);
+    }
+
+    public function testFromEmptyPlanIncludesFtsWithoutInspectingAnExistingVector(): void
+    {
+        $tool = $this->create();
+        $plan = $tool->getSchemaMigrationSql([$this->metadata], fromEmptySchema: true);
+        self::assertStringContainsString('CREATE TABLE', implode("\n", $plan['up']));
+        self::assertStringContainsString('USING GIN', implode("\n", $plan['up']));
+        self::assertStringContainsString('DROP TABLE', implode("\n", $plan['down']));
+    }
+
     private function seedSearchProducts(): void
     {
         foreach ([

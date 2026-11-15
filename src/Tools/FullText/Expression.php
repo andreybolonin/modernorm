@@ -45,6 +45,40 @@ final class Expression
         return $this->normalize($node);
     }
 
+    /** Render a catalog expression for migration SQL without persisting database-local OIDs. */
+    public function render(array $node): string
+    {
+        $platform = $this->connection->getDatabasePlatform();
+        if ($node[0] === 'column') {
+            return $platform->quoteSingleIdentifier($node[1]) . '::pg_catalog.text';
+        }
+        if ($node[0] === 'literal') {
+            return $this->connection->quote($node[1]) . '::pg_catalog.text';
+        }
+        if ($node[0] === 'configuration') {
+            $configuration = $this->connection->fetchAssociative(
+                'SELECT n.nspname, c.cfgname FROM pg_catalog.pg_ts_config c JOIN pg_catalog.pg_namespace n ON n.oid = c.cfgnamespace WHERE c.oid = ?',
+                [$node[1]],
+            );
+            if ($configuration === false) {
+                throw new RuntimeException('Cannot resolve the previous full-text configuration.');
+            }
+            $name = $platform->quoteSingleIdentifier($configuration['nspname']) . '.' . $platform->quoteSingleIdentifier($configuration['cfgname']);
+            return $this->connection->quote($name) . '::pg_catalog.regconfig';
+        }
+        if ($node[0] === 'concat') {
+            return '(' . $this->render($node[1]) . ' || ' . $this->render($node[2]) . ')';
+        }
+        if ($node[0] === 'cast' && $node[2] === 'char') {
+            return '(' . $this->render($node[1]) . ')::pg_catalog."char"';
+        }
+        if ($node[0] === 'function' && in_array($node[1], ['coalesce', 'setweight', 'to_tsvector'], true)) {
+            $function = $node[1] === 'coalesce' ? 'COALESCE' : 'pg_catalog.' . $node[1];
+            return $function . '(' . implode(', ', array_map($this->render(...), array_slice($node, 2))) . ')';
+        }
+        throw new RuntimeException('Unsupported previous FullTextIndex expression; write an explicit migration.');
+    }
+
     /** @return list<string> */
     public function columns(array $node): array
     {

@@ -1150,6 +1150,48 @@ class SchemaTool
         return [...$this->platform->getAlterSchemaSQL($schemaDiff), ...$fullTextSql];
     }
 
+    /** Reversible SQL for migration integrations, including owned FTS assets.
+     *  @param list<ClassMetadata> $classes
+     *  @return array{up: list<string>, down: list<string>}
+     *  @phpstan-impure Reads the live database schema and configuration catalogs.
+     */
+    public function getSchemaMigrationSql(array $classes, bool $fromEmptySchema = false): array
+    {
+        $to = $this->getOrdinarySchemaFromMetadata($classes);
+        $from = $fromEmptySchema
+            ? new Schema([], [], $this->schemaManager->createSchemaConfig())
+            : $this->createSchemaForComparison($to);
+        // Schema filters do not cover namespaces. Never drop an existing unrelated namespace.
+        foreach ($this->schemaManager->listSchemaNames() as $namespace) {
+            foreach ([$from, $to] as $schema) {
+                if (! $schema->hasNamespace($namespace)) {
+                    $schema->createNamespace($namespace);
+                }
+            }
+        }
+        $targetTables = [];
+        foreach ($to->getTables() as $table) {
+            $targetTables[$table->getObjectName()->toSQL($this->platform)] = true;
+        }
+        foreach ($from->getTables() as $table) {
+            if (isset($targetTables[$table->getObjectName()->toSQL($this->platform)])) {
+                continue;
+            }
+            foreach ($table->getColumns() as $column) {
+                if (str_starts_with($column->getComment() ?? '', 'modernorm:fulltext:')) {
+                    throw new RuntimeException('Dropping a table containing FullTextIndex assets requires an explicit migration.');
+                }
+            }
+        }
+        $fullText = (new FullText\SchemaExtension($this->em))->migrationSql($classes, $from, $to, $fromEmptySchema);
+        $this->normalizeEquivalentIndexPredicates($from, $to);
+        $comparator = $this->schemaManager->createComparator((new ComparatorConfig())->withReportModifiedIndexes(false));
+        return [
+            'up' => [...$this->platform->getAlterSchemaSQL($comparator->compareSchemas($from, $to)), ...$fullText['up']],
+            'down' => [...$fullText['down'], ...$this->platform->getAlterSchemaSQL($comparator->compareSchemas($to, $from))],
+        ];
+    }
+
     /**
      * Creates the schema from the database, ensuring tables from the target schema are whitelisted for comparison.
      */

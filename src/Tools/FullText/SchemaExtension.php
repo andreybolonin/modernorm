@@ -47,10 +47,27 @@ final class SchemaExtension
      */
     public function updateSql(array $classes, Schema $from, Schema $to): array
     {
+        return $this->plan($classes, $from, $to, false, false)['up'];
+    }
+
+    /** @param list<ClassMetadata> $classes
+     *  @return array{up: list<string>, down: list<string>}
+     */
+    public function migrationSql(array $classes, Schema $from, Schema $to, bool $fromEmptySchema): array
+    {
+        return $this->plan($classes, $from, $to, true, $fromEmptySchema);
+    }
+
+    /** @param list<ClassMetadata> $classes
+     *  @return array{up: list<string>, down: list<string>}
+     */
+    private function plan(array $classes, Schema $from, Schema $to, bool $reverse, bool $fromEmptySchema): array
+    {
         $sql = [];
+        $down = [];
         foreach ($this->classes($classes, $to) as $class) {
             $tableSql = $this->tableSql($class);
-            $relation = $this->connection->fetchAssociative(
+            $relation = $fromEmptySchema ? false : $this->connection->fetchAssociative(
                 'SELECT c.oid, c.relkind, n.nspname AS schema_name FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace WHERE c.oid = pg_catalog.to_regclass(?)',
                 [$tableSql],
             );
@@ -113,11 +130,18 @@ final class SchemaExtension
                         if (version_compare($this->connection->getServerVersion(), '17', '<')) {
                             throw new RuntimeException('Changing FullTextIndex expressions requires PostgreSQL 17 or later.');
                         }
+                        if ($reverse) {
+                            $down[] = 'ALTER TABLE ' . $tableSql . ' ALTER COLUMN ' . $this->quote($index->column)
+                                . ' SET EXPRESSION AS (' . $this->reader->render($actual) . ')';
+                        }
                         $sql[] = 'ALTER TABLE ' . $tableSql . ' ALTER COLUMN ' . $this->quote($index->column)
                             . ' SET EXPRESSION AS (' . $this->expression($class, $index) . ')';
                     }
                 } else {
                     $sql = [...$sql, ...$this->createColumn($class, $index)];
+                    if ($reverse) {
+                        $down[] = 'ALTER TABLE ' . $tableSql . ' DROP COLUMN ' . $this->quote($index->column);
+                    }
                 }
                 $indexState = $this->connection->fetchAssociative(
                     "SELECT i.indrelid, am.amname, i.indisvalid, i.indisready, i.indisunique,
@@ -136,6 +160,9 @@ final class SchemaExtension
                 );
                 if ($indexState === false) {
                     $sql = [...$sql, ...$this->createIndex($class, $index, $relation['schema_name'])];
+                    if ($reverse && $state !== null) {
+                        $down[] = 'DROP INDEX ' . $this->quote($relation['schema_name']) . '.' . $this->quote($index->name);
+                    }
                 } else {
                     if ($state === null || $indexState['comment'] !== self::OWNER . $index->column
                         || $indexState['indrelid'] != $relation['oid'] || $indexState['amname'] !== 'gin'
@@ -161,7 +188,7 @@ final class SchemaExtension
                 }
             }
         }
-        return $sql;
+        return ['up' => $sql, 'down' => $down];
     }
 
     /** @param list<ClassMetadata> $classes

@@ -38,7 +38,10 @@ $tool = new ModernORM\Tools\SchemaTool($em);
 $classes = [$em->getClassMetadata(Product::class)];
 $create = $tool->getCreateSchemaSql($classes);
 $update = $tool->getUpdateSchemaSql($classes);
+$plan = $tool->getSchemaMigrationSql($classes); // ['up' => [...], 'down' => [...]]
 ```
+
+`getSchemaMigrationSql()` combines ordinary schema changes and FTS SQL in reversible `up`/`down` lists. It supports new tables, adding or repairing technical assets, and changes to weights or search configuration. Rollback restores the previous expression with schema-qualified configuration names, independent of the execution connection’s `search_path`. Pass `fromEmptySchema: true` to generate a complete initial migration without comparing existing tables. Existing unrelated namespaces are preserved. Removing an FTS-bearing table, renaming/removing the attribute, or changing source columns/types requires an explicit migration.
 
 Creation emits the ordinary table, generated column, GIN index and ownership comments. Include **all** statements in migrations and preserve comments in database dumps. Direct `createSchema()`, `updateSchema()` and `dropSchema()` use the same pipeline.
 
