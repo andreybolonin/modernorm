@@ -123,3 +123,7 @@ There is no drop-in doctrine/orm compatibility layer. Retained persistence conce
 ## Full-text search
 
 For entities with `#[FullTextIndex]`, use `andWhereFullText()` to bind a web-style search using the mapped language and vector column. `addOrderByFullTextRank()` orders matches; `addFullTextRank()` adds a float score to mixed results. See [full-text search examples and constraints](full-text-index.md#searching-and-ranking).
+
+## JSONB expressions
+
+`$builder->jsonb('p', 'attributes')` resolves a mapped JSONB field and provides bound `contains`, `exists`, immutable `path`, JSON/text extraction and explicit JSONB/text/numeric comparisons. Compose its predicates with `andWhere()` or the DBAL expression builder. See [examples and null/type semantics](jsonb-query-api.md).

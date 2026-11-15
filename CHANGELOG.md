@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add mapped JSONB query expressions with bound containment, existence, immutable paths, JSON/text extraction and explicit JSONB/text/numeric comparisons. Preserve JSON type distinctions, support precise decimal comparison values and distinguish missing paths, JSON null and SQL NULL.
+
 - Add CursorPaginator, Cursor and immutable CursorPage APIs adapted from Doctrine ORM, with PostgreSQL SQL integration, bidirectional keyset navigation, explicit root-field sorting, raw key snapshots, root deduplication before LIMIT and lazy total count. Collection fetch joins, nullable/expression sorting and mixed results are rejected. Include compound-index EXPLAIN evidence for 60,000 rows.
 
 - Add QueryBuilder andWhereFullText(), addOrderByFullTextRank() and addFullTextRank() for mapped FullTextIndex searches, bound web-search input, relevance ordering and optional float scores. Support explicit index selection, joined entity aliases, cloning, pagination and SoftDelete visibility.

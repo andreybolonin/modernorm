@@ -12,6 +12,11 @@ use ModernORM\Tools\Pagination\CursorQuery;
 use ModernORM\Mapping\FullTextIndex;
 use ModernORM\Query\EntityResultPlan;
 use ModernORM\Query\ResultSetMapping;
+use ModernORM\Query\Expression\JsonbExpression;
+use Doctrine\DBAL\Types\JsonbType;
+use Doctrine\DBAL\Types\JsonbObjectType;
+use Doctrine\DBAL\Types\JsonType;
+use Doctrine\DBAL\Types\JsonObjectType;
 
 /** SQL builder backed by DBAL, with optional explicit entity result mappings. */
 class QueryBuilder extends SqlQueryBuilder
@@ -25,6 +30,7 @@ class QueryBuilder extends SqlQueryBuilder
     /** @var array<string, array<string, array{vector: string, query: string}>> */
     private array $fullTextSearches = [];
     private int $fullTextParameterCounter = 0;
+    private int $jsonbParameterCounter = 0;
     private bool $cursorUnsupportedOperation = false;
     private bool $customResultSetMapping = false;
 
@@ -162,6 +168,36 @@ class QueryBuilder extends SqlQueryBuilder
     {
         return $this->entities[$alias]->columns[$field]
             ?? throw new \InvalidArgumentException('Unknown mapped SQL field.');
+    }
+
+    /** Build parameterized expressions for a mapped JSONB field on a registered entity alias. */
+    public function jsonb(string $alias, string $field): JsonbExpression
+    {
+        if (! isset($this->entities[$alias], $this->mapping->aliasMap[$alias])) {
+            throw new \InvalidArgumentException('JSONB expressions require an alias registered with fromEntity() or addJoinedEntity().');
+        }
+        $metadata = $this->em->getClassMetadata($this->mapping->aliasMap[$alias]);
+        $mapping = $metadata->fieldMappings[$field] ?? null;
+        if ($mapping === null || $mapping->columnDefinition !== null) {
+            throw new \InvalidArgumentException('JSONB expressions require a mapped JSONB scalar field without a custom columnDefinition.');
+        }
+        $type = $this->em->getConnection()->getConfiguration()->getTypeProvider()->get($mapping->type);
+        $jsonb = $type instanceof JsonbType || $type instanceof JsonbObjectType
+            || (($type instanceof JsonType || $type instanceof JsonObjectType) && ($mapping->options['jsonb'] ?? false) === true);
+        if (! $jsonb) {
+            throw new \InvalidArgumentException('JSONB expressions require a JSONB mapping; ordinary JSON and text columns are not cast implicitly.');
+        }
+        return new JsonbExpression($this, $this->column($alias, $field));
+    }
+
+    /** @internal Allocate JSONB bindings monotonically, including after setParameters() replaces the binding map. */
+    public function bindJsonbParameter(string $value): string
+    {
+        do {
+            $name = '__orm_jsonb_' . ++$this->jsonbParameterCounter;
+        } while (array_key_exists($name, $this->getParameters()));
+        $this->setParameter($name, $value, ParameterType::STRING);
+        return ':' . $name;
     }
 
     /** Append a web-style text search using a registered entity's FullTextIndex. */

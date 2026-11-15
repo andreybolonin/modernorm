@@ -5,6 +5,8 @@ parameters:
     level: 5
     paths:
         - src
+        - tests/Unit/JsonbQueryBuilderTest.php
+        - tests/Integration/JsonbQueryApiTest.php
         - tests/Unit/CursorTest.php
         - tests/Unit/CursorPageTest.php
         - tests/Unit/CursorQueryTest.php
