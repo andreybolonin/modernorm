@@ -104,4 +104,4 @@ Removing or renaming an attribute, changing source columns or source column type
 
 For a source-set change or removal, explicitly drop the old vector (its index is dropped with it), apply the mapping/source-column changes, and generate the replacement schema SQL if needed. Do not simply erase ownership comments to bypass validation. Removing an attribute while its owned column remains is rejected before SQL execution. Dropping the whole mapped table is supported.
 
-Metadata uses cache salt V12. Clear/version deployment query caches and restart workers when changing mapping definitions. The former [schema prototype](full-text-schema-prototype.md) is retained as historical feasibility evidence; the production implementation does not use its temporary-table canonicalization.
+Metadata uses cache salt V13 (including the later metadata/sequence restoration fixes). Clear/version deployment query caches and restart workers when changing mapping definitions. The former [schema prototype](full-text-schema-prototype.md) is retained as historical feasibility evidence; the production implementation does not use its temporary-table canonicalization.

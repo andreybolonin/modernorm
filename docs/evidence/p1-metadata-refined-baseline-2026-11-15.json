@@ -1,0 +1,48 @@
+{
+  "php": "8.5.12",
+  "postgresql": "18.7 (Homebrew)",
+  "zend_assertions": "1",
+  "cases": [
+    {
+      "case": "metadata_mapping_after_cache",
+      "issues": [
+        12783,
+        11957
+      ],
+      "result": "probe-failed",
+      "exception": "Error",
+      "message": "Typed property ModernORM\\Mapping\\ClassMetadata::$typedFieldMapper must not be accessed before initialization",
+      "trace": [
+        "ModernORM\\Mapping\\ClassMetadata->validateAndCompleteTypedFieldMapping",
+        "ModernORM\\Mapping\\ClassMetadata->validateAndCompleteFieldMapping",
+        "ModernORM\\Mapping\\ClassMetadata->mapField",
+        "{closure:<repo>/tools/issue-audit/run.php:26}"
+      ]
+    },
+    {
+      "case": "metadata_typed_mapping_after_cache",
+      "issues": [
+        12783
+      ],
+      "result": "probe-failed",
+      "exception": "Error",
+      "message": "Typed property ModernORM\\Mapping\\ClassMetadata::$typedFieldMapper must not be accessed before initialization",
+      "trace": [
+        "ModernORM\\Mapping\\ClassMetadata->validateAndCompleteTypedFieldMapping",
+        "ModernORM\\Mapping\\ClassMetadata->validateAndCompleteFieldMapping",
+        "ModernORM\\Mapping\\ClassMetadata->mapField",
+        "{closure:<repo>/tools/issue-audit/run.php:31}"
+      ]
+    }
+  ],
+  "core_source_baseline": "46eb4b8c0deabe70315259f335707fb02a1b45e9",
+  "scope": "Refined metadata inputs run against baseline ClassMetadata/Factory/AnsiQuoteStrategy/RSMBuilder extracted from git; only these production classes differ from the working tree.",
+  "probe_refinement": {
+    "cases": [
+      "metadata_mapping_after_cache",
+      "metadata_typed_mapping_after_cache"
+    ],
+    "change": "Map an intentionally unmapped typed extra property instead of attempting a duplicate mapping of name. The original runtime-service failure had masked the later duplicate-field error.",
+    "baseline_rechecked": "The refined valid scenarios still raise the original uninitialized typedFieldMapper error when loading the four baseline production classes from git."
+  }
+}

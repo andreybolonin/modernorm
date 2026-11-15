@@ -1,0 +1,93 @@
+{
+  "baseline_core": "46eb4b8c0deabe70315259f335707fb02a1b45e9",
+  "fix_revision": "working tree",
+  "baseline_focused_run": {
+    "tests": 13,
+    "assertions": 21,
+    "errors": 3,
+    "failures": 8,
+    "method": "The four changed production classes were extracted from git into an isolated /tmp loader; the same current PHPUnit regressions ran against them without reverting the workspace."
+  },
+  "new_phpunit_scenarios": 13,
+  "metadata_cache_salt": "V13",
+  "full_suite": {
+    "php84": {
+      "tests": 990,
+      "assertions": 7258,
+      "skipped": 21,
+      "skip_reason": "Redis was not started."
+    },
+    "php85": {
+      "tests": 990,
+      "assertions": 7258,
+      "skipped": 21,
+      "skip_reason": "Redis was not started."
+    }
+  },
+  "bundle_smoke": {
+    "php": "8.5",
+    "tests": 64,
+    "assertions": 403,
+    "skipped": 0
+  },
+  "diagnostic_changes": [
+    {
+      "case": "metadata_mapping_after_cache",
+      "before": "probe-failed",
+      "after": "not-reproduced",
+      "issues": [
+        12783,
+        11957
+      ]
+    },
+    {
+      "case": "metadata_typed_mapping_after_cache",
+      "before": "probe-failed",
+      "after": "not-reproduced",
+      "issues": [
+        12783
+      ]
+    },
+    {
+      "case": "native_result_mapping_quoted_select",
+      "before": "probe-failed",
+      "after": "not-reproduced",
+      "issues": [
+        3927
+      ]
+    },
+    {
+      "case": "mapped_superclass_sequence_name",
+      "before": "probe-failed",
+      "after": "not-reproduced",
+      "issues": [
+        12390
+      ]
+    },
+    {
+      "case": "metadata_association_override_after_cache",
+      "before": "probe-failed",
+      "after": "not-reproduced",
+      "issues": [
+        12783,
+        11957
+      ]
+    },
+    {
+      "case": "ansi_quote_identifier_column_names",
+      "before": "probe-failed",
+      "after": "not-reproduced",
+      "issues": [
+        10014
+      ]
+    }
+  ],
+  "probe_refinement": {
+    "cases": [
+      "metadata_mapping_after_cache",
+      "metadata_typed_mapping_after_cache"
+    ],
+    "change": "Map an intentionally unmapped typed extra property instead of attempting a duplicate mapping of name. The original runtime-service failure had masked the later duplicate-field error.",
+    "baseline_rechecked": "The refined valid scenarios still raise the original uninitialized typedFieldMapper error when loading the four baseline production classes from git."
+  }
+}

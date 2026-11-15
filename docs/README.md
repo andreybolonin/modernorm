@@ -11,6 +11,7 @@ Start with the [project README](../README.md) for key features, installation and
 | Inherited persistence bugs, fixes and limitations | [Persistence audit](persistence-audit.md) |
 | All open upstream issues: applicability, probes and findings | [Doctrine issue audit](doctrine-open-issues-audit.md) |
 | Critical flush/hydration regressions and fixes | [Critical persistence fixes](critical-persistence-fixes.md) |
+| P1 metadata cache, inherited sequence and SQL quoting fixes | [P1 mapping fixes](p1-mapping-fixes.md) |
 | Attributes, identifiers and inheritance boundary | [Mapping scope](mapping-scope.md) |
 | Stored full-text vectors and GIN indexes | [Full-text indexes](full-text-index.md) |
 | Connection-scoped DBAL types | [DBAL type providers](dbal-types.md) |

@@ -26,12 +26,12 @@ $cases = [];
 $cases['metadata_mapping_after_cache'] = [[12783, 11957], static function (EntityManager $em): void {
     $metadata = unserialize(serialize($em->getClassMetadata(Owner::class)));
     $metadata->wakeupReflection(new RuntimeReflectionService());
-    $metadata->mapField(['fieldName' => 'name', 'type' => 'string']);
+    $metadata->mapField(['fieldName' => 'extra', 'type' => 'string']);
 }];
 $cases['metadata_typed_mapping_after_cache'] = [[12783], static function (EntityManager $em): void {
     $metadata = unserialize(serialize($em->getClassMetadata(Owner::class)));
     $metadata->wakeupReflection(new RuntimeReflectionService());
-    $metadata->mapField(['fieldName' => 'name']);
+    $metadata->mapField(['fieldName' => 'extra']);
 }];
 $cases['hooked_generated_identifier_delete'] = [[12077], static function (EntityManager $em): void {
     $entity = new HookedId();
@@ -683,6 +683,24 @@ $cases['cascade_delete_parent_with_featured_child_cycle'] = [[5665], static func
     $em->clear();
     check($em->find(CycleParent::class, $parentId) === null && $em->find(CycleChild::class, $childId) === null, 'Cascade failed to remove the nullable featured-child cycle.');
 }];
+
+$selected = [];
+foreach (array_slice($argv, 1) as $argument) {
+    if (str_starts_with($argument, '--case=')) {
+        $selected[] = substr($argument, 7);
+    } elseif ($argument !== '--fail-on-findings') {
+        fwrite(STDERR, 'Unknown option: ' . $argument . PHP_EOL);
+        exit(2);
+    }
+}
+if ($selected !== []) {
+    $unknown = array_diff($selected, array_keys($cases));
+    if ($unknown !== []) {
+        fwrite(STDERR, 'Unknown diagnostic case: ' . implode(', ', $unknown) . PHP_EOL);
+        exit(2);
+    }
+    $cases = array_intersect_key($cases, array_fill_keys($selected, true));
+}
 
 $results = [];
 foreach ($cases as $name => [$issues, $scenario]) {

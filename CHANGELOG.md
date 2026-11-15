@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Restore metadata runtime mapping services from the owning configuration after cache deserialization, preserving custom naming/typed-field services without serializing them. Inherit explicit MappedSuperclass sequence definitions while retaining independent concrete defaults. Fix AnsiQuoteStrategy PK column names and native RSM field/FK/result-alias quoting. Metadata cache salt is V13.
+
 - Preserve operations scheduled by postFlush for the next explicit flush, including callback failures and explicit dirty checking. Preserve local to-one changes and their baselines during lazy/EAGER hydration, with entity-scoped refresh. Scope nested array collection positions to the complete ancestor identity path. Add PostgreSQL and array-hydration regressions.
 
 - Add immutable EntityManager::association() queries for OneToMany and both ManyToMany sides: database count/exists, typed field conditions and keyset pages without collection initialization or automatic flush. Preserve EXTRA_LAZY compatibility. Fix quoted foreign keys when loading ordinary OneToMany collections.

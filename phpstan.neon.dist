@@ -5,6 +5,8 @@ parameters:
     level: 5
     paths:
         - src
+        - tests/Integration/P1MappingRegressionTest.php
+        - tests/Unit/MetadataRuntimeServicesTest.php
         - tests/Integration/CriticalHydrationRegressionTest.php
         - tests/Integration/AssociationQueryTest.php
         - tests/Unit/JsonbQueryBuilderTest.php

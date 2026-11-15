@@ -1,6 +1,6 @@
 # Open Doctrine ORM issue audit — 2026-11-15
 
-This is an issue inventory and a bounded executable audit of ModernORM, not a claim that every variant of every Doctrine bug is fixed. The initial audit did not change production ORM code. A subsequent [critical fix pass](critical-persistence-fixes.md) resolves four baseline problem families in the linked regression scenarios. The code under test is core `ad789bc`; audit tooling is added in the working tree. Doctrine status is a dated snapshot, not a permanent property of an issue.
+This is an issue inventory and a bounded executable audit of ModernORM, not a claim that every variant of every Doctrine bug is fixed. The initial audit did not change production ORM code. The [critical fix pass](critical-persistence-fixes.md) resolves four baseline problem families; the [first P1 mapping fix pass](p1-mapping-fixes.md) resolves four more in their linked regression scenarios. The code under test is core `ad789bc`; audit tooling is added in the working tree. Doctrine status is a dated snapshot, not a permanent property of an issue.
 
 The complete paginated GitHub API snapshot contains **335 open non-PR issues**, including **60 with the Bug label**. Unlabeled reports were also reviewed. One additional issue has GitHub issue type Bug; it is included in the same inventory. Open PRs and closed issues are not part of this snapshot. Newest/oldest pagination and absence of duplicate issue numbers were checked.
 
@@ -13,7 +13,7 @@ The complete paginated GitHub API snapshot contains **335 open non-PR issues**, 
 
 **57 diagnostic scenarios ran on PostgreSQL 18.7 with PHP 8.4.27 and 8.5.12. All scenario outcomes agree across the two PHP versions.** There are 38 `probe-failed` observations and 19 `not-reproduced` observations per runtime. A failed probe is not automatically a distinct bug: several exercise an intentional contract, several overlap, and some encounter a different failure before reaching the original issue's mechanism.
 
-**33 open issue references map to 24 reproduced problem families** in the supported/adapted scenarios below. At baseline these findings were unfixed. The subsequent working-tree fix pass resolves the first four P0 rows below (six upstream references); the remaining twenty problem families still require work. Priorities are local audit recommendations, not upstream severity labels.
+**33 open issue references map to 24 reproduced problem families** in the supported/adapted scenarios below. At baseline these findings were unfixed. The critical fix pass resolves the first four P0 rows below (six upstream references). The first P1 mapping pass resolves four more families (five upstream references); sixteen baseline problem families still require work. Priorities are local audit recommendations, not upstream severity labels.
 
 The existing PHPUnit suite still reports **953 tests / 6929 assertions / 21 skipped Redis tests** on each PHP version. The additional 57 checks are **not PHPUnit regression tests** and are outside that suite. A passing existing suite therefore does not invalidate these newly reproduced findings. Redis was not started, so this audit adds no new Redis concurrency certification.
 
@@ -82,6 +82,8 @@ Upstream numbers describe related reports, not a one-to-one mapping between issu
 ```sh
 export PGHOST=127.0.0.1 PGPORT=5432 PGUSER=YOUR_USER PGDATABASE=modernorm_test
 php tools/issue-audit/run.php > /tmp/modernorm-issue-probes.json
+# Run one case without repeating the entire inventory:
+php tools/issue-audit/run.php --case=metadata_mapping_after_cache
 # Optional: exit 1 when any probe observation fails its oracle:
 php tools/issue-audit/run.php --fail-on-findings
 ```
@@ -90,4 +92,4 @@ Use a dedicated test database. Every scenario creates a random private schema, c
 
 Source responses were retrieved read-only from `GET /repos/doctrine/orm/issues?state=open&per_page=100` with full pagination. The inventory retains number/title/URL, labels/type, updated timestamp and a SHA-256 of the body. It does not republish full issue bodies or user/application data. To refresh, fetch all pages again and review applicability/reproductions; do not relabel a report as passing solely from its title, age, labels or a closed linked PR.
 
-The [critical fix pass](critical-persistence-fixes.md) adds 24 PHPUnit scenarios and resolves the four P0 baseline families. Before stable, handle the remaining high-priority families with focused regressions and use the diagnostic JSON to track which outcomes actually changed. Do not flip a matrix entry to fixed merely because the default suite is green.
+The [critical fix pass](critical-persistence-fixes.md) adds 24 PHPUnit scenarios and resolves the four P0 baseline families; the [first P1 mapping pass](p1-mapping-fixes.md) adds 13 more scenarios and resolves four further families. Before stable, handle the remaining high-priority families with focused regressions and use the diagnostic JSON to track which outcomes actually changed. Do not flip a matrix entry to fixed merely because the default suite is green.

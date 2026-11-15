@@ -7,7 +7,7 @@ Every row is an open non-PR issue from the same paginated snapshot. Status is th
 | Issue | Title | Baseline audit classification | Follow-up |
 | --- | --- | --- | --- |
 | [#12784](https://github.com/doctrine/orm/issues/12784) | Detaching native lazy objects leaves stale partial-loading state | `covered-related` | — |
-| [#12783](https://github.com/doctrine/orm/issues/12783) | ClassMetadata: namingStrategy and typedFieldMapper are not restored after metadata cache unserialization | `reproduced` | — |
+| [#12783](https://github.com/doctrine/orm/issues/12783) | ClassMetadata: namingStrategy and typedFieldMapper are not restored after metadata cache unserialization | `reproduced` | `fixed-working-tree` |
 | [#12774](https://github.com/doctrine/orm/issues/12774) | Dynamic properties | `not-bug-report` | — |
 | [#12773](https://github.com/doctrine/orm/issues/12773) | RFC: Support window functions (OVER) in DQL | `not-bug-report` | — |
 | [#12747](https://github.com/doctrine/orm/issues/12747) | Deprecate passing enumType to the DBAL layer | `not-bug-report` | — |
@@ -26,7 +26,7 @@ Every row is an open non-PR issue from the same paginated snapshot. Status is th
 | [#12428](https://github.com/doctrine/orm/issues/12428) | EntityIdentityCollisionException in OneToOne Id column with inheritance | `not-applicable` | — |
 | [#12417](https://github.com/doctrine/orm/issues/12417) | Chained identifying associations (nested #[ORM\Id]) cause "Object could not be converted to int" on lazy load | `not-applicable` | — |
 | [#12402](https://github.com/doctrine/orm/issues/12402) | `DateTime` object in `Criteria` is treated as `date` when used in `EntityRepository::matching()` but is treated as `datetime` when used in `QueryBuilder::addCriteria()` | `not-applicable` | — |
-| [#12390](https://github.com/doctrine/orm/issues/12390) | SequenceGenerator not working in MappedSuperclass | `reproduced` | — |
+| [#12390](https://github.com/doctrine/orm/issues/12390) | SequenceGenerator not working in MappedSuperclass | `reproduced` | `fixed-working-tree` |
 | [#12389](https://github.com/doctrine/orm/issues/12389) | Don't let EntityManager::getReference() return null | `not-bug-report` | — |
 | [#12381](https://github.com/doctrine/orm/issues/12381) | 💡 Support QueryBuilder CTE (Common Table Expression)  | `not-bug-report` | — |
 | [#12420](https://github.com/doctrine/orm/issues/12420) | Unnecessary changesets when using unsigned bigint | `not-applicable` | — |
@@ -47,7 +47,7 @@ Every row is an open non-PR issue from the same paginated snapshot. Status is th
 | [#12017](https://github.com/doctrine/orm/issues/12017) | Generated columns with insertable/updatable=false cause false positive change detection | `reproduced` | — |
 | [#11991](https://github.com/doctrine/orm/issues/11991) | [3.4.0, PHP <8.4] Cannot hydrate readonly properties from superclass of embeddable | `not-applicable` | — |
 | [#11964](https://github.com/doctrine/orm/issues/11964) | The order of JoinColumn Attributes affects the SQL statements of the repository methods | `not-applicable` | — |
-| [#11957](https://github.com/doctrine/orm/issues/11957) | Calling setAssociationOverride in prePersist/preUpdate throws an exception | `reproduced` | — |
+| [#11957](https://github.com/doctrine/orm/issues/11957) | Calling setAssociationOverride in prePersist/preUpdate throws an exception | `reproduced` | `fixed-working-tree` |
 | [#11956](https://github.com/doctrine/orm/issues/11956) | Premature postLoad firing during fetch join result hydration with OneToOne association | `not-applicable` | — |
 | [#11936](https://github.com/doctrine/orm/issues/11936) | Can't use readonly class because of doctrine proxies | `not-applicable` | — |
 | [#11910](https://github.com/doctrine/orm/issues/11910) | [Feature] Ablity to write custom change detection logic for custom doctrine types | `not-bug-report` | — |
@@ -128,7 +128,7 @@ Every row is an open non-PR issue from the same paginated snapshot. Status is th
 | [#10044](https://github.com/doctrine/orm/issues/10044) | setDefaultQueryHint in doctrine.yaml | `not-bug-report` | — |
 | [#10038](https://github.com/doctrine/orm/issues/10038) | Enums instead constants | `not-bug-report` | — |
 | [#10018](https://github.com/doctrine/orm/issues/10018) | Explicitly support traversable as parameter | `not-bug-report` | — |
-| [#10014](https://github.com/doctrine/orm/issues/10014) | AnsiQuoteStrategy does not convert field names to column names for identifiers | `reproduced` | — |
+| [#10014](https://github.com/doctrine/orm/issues/10014) | AnsiQuoteStrategy does not convert field names to column names for identifiers | `reproduced` | `fixed-working-tree` |
 | [#10003](https://github.com/doctrine/orm/issues/10003) | Fetching again an entity with unpersisted changes on a many-to-many relation makes UoW inconsistent | `probe-not-reproduced` | — |
 | [#9999](https://github.com/doctrine/orm/issues/9999) | Doctrine 'ORM\Cache' with inherited classes | `not-applicable` | — |
 | [#9952](https://github.com/doctrine/orm/issues/9952) | Paginator fails with `$fetchJoinCollection = true` and query ordered by a join column. | `not-applicable` | — |
@@ -147,7 +147,7 @@ Every row is an open non-PR issue from the same paginated snapshot. Status is th
 | [#9460](https://github.com/doctrine/orm/issues/9460) |  Add possibility to use `toIterable` for a join which does just a `SUM`. | `not-bug-report` | — |
 | [#9427](https://github.com/doctrine/orm/issues/9427) | Overwriting entities relation field when hydrating a collection | `probe-not-reproduced` | — |
 | [#9201](https://github.com/doctrine/orm/issues/9201) | After refresh my entity it is updated (doctrine do SQL UPDATE) | `probe-not-reproduced` | — |
-| [#9185](https://github.com/doctrine/orm/issues/9185) | Array hydrator returns null values instead of actual elements in one-to-many relationships | `reproduced` | `fixed-working-tree` |
+| [#9185](https://github.com/doctrine/orm/issues/9185) | Array hydrator returns null values instead of actual elements in one-to-many relationships | `reproduced` | `fixed (46eb4b8)` |
 | [#9183](https://github.com/doctrine/orm/issues/9183) | `BasicEntityPersister::expandParameters()` expands criteria parameters with custom types wrong | `probe-not-reproduced` | — |
 | [#9178](https://github.com/doctrine/orm/issues/9178) | Condition using "CASE WHEN" not expecting "LIKE" keyword | `not-applicable` | — |
 | [#9124](https://github.com/doctrine/orm/issues/9124) | Undefined index on second flush removing an Entity that's into an initialized PersistentCollection | `probe-not-reproduced` | — |
@@ -165,7 +165,7 @@ Every row is an open non-PR issue from the same paginated snapshot. Status is th
 | [#8607](https://github.com/doctrine/orm/issues/8607) | Extra lazy PersistentCollection::get() with indexBy doesn't check mappedBy value | `covered-related` | — |
 | [#8580](https://github.com/doctrine/orm/issues/8580) |  Paginator's CountOutputWalker not remove ORDER BY for MSSQL platform | `not-applicable` | — |
 | [#8554](https://github.com/doctrine/orm/issues/8554) | CaseExpression as first parameter of LikeExpression not working as intended | `not-applicable` | — |
-| [#8436](https://github.com/doctrine/orm/issues/8436) | Bidirectional OneToOne with orphanRemoval leads to the deletion of a still referenced entity | `reproduced` | `fixed-working-tree` |
+| [#8436](https://github.com/doctrine/orm/issues/8436) | Bidirectional OneToOne with orphanRemoval leads to the deletion of a still referenced entity | `reproduced` | `fixed (46eb4b8)` |
 | [#8429](https://github.com/doctrine/orm/issues/8429) | Fetching untracked entities | `not-bug-report` | — |
 | [#8411](https://github.com/doctrine/orm/issues/8411) | SQLite schema namespace adjustment incorrectly implied for ManyToMany inserts. | `not-applicable` | — |
 | [#8404](https://github.com/doctrine/orm/issues/8404) | DQL functions return type is respected by `getSingleResult` but not `getSingleScalarResult`. | `not-applicable` | — |
@@ -177,12 +177,12 @@ Every row is an open non-PR issue from the same paginated snapshot. Status is th
 | [#8346](https://github.com/doctrine/orm/issues/8346) | [join table inheritance]Suboptimal JOIN clause order for ToMany-association to parent class | `not-applicable` | — |
 | [#8324](https://github.com/doctrine/orm/issues/8324) | Issue with bidirectional OneToMany when removing from a collection | `probe-not-reproduced` | — |
 | [#8323](https://github.com/doctrine/orm/issues/8323) | UnitOfWork->createEntity: idHash-creation from DateTime fails | `not-applicable` | — |
-| [#8282](https://github.com/doctrine/orm/issues/8282) | OneToOne relation is not updated if proxy is loaded afterwords | `reproduced` | `fixed-working-tree` |
+| [#8282](https://github.com/doctrine/orm/issues/8282) | OneToOne relation is not updated if proxy is loaded afterwords | `reproduced` | `fixed (46eb4b8)` |
 | [#8280](https://github.com/doctrine/orm/issues/8280) | Scalars aren't necessarily related to their nearest root entity | `not-applicable` | — |
 | [#8278](https://github.com/doctrine/orm/issues/8278) | [RFC] Smarter paginator default | `not-bug-report` | — |
 | [#8255](https://github.com/doctrine/orm/issues/8255) | PHP 7.4, Type Hinted Properties, and Composite Primary key with a Foreign Key gives a type error | `not-applicable` | — |
 | [#8254](https://github.com/doctrine/orm/issues/8254) | LimitSubqueryOutputWalker walkSelectStatementWithoutRowNumber doesn't preserve order | `not-applicable` | — |
-| [#8205](https://github.com/doctrine/orm/issues/8205) | Refetching entity with eager relation overwrites nulled relation | `reproduced` | `fixed-working-tree` |
+| [#8205](https://github.com/doctrine/orm/issues/8205) | Refetching entity with eager relation overwrites nulled relation | `reproduced` | `fixed (46eb4b8)` |
 | [#8191](https://github.com/doctrine/orm/issues/8191) | convertToDatabaseValueSQL is not called when using a QuoteStrategy | `reproduced` | — |
 | [#8181](https://github.com/doctrine/orm/issues/8181) | Entities with custom DBAL type identifier bound to DQL query parameters are not converted through DBAL types | `not-applicable` | — |
 | [#8177](https://github.com/doctrine/orm/issues/8177) | Support unique yet stable identifier generation in "Specification"-style designs | `not-bug-report` | — |
@@ -302,10 +302,10 @@ Every row is an open non-PR issue from the same paginated snapshot. Status is th
 | [#5770](https://github.com/doctrine/orm/issues/5770) | findBy / matching should work with join table | `reproduced` | — |
 | [#5754](https://github.com/doctrine/orm/issues/5754) | Multiple GROUP BY clauses don't work | `not-applicable` | — |
 | [#5750](https://github.com/doctrine/orm/issues/5750) | Expected behvior when an entity is refreshed when its row has been deleted from DB. | `observed-contract` | — |
-| [#5747](https://github.com/doctrine/orm/issues/5747) | ObjectHydrator overwriting changes to entity of "$targetClass" | `reproduced` | `fixed-working-tree` |
+| [#5747](https://github.com/doctrine/orm/issues/5747) | ObjectHydrator overwriting changes to entity of "$targetClass" | `reproduced` | `fixed (46eb4b8)` |
 | [#5746](https://github.com/doctrine/orm/issues/5746) | orm:validate-schema inversed-by instead of inversedBy | `not-bug-report` | — |
 | [#5742](https://github.com/doctrine/orm/issues/5742) | Flush could delete entities before inserting new ones | `known-limitation` | — |
-| [#5732](https://github.com/doctrine/orm/issues/5732) | problem with persisting entities when using doctrine events | `reproduced` | `fixed-working-tree` |
+| [#5732](https://github.com/doctrine/orm/issues/5732) | problem with persisting entities when using doctrine events | `reproduced` | `fixed (46eb4b8)` |
 | [#5723](https://github.com/doctrine/orm/issues/5723) | NamingStrategy::joinKeyColumnName cannot disambiguate self-reference | `not-bug-report` | — |
 | [#5722](https://github.com/doctrine/orm/issues/5722) | Allow to select embeddable using NEW() | `not-applicable` | — |
 | [#5694](https://github.com/doctrine/orm/issues/5694) | DQL badly translated when having Class Table Inheritance | `not-applicable` | — |
@@ -331,7 +331,7 @@ Every row is an open non-PR issue from the same paginated snapshot. Status is th
 | [#4153](https://github.com/doctrine/orm/issues/4153) | DDC-3354: Replacing indexed item on association with indexBy cannot comply with unicity constraint | `known-limitation` | — |
 | [#4106](https://github.com/doctrine/orm/issues/4106) | DDC-3311: Add ESCAPE clause support after LIKE pattern, in Expr class | `not-applicable` | — |
 | [#4076](https://github.com/doctrine/orm/issues/4076) | DDC-3285: \Doctrine\ORM\Event\PreUpdateEventArgs::getOldValue and ::getNewValue return wrong values for ManyToMany association | `reproduced` | — |
-| [#3927](https://github.com/doctrine/orm/issues/3927) | DDC-3148: ResultSetMappingBuilder::generateSelectClause ignores quoted column names | `reproduced` | — |
+| [#3927](https://github.com/doctrine/orm/issues/3927) | DDC-3148: ResultSetMappingBuilder::generateSelectClause ignores quoted column names | `reproduced` | `fixed-working-tree` |
 | [#3752](https://github.com/doctrine/orm/issues/3752) | DDC-2988: Notice: Undefined index: joinColumns in BasicEntityPersister.php | `reproduced` | — |
 | [#3689](https://github.com/doctrine/orm/issues/3689) | DDC-2929: Pessimistic lock on Query does not update the entity with the DB values if it's already cached | `observed-contract` | — |
 | [#3649](https://github.com/doctrine/orm/issues/3649) | DDC-2891: Impossible to pass a limit to a subquery | `not-applicable` | — |

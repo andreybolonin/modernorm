@@ -41,7 +41,7 @@ use const PHP_VERSION_ID;
  */
 class ClassMetadataFactory extends AbstractClassMetadataFactory
 {
-    protected string $cacheSalt = '__MODERNORM_TYPED_MAPPING_V12__';
+    protected string $cacheSalt = '__MODERNORM_TYPED_MAPPING_V13__';
 
     public function getMetadataFor(string $className): ClassMetadata
     {
@@ -144,6 +144,9 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
         }
         if ($parent) {
             $class->setIdGeneratorType($parent->generatorType);
+            if ($parent->isIdGeneratorSequence() && $parent->sequenceGeneratorDefinition !== null) {
+                $class->setSequenceGeneratorDefinition($parent->sequenceGeneratorDefinition);
+            }
             $this->addInheritedFields($class, $parent);
             $this->addInheritedRelations($class, $parent);
             $this->addInheritedEmbeddedClasses($class, $parent);
@@ -428,6 +431,13 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
                 // If there is no sequence definition yet, create a default definition
                 $definition = $class->sequenceGeneratorDefinition;
 
+                if ($class->isMappedSuperclass && $definition === null) {
+                    // An abstract mapping has no physical sequence of its own. Each concrete
+                    // child completes its default name after its table mapping is available.
+                    $class->setIdGenerator(new AssignedGenerator());
+                    break;
+                }
+
                 if (! $definition) {
                     $fieldName    = $class->getSingleIdentifierFieldName();
                     $sequenceName = $class->getSequenceName($this->getTargetPlatform());
@@ -480,7 +490,7 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
      */
     private function inheritIdGeneratorMapping(ClassMetadata $class, ClassMetadata $parent): void
     {
-        if ($parent->isIdGeneratorSequence()) {
+        if ($parent->isIdGeneratorSequence() && $parent->sequenceGeneratorDefinition !== null) {
             $class->setSequenceGeneratorDefinition($parent->sequenceGeneratorDefinition);
         }
 
@@ -495,6 +505,10 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
 
     protected function wakeupReflection(ClassMetadataInterface $class, ReflectionService $reflService): void
     {
+        $class->restoreMappingServices(
+            $this->em->getConfiguration()->getNamingStrategy(),
+            $this->em->getConfiguration()->getTypedFieldMapper(),
+        );
         $class->assertSupportedMapping();
         $class->wakeupReflection($reflService);
 

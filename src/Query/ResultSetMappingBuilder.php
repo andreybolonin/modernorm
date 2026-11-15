@@ -222,6 +222,19 @@ class ResultSetMappingBuilder extends ResultSetMapping implements Stringable
     {
         $this->assertSupportedMapping();
         $sql = '';
+        $platform = $this->em->getConnection()->getDatabasePlatform();
+        $quote = $this->em->getConfiguration()->getQuoteStrategy();
+        $metaColumns = [];
+        foreach ($this->aliasMap as $alias => $entityClass) {
+            $metadata = $this->em->getClassMetadata($entityClass);
+            foreach ($metadata->associationMappings as $association) {
+                if ($association->isToOneOwningSide()) {
+                    foreach ($association->joinColumns as $joinColumn) {
+                        $metaColumns[$alias][$joinColumn->name] = $quote->getJoinColumnName($joinColumn, $metadata, $platform);
+                    }
+                }
+            }
+        }
 
         foreach ($this->columnOwnerMap as $columnName => $resultAlias) {
             $tableAlias = $tableAliases[$resultAlias] ?? $resultAlias;
@@ -234,18 +247,19 @@ class ResultSetMappingBuilder extends ResultSetMapping implements Stringable
                 $class             = $this->em->getClassMetadata($this->declaringClasses[$columnName]);
                 $fieldName         = $this->fieldMappings[$columnName];
                 $classFieldMapping = $class->fieldMappings[$fieldName];
-                $columnSql         = $tableAlias . '.' . $classFieldMapping->columnName;
+                $columnSql         = $tableAlias . '.' . $quote->getColumnName($fieldName, $class, $platform);
 
                 $type      = $this->em->getConnection()->getConfiguration()->getTypeProvider()->get($classFieldMapping->type);
                 $columnSql = $type->convertToPHPValueSQL($columnSql, $this->em->getConnection()->getDatabasePlatform());
 
                 $sql .= $columnSql;
             } elseif (isset($this->metaMappings[$columnName])) {
-                $sql .= $tableAlias . '.' . $this->metaMappings[$columnName];
+                $metaColumn = $this->metaMappings[$columnName];
+                $sql .= $tableAlias . '.' . ($metaColumns[$resultAlias][$metaColumn] ?? $platform->quoteSingleIdentifier($metaColumn));
 
             }
 
-            $sql .= ' AS ' . $columnName;
+            $sql .= ' AS ' . $platform->quoteSingleIdentifier($columnName);
         }
 
         return $sql;

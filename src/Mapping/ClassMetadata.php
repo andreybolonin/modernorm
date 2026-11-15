@@ -481,7 +481,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
 
     private InstantiatorInterface|null $instantiator = null;
 
-    private readonly TypedFieldMapper $typedFieldMapper;
+    private TypedFieldMapper $typedFieldMapper;
 
     /**
      * Initializes a new ClassMetadata instance that will hold the object-relational mapping
@@ -697,11 +697,21 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
         return $this->instantiator->instantiate($this->name);
     }
 
+    /** @internal Rebind runtime services from the owning factory instead of serializing application services. */
+    public function restoreMappingServices(?NamingStrategy $namingStrategy = null, ?TypedFieldMapper $typedFieldMapper = null): void
+    {
+        $this->namingStrategy ??= $namingStrategy ?? new DefaultNamingStrategy();
+        if (! isset($this->typedFieldMapper)) {
+            $this->typedFieldMapper = $typedFieldMapper ?? new DefaultTypedFieldMapper();
+        }
+    }
+
     /**
      * Restores some state that can not be serialized/unserialized.
      */
     public function wakeupReflection(ReflectionService $reflService): void
     {
+        $this->restoreMappingServices();
         // Restore ReflectionClass and properties
         $this->reflClass    = $reflService->getClass($this->name);
         $this->instantiator = $this->instantiator ?: new Instantiator();
@@ -1419,8 +1429,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
 
     /**
      * Checks whether the class uses a sequence for id generation.
-     *
-     * @phpstan-assert-if-true !null $this->sequenceGeneratorDefinition
+     * A mapped superclass can defer its default definition to concrete children.
      */
     public function isIdGeneratorSequence(): bool
     {

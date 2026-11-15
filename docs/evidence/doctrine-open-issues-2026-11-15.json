@@ -60,7 +60,12 @@
           "case": "metadata_association_override_after_cache",
           "result": "probe-failed"
         }
-      ]
+      ],
+      "follow_up": {
+        "status": "fixed-working-tree",
+        "scope": "The linked metadata/sequence/Ansi/RSM PHPUnit scenarios and diagnostic variants only.",
+        "report": "docs/p1-mapping-fixes.md"
+      }
     },
     {
       "number": 12774,
@@ -329,7 +334,12 @@
           "case": "mapped_superclass_sequence_name",
           "result": "probe-failed"
         }
-      ]
+      ],
+      "follow_up": {
+        "status": "fixed-working-tree",
+        "scope": "The linked metadata/sequence/Ansi/RSM PHPUnit scenarios and diagnostic variants only.",
+        "report": "docs/p1-mapping-fixes.md"
+      }
     },
     {
       "number": 12389,
@@ -652,7 +662,12 @@
           "case": "metadata_association_override_after_cache",
           "result": "probe-failed"
         }
-      ]
+      ],
+      "follow_up": {
+        "status": "fixed-working-tree",
+        "scope": "The linked metadata/sequence/Ansi/RSM PHPUnit scenarios and diagnostic variants only.",
+        "report": "docs/p1-mapping-fixes.md"
+      }
     },
     {
       "number": 11956,
@@ -1852,7 +1867,12 @@
           "case": "ansi_quote_identifier_column_names",
           "result": "probe-failed"
         }
-      ]
+      ],
+      "follow_up": {
+        "status": "fixed-working-tree",
+        "scope": "The linked metadata/sequence/Ansi/RSM PHPUnit scenarios and diagnostic variants only.",
+        "report": "docs/p1-mapping-fixes.md"
+      }
     },
     {
       "number": 10003,
@@ -2154,9 +2174,10 @@
         }
       ],
       "follow_up": {
-        "status": "fixed-working-tree",
+        "status": "fixed",
         "scope": "Only the linked local regression scenarios; not a certification of every upstream variation.",
-        "report": "docs/critical-persistence-fixes.md"
+        "report": "docs/critical-persistence-fixes.md",
+        "commit": "46eb4b8c0deabe70315259f335707fb02a1b45e9"
       }
     },
     {
@@ -2449,9 +2470,10 @@
         }
       ],
       "follow_up": {
-        "status": "fixed-working-tree",
+        "status": "fixed",
         "scope": "Only the linked local regression scenarios; not a certification of every upstream variation.",
-        "report": "docs/critical-persistence-fixes.md"
+        "report": "docs/critical-persistence-fixes.md",
+        "commit": "46eb4b8c0deabe70315259f335707fb02a1b45e9"
       }
     },
     {
@@ -2637,9 +2659,10 @@
         }
       ],
       "follow_up": {
-        "status": "fixed-working-tree",
+        "status": "fixed",
         "scope": "Only the linked local regression scenarios; not a certification of every upstream variation.",
-        "report": "docs/critical-persistence-fixes.md"
+        "report": "docs/critical-persistence-fixes.md",
+        "commit": "46eb4b8c0deabe70315259f335707fb02a1b45e9"
       }
     },
     {
@@ -2718,9 +2741,10 @@
         }
       ],
       "follow_up": {
-        "status": "fixed-working-tree",
+        "status": "fixed",
         "scope": "Only the linked local regression scenarios; not a certification of every upstream variation.",
-        "report": "docs/critical-persistence-fixes.md"
+        "report": "docs/critical-persistence-fixes.md",
+        "commit": "46eb4b8c0deabe70315259f335707fb02a1b45e9"
       }
     },
     {
@@ -4695,9 +4719,10 @@
         "tools/issue-audit/run.php::to_one_local_change_survives_old_reference_load"
       ],
       "follow_up": {
-        "status": "fixed-working-tree",
+        "status": "fixed",
         "scope": "Only the linked local regression scenarios; not a certification of every upstream variation.",
-        "report": "docs/critical-persistence-fixes.md"
+        "report": "docs/critical-persistence-fixes.md",
+        "commit": "46eb4b8c0deabe70315259f335707fb02a1b45e9"
       }
     },
     {
@@ -4747,9 +4772,10 @@
         }
       ],
       "follow_up": {
-        "status": "fixed-working-tree",
+        "status": "fixed",
         "scope": "Only the linked local regression scenarios; not a certification of every upstream variation.",
-        "report": "docs/critical-persistence-fixes.md"
+        "report": "docs/critical-persistence-fixes.md",
+        "commit": "46eb4b8c0deabe70315259f335707fb02a1b45e9"
       }
     },
     {
@@ -5182,7 +5208,12 @@
           "case": "native_result_mapping_quoted_select",
           "result": "probe-failed"
         }
-      ]
+      ],
+      "follow_up": {
+        "status": "fixed-working-tree",
+        "scope": "The linked metadata/sequence/Ansi/RSM PHPUnit scenarios and diagnostic variants only.",
+        "report": "docs/p1-mapping-fixes.md"
+      }
     },
     {
       "number": 3752,
@@ -5361,17 +5392,22 @@
   "api_page_count": 4,
   "excluded_open_pr_count": 46,
   "follow_up": {
-    "report": "docs/critical-persistence-fixes.md",
+    "report": "docs/p1-mapping-fixes.md",
     "fixed_issue_references": [
+      3927,
       5732,
       5747,
       8205,
       8282,
       8436,
-      9185
+      9185,
+      10014,
+      11957,
+      12390,
+      12783
     ],
-    "fixed_problem_families": 4,
-    "remaining_reproduced_problem_families": 20,
+    "fixed_problem_families": 8,
+    "remaining_reproduced_problem_families": 16,
     "baseline_classification_preserved": true
   }
 }

@@ -61,7 +61,7 @@ class AnsiQuoteStrategy implements QuoteStrategy
      */
     public function getIdentifierColumnNames(ClassMetadata $class, AbstractPlatform $platform): array
     {
-        return $class->identifier;
+        return array_map(fn (string $field): string => $this->getColumnName($field, $class, $platform), $class->identifier);
     }
 
     public function getColumnAlias(
