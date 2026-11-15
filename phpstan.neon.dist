@@ -8,6 +8,8 @@ parameters:
         - tests/Fixtures/RemovedFetchModes.php
     paths:
         - src
+        - tests/Unit/EntityHydratorTest.php
+        - tests/Unit/ChangeSetComputerTest.php
         - tests/Unit/CascadeScopeTest.php
         - tests/Integration/CompleteEntityProjectionTest.php
         - tests/Unit/FetchModeScopeTest.php

@@ -40,6 +40,8 @@ Start with the [project README](../README.md) for key features, installation and
 - [Cascade refresh/detach removal and migration](cascade-refresh-detach-removal.md)
 - [Partial managed entity removal and migration](partial-entity-removal.md)
 - [EXTRA_LAZY removal and migration](extra-lazy-removal.md)
+- [EntityHydrator scalar assignment boundary](entity-hydrator.md)
+- [ChangeSetComputer boundary](change-set-computer.md)
 - [Beta contract and release gates](beta-release.md)
 - [Local verification evidence](beta-verification.md)
 - [Roadmap](../roadmap.md)

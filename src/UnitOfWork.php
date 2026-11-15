@@ -41,7 +41,8 @@ use ModernORM\Internal\UnitOfWork\EntityDeleteDependencies;
 use ModernORM\Internal\UnitOfWork\WriteOrderPlanner;
 use ModernORM\Internal\UnitOfWork\AssociationChangePlanner;
 use ModernORM\Internal\UnitOfWork\AssociationMembership;
-use ModernORM\Internal\UnitOfWork\FieldChangeComparator;
+use ModernORM\Internal\UnitOfWork\ChangeSetComputer;
+use ModernORM\Internal\UnitOfWork\EntityHydrator;
 use ModernORM\Internal\UnitOfWork\FlushOperationQueues;
 use ModernORM\Internal\UnitOfWork\IdentityMap;
 use ModernORM\Internal\UnitOfWork\LazyReferenceTracker;
@@ -49,7 +50,6 @@ use ModernORM\Internal\UnitOfWork\OrphanRemovalReason;
 use ModernORM\Mapping\AssociationMapping;
 use ModernORM\Mapping\ClassMetadata;
 use ModernORM\Exception\MappingException;
-use ModernORM\Mapping\PropertyAccessors\ReadonlyAccessor;
 use ModernORM\Mapping\ToManyInverseSideMapping;
 use ModernORM\Persisters\Collection\CollectionPersister;
 use ModernORM\Persisters\Collection\ManyToManyPersister;
@@ -69,6 +69,7 @@ use function array_combine;
 use function array_diff_key;
 use function array_filter;
 use function array_key_exists;
+use function array_fill_keys;
 use function array_keys;
 use function array_values;
 use function assert;
@@ -695,31 +696,19 @@ class UnitOfWork implements PropertyChangedListener
                 $this->lazyReferenceTracker->forget($entity);
             }
 
+            $scalarChanges = ChangeSetComputer::compare($class, $originalData, $actualData);
             foreach ($actualData as $propName => $actualValue) {
-                // Match the persister's UPDATE permissions before scheduling work or events.
-                if (isset($class->fieldMappings[$propName]->notUpdatable)) {
+                if (! isset($class->associationMappings[$propName])) {
+                    if (isset($scalarChanges[$propName])) {
+                        $changeSet[$propName] = $scalarChanges[$propName];
+                    }
                     continue;
                 }
 
                 if (! array_key_exists($propName, $originalData)) {
-                    // No loaded baseline is available for this field.
                     continue;
                 }
-
                 $orgValue = $originalData[$propName];
-
-                if (! isset($class->associationMappings[$propName])) {
-                    $fieldChange = FieldChangeComparator::compare(
-                        $orgValue,
-                        $actualValue,
-                        ! empty($class->fieldMappings[$propName]->enumType),
-                    );
-                    if ($fieldChange !== null) {
-                        $changeSet[$propName] = $fieldChange;
-                    }
-
-                    continue;
-                }
 
                 if ($orgValue === $actualValue) {
                     continue;
@@ -1108,21 +1097,21 @@ class UnitOfWork implements PropertyChangedListener
 
         $originalData = $this->originalEntityData[$oid];
         $changeSet    = [];
+        // Recompute historically treats a missing baseline as null; ordinary dirty checking skips it.
+        $comparisonData = $originalData + array_fill_keys(array_keys($actualData), null);
+        $scalarChanges = $this->flushQueues->hasInsertion($oid)
+            ? ChangeSetComputer::compareForInsert($class, $comparisonData, $actualData)
+            : ChangeSetComputer::compare($class, $comparisonData, $actualData);
 
+        // Retain the original field ordering and strict to-one comparison in the coordinator.
         foreach ($actualData as $propName => $actualValue) {
-            if (! $this->flushQueues->hasInsertion($oid) && isset($class->fieldMappings[$propName]->notUpdatable)) {
-                continue;
-            }
-
-            $orgValue = $originalData[$propName] ?? null;
-
-            $fieldChange = FieldChangeComparator::compare(
-                $orgValue,
-                $actualValue,
-                isset($class->fieldMappings[$propName]->enumType),
-            );
-            if ($fieldChange !== null) {
-                $changeSet[$propName] = $fieldChange;
+            if (isset($class->associationMappings[$propName])) {
+                $orgValue = $originalData[$propName] ?? null;
+                if ($orgValue !== $actualValue) {
+                    $changeSet[$propName] = [$orgValue, $actualValue];
+                }
+            } elseif (isset($scalarChanges[$propName])) {
+                $changeSet[$propName] = $scalarChanges[$propName];
             }
         }
 
@@ -2337,16 +2326,9 @@ class UnitOfWork implements PropertyChangedListener
             }
         }
 
-        foreach ($data as $field => $value) {
-            if (isset($class->fieldMappings[$field])) {
-                $accessor = $class->propertyAccessors[$field];
-                $accessor->setValue($entity, $value);
-                if ($accessor instanceof ReadonlyAccessor) {
-                    // An equivalent readonly date retains its original object.
-                    // Snapshot that actual value so refresh cannot schedule a phantom UPDATE.
-                    $this->originalEntityData[$oid][$field] = $accessor->getValue($entity);
-                }
-            }
+        foreach (EntityHydrator::hydrateScalars($class, $entity, $data) as $field => $value) {
+            // Equivalent readonly values can retain the original object; snapshot that actual value.
+            $this->originalEntityData[$oid][$field] = $value;
         }
 
         // Loading the entity right here, if its in the eager loading map get rid of it there.

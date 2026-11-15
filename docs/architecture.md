@@ -14,6 +14,10 @@ One EntityManager owns an Identity Map, UnitOfWork, persisters and lazy-loading 
 
 Snapshot and explicit change tracking, persist/remove cascades, orphan removal, callbacks and basic locking remain part of the supported persistence model. Not every combination of inherited extension points is covered; the [compatibility matrix](compatibility.md) defines the tested boundary.
 
+`Internal/UnitOfWork/EntityHydrator` assigns prepared scalar/embedded fields through existing accessors. It yields readonly snapshot corrections in assignment order; UnitOfWork applies them and retains Identity Map, registration, snapshots, associations and loading/event queues. See the [scalar assignment boundary](entity-hydrator.md).
+
+`Internal/UnitOfWork/ChangeSetComputer` compares prepared scalar/embedded snapshots and returns old/new pairs, using FieldChangeComparator for individual values. UnitOfWork retains property access, baseline preparation, state, events, collections, associations and queue updates. The [comparison boundary](change-set-computer.md) records ordinary/recompute and INSERT/UPDATE differences.
+
 `Internal/UnitOfWork/AssociationChangePlanner` owns the orphan candidate queue, scheduling reasons and removal policy. Collection mutations report candidates; replacement compares materialized membership arrays. The planner receives `AssociationMembership` facts and does not depend on EntityManager, metadata or PersistentCollection. It does not execute SQL or read entity properties.
 
 UnitOfWork adapts ORM state into membership facts, lazily and one candidate at a time, then invokes the existing removal lifecycle for confirmed orphans. Observation stops at the first retained membership or owning-side transfer. This preserves collection-loading/callback order instead of taking an early snapshot of every origin. `clear()` and flush cleanup reset the planner. SQL execution order and public scheduling methods remain unchanged. [Audit evidence and remaining limitations](persistence-audit.md) document the behavior that this local extraction preserves.
