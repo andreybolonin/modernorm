@@ -87,8 +87,6 @@ use function strcmp;
 use function strtolower;
 use function usort;
 
-use const PHP_VERSION_ID;
-
 /**
  * The UnitOfWork is responsible for tracking changes to objects during an
  * "object-level" transaction and for writing out changes to the database
@@ -524,7 +522,7 @@ class UnitOfWork implements PropertyChangedListener
         foreach ($this->flushQueues->insertions() as $entity) {
             $class = $this->em->getClassMetadata($entity::class);
 
-            if (PHP_VERSION_ID >= 80400 && $class->reflClass->isUninitializedLazyObject($entity)) {
+            if ($class->reflClass->isUninitializedLazyObject($entity)) {
                 $class->reflClass->initializeLazyObject($entity);
             }
 
@@ -692,7 +690,7 @@ class UnitOfWork implements PropertyChangedListener
             $trackedReference = $this->lazyReferenceTracker->contains($entity);
             $changeSet     = [];
 
-            if (PHP_VERSION_ID >= 80400 && $trackedReference && ! $this->isUninitializedObject($entity)) {
+            if ($trackedReference && ! $this->isUninitializedObject($entity)) {
                 $this->reconcileCompletedReference($oid, $class, $actualData, $originalData, $changeSet);
                 $this->lazyReferenceTracker->forget($entity);
             }

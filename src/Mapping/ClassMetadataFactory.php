@@ -30,8 +30,6 @@ use function class_exists;
 use function is_a;
 use function is_int;
 
-use const PHP_VERSION_ID;
-
 /**
  * The ClassMetadataFactory is used to create ClassMetadata objects that contain all the
  * metadata mapping information of a class which describes how a class should be mapped
@@ -511,10 +509,6 @@ class ClassMetadataFactory extends AbstractClassMetadataFactory
         );
         $class->assertSupportedMapping();
         $class->wakeupReflection($reflService);
-
-        if (PHP_VERSION_ID < 80400) {
-            return;
-        }
 
         foreach ($class->propertyAccessors as $propertyAccessor) {
             $property = $propertyAccessor->getUnderlyingReflector();

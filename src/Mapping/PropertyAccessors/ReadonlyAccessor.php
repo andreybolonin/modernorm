@@ -11,8 +11,6 @@ use ReflectionProperty;
 
 use function sprintf;
 
-use const PHP_VERSION_ID;
-
 /** @internal */
 class ReadonlyAccessor implements PropertyAccessor
 {
@@ -32,7 +30,7 @@ class ReadonlyAccessor implements PropertyAccessor
         /* For lazy properties, skip the isInitialized() check
            because it would trigger the initialization of the whole object. */
         if (
-            PHP_VERSION_ID >= 80400 && $this->reflectionProperty->isLazy($object)
+            $this->reflectionProperty->isLazy($object)
             || ! $this->reflectionProperty->isInitialized($object)
         ) {
             $this->parent->setValue($object, $value);

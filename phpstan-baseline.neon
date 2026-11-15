@@ -73,12 +73,6 @@ parameters:
 			path: src/Mapping/ClassMetadata.php
 
 		-
-			message: '#^Comparison operation "\<" between int\<80400, 80699\> and 80400 is always false\.$#'
-			identifier: smaller.alwaysFalse
-			count: 1
-			path: src/Mapping/ClassMetadataFactory.php
-
-		-
 			message: '#^Method ModernORM\\Mapping\\ClassMetadataFactory\:\:peekIfIsMappedSuperclass\(\) is unused\.$#'
 			identifier: method.unused
 			count: 1
@@ -137,30 +131,6 @@ parameters:
 			identifier: notIdentical.alwaysTrue
 			count: 1
 			path: src/Mapping/ManyToManyOwningSideMapping.php
-
-		-
-			message: '#^Comparison operation "\>\=" between int\<80400, 80699\> and 80400 is always true\.$#'
-			identifier: greaterOrEqual.alwaysTrue
-			count: 1
-			path: src/Mapping/PropertyAccessors/PropertyAccessorFactory.php
-
-		-
-			message: '#^Comparison operation "\<" between int\<80400, 80699\> and 80400 is always false\.$#'
-			identifier: smaller.alwaysFalse
-			count: 1
-			path: src/Mapping/PropertyAccessors/RawValuePropertyAccessor.php
-
-		-
-			message: '#^Comparison operation "\>\=" between int\<80400, 80699\> and 80400 is always true\.$#'
-			identifier: greaterOrEqual.alwaysTrue
-			count: 1
-			path: src/Mapping/PropertyAccessors/ReadonlyAccessor.php
-
-		-
-			message: '#^Comparison operation "\>\=" between int\<80400, 80699\> and 80400 is always true\.$#'
-			identifier: greaterOrEqual.alwaysTrue
-			count: 2
-			path: src/Mapping/PropertyAccessors/TypedNoDefaultPropertyAccessor.php
 
 		-
 			message: '#^Asserted type string for \$this\-\>indexBy\(\) with type string does not narrow down the type\.$#'
@@ -448,12 +418,6 @@ parameters:
 			message: '#^Access to an undefined property ModernORM\\Mapping\\AssociationMapping\:\:\$joinColumns\.$#'
 			identifier: property.notFound
 			count: 1
-			path: src/UnitOfWork.php
-
-		-
-			message: '#^Comparison operation "\>\=" between int\<80400, 80699\> and 80400 is always true\.$#'
-			identifier: greaterOrEqual.alwaysTrue
-			count: 2
 			path: src/UnitOfWork.php
 
 		-

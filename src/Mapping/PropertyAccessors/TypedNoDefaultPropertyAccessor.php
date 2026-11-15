@@ -11,8 +11,6 @@ use ReflectionProperty;
 use function assert;
 use function sprintf;
 
-use const PHP_VERSION_ID;
-
 /** @internal */
 class TypedNoDefaultPropertyAccessor implements PropertyAccessor
 {
@@ -42,7 +40,7 @@ class TypedNoDefaultPropertyAccessor implements PropertyAccessor
         if ($value === null) {
             /* The property is not initialized yet on a lazy object, so it is already unset.
                Calling unset() on it would trigger the initialization of the whole object. */
-            if (PHP_VERSION_ID >= 80400 && $this->reflectionProperty->isLazy($object)) {
+            if ($this->reflectionProperty->isLazy($object)) {
                 return;
             }
 
@@ -69,7 +67,7 @@ class TypedNoDefaultPropertyAccessor implements PropertyAccessor
     {
         /* The property is not initialized yet on a lazy object. Calling isInitialized()
            on it would trigger the initialization of the whole object. */
-        if (PHP_VERSION_ID >= 80400 && $this->reflectionProperty->isLazy($object)) {
+        if ($this->reflectionProperty->isLazy($object)) {
             return null;
         }
 
