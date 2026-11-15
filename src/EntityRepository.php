@@ -6,8 +6,6 @@ namespace ModernORM;
 
 use BadMethodCallException;
 use Doctrine\DBAL\LockMode;
-use Doctrine\Inflector\Inflector;
-use Doctrine\Inflector\InflectorFactory;
 use ModernORM\Mapping\ClassMetadata;
 use Doctrine\DBAL\Query\Expression\ExpressionBuilder as Expr;
 use ModernORM\Query\ResultSetMappingBuilder;
@@ -34,7 +32,6 @@ class EntityRepository implements ObjectRepository
 {
     /** @var class-string<T> */
     private readonly string $entityName;
-    private static Inflector|null $inflector = null;
 
     /** @param ClassMetadata<T> $class */
     public function __construct(
@@ -210,9 +207,8 @@ class EntityRepository implements ObjectRepository
             throw InvalidMagicMethodCall::onMissingParameter($method . $by);
         }
 
-        self::$inflector ??= InflectorFactory::create()->build();
-
-        $fieldName = lcfirst(self::$inflector->classify($by));
+        // Doctrine Inflector name conversion (MIT; licenses/Doctrine-Inflector-MIT.txt).
+        $fieldName = lcfirst(str_replace([' ', '_', '-'], '', ucwords($by, ' _-')));
 
         if (! ($this->class->hasField($fieldName) || $this->class->hasAssociation($fieldName))) {
             throw InvalidMagicMethodCall::becauseFieldNotFoundIn(
