@@ -12,6 +12,7 @@ Start with the [project README](../README.md) for key features, installation and
 | Attributes, identifiers and inheritance boundary | [Mapping scope](mapping-scope.md) |
 | Stored full-text vectors and GIN indexes | [Full-text indexes](full-text-index.md) |
 | Connection-scoped DBAL types | [DBAL type providers](dbal-types.md) |
+| Keyset pagination with forward/backward cursors | [Cursor pagination](cursor-pagination.md) |
 | Queries, hydration, joins and pagination | [SQL query API](sql-query-api.md) |
 | Automatic creation and update dates | [Timestampable trait](timestampable.md) |
 | Creation and update actor attribution | [Blameable behavior](blameable.md) |

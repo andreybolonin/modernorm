@@ -1,0 +1,124 @@
+{
+    "postgresql": "18.7 (Homebrew)",
+    "rows": 60000,
+    "order": {
+        "occurredAt": "DESC",
+        "id": "ASC"
+    },
+    "cursor": {
+        "v": 1,
+        "next": true,
+        "values": {
+            "occurredAt": "2026-01-01 00:00:00.003333",
+            "id": 10000
+        }
+    },
+    "sql": "SELECT DISTINCT morm_page.orm_cursor_key_0, morm_page.orm_cursor_key_1 FROM (SELECT r.id AS r__f0, r.tenant AS r__f1, r.\"OccurredAt\" AS r__f2, r.score AS r__f3, r.amount AS r__f4, r.enabled AS r__f5, r.payload AS r__f6, r.note AS r__f7, r.parent_id AS r__m0, r.\"OccurredAt\" AS orm_cursor_key_0, r.id AS orm_cursor_key_1 FROM \"cursor_schema\".\"CursorRecords\" r WHERE r.tenant = :tenant) morm_page WHERE (morm_page.orm_cursor_key_1 IS NOT NULL) AND (morm_page.orm_cursor_key_0 <= :__orm_cursor_1) AND (((morm_page.orm_cursor_key_0 < :__orm_cursor_1) OR (morm_page.orm_cursor_key_0 = :__orm_cursor_1 AND morm_page.orm_cursor_key_1 > :__orm_cursor_2))) ORDER BY morm_page.orm_cursor_key_0 DESC, morm_page.orm_cursor_key_1 ASC LIMIT 21",
+    "plan": [
+        {
+            "Plan": {
+                "Node Type": "Limit",
+                "Parallel Aware": false,
+                "Async Capable": false,
+                "Startup Cost": 0.41,
+                "Total Cost": 19.42,
+                "Plan Rows": 21,
+                "Plan Width": 16,
+                "Actual Startup Time": 0.019,
+                "Actual Total Time": 0.023,
+                "Actual Rows": 21,
+                "Actual Loops": 1,
+                "Disabled": false,
+                "Shared Hit Blocks": 1,
+                "Shared Read Blocks": 3,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0,
+                "Plans": [
+                    {
+                        "Node Type": "Unique",
+                        "Parent Relationship": "Outer",
+                        "Parallel Aware": false,
+                        "Async Capable": false,
+                        "Startup Cost": 0.41,
+                        "Total Cost": 1526.29,
+                        "Plan Rows": 1686,
+                        "Plan Width": 16,
+                        "Actual Startup Time": 0.018,
+                        "Actual Total Time": 0.022,
+                        "Actual Rows": 21,
+                        "Actual Loops": 1,
+                        "Disabled": false,
+                        "Shared Hit Blocks": 1,
+                        "Shared Read Blocks": 3,
+                        "Shared Dirtied Blocks": 0,
+                        "Shared Written Blocks": 0,
+                        "Local Hit Blocks": 0,
+                        "Local Read Blocks": 0,
+                        "Local Dirtied Blocks": 0,
+                        "Local Written Blocks": 0,
+                        "Temp Read Blocks": 0,
+                        "Temp Written Blocks": 0,
+                        "Plans": [
+                            {
+                                "Node Type": "Index Only Scan",
+                                "Parent Relationship": "Outer",
+                                "Parallel Aware": false,
+                                "Async Capable": false,
+                                "Scan Direction": "Forward",
+                                "Index Name": "cursor_seek",
+                                "Relation Name": "CursorRecords",
+                                "Alias": "r",
+                                "Startup Cost": 0.41,
+                                "Total Cost": 1517.86,
+                                "Plan Rows": 1686,
+                                "Plan Width": 16,
+                                "Actual Startup Time": 0.018,
+                                "Actual Total Time": 0.019,
+                                "Actual Rows": 21,
+                                "Actual Loops": 1,
+                                "Disabled": false,
+                                "Index Cond": "((tenant = 1) AND (\"OccurredAt\" <= '2026-01-01 00:00:00.003333'::timestamp without time zone))",
+                                "Rows Removed by Index Recheck": 0,
+                                "Filter": "((\"OccurredAt\" < '2026-01-01 00:00:00.003333'::timestamp without time zone) OR ((\"OccurredAt\" = '2026-01-01 00:00:00.003333'::timestamp without time zone) AND (id > '10000'::bigint)))",
+                                "Rows Removed by Filter": 2,
+                                "Heap Fetches": 23,
+                                "Index Searches": 1,
+                                "Shared Hit Blocks": 1,
+                                "Shared Read Blocks": 3,
+                                "Shared Dirtied Blocks": 0,
+                                "Shared Written Blocks": 0,
+                                "Local Hit Blocks": 0,
+                                "Local Read Blocks": 0,
+                                "Local Dirtied Blocks": 0,
+                                "Local Written Blocks": 0,
+                                "Temp Read Blocks": 0,
+                                "Temp Written Blocks": 0
+                            }
+                        ]
+                    }
+                ]
+            },
+            "Planning": {
+                "Shared Hit Blocks": 62,
+                "Shared Read Blocks": 1,
+                "Shared Dirtied Blocks": 0,
+                "Shared Written Blocks": 0,
+                "Local Hit Blocks": 0,
+                "Local Read Blocks": 0,
+                "Local Dirtied Blocks": 0,
+                "Local Written Blocks": 0,
+                "Temp Read Blocks": 0,
+                "Temp Written Blocks": 0
+            },
+            "Planning Time": 0.149,
+            "Triggers": [],
+            "Execution Time": 0.035
+        }
+    ]
+}

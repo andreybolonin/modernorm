@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add CursorPaginator, Cursor and immutable CursorPage APIs adapted from Doctrine ORM, with PostgreSQL SQL integration, bidirectional keyset navigation, explicit root-field sorting, raw key snapshots, root deduplication before LIMIT and lazy total count. Collection fetch joins, nullable/expression sorting and mixed results are rejected. Include compound-index EXPLAIN evidence for 60,000 rows.
+
 - Add QueryBuilder andWhereFullText(), addOrderByFullTextRank() and addFullTextRank() for mapped FullTextIndex searches, bound web-search input, relevance ordering and optional float scores. Support explicit index selection, joined entity aliases, cloning, pagination and SoftDelete visibility.
 
 - Add repeatable class-level FullTextIndex mapping for weighted PostgreSQL STORED tsvector columns and GIN indexes. SchemaTool owns the technical assets, compares expressions without temporary DDL, repairs missing assets and updates weights/configuration. Removal, renames and source-type/set changes require explicit migrations; raw DBAL Schema export rejects FTS mappings. Metadata cache salt is V12.

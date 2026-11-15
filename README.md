@@ -13,6 +13,7 @@ Batch fetching, PostgreSQL bulk writes, entity L2 cache and built-in observabili
 | **Batch fetching** | Load lazy ManyToOne, OneToMany and ManyToMany associations in groups, configured directly on attributes. |
 | **PostgreSQL-native bulk** | Multi-row INSERT, UPSERT, UPDATE, DELETE and `RETURNING`, with explicit UnitOfWork policies. |
 | **Entity L2 cache** | Cache entities across EntityManagers with PSR-6 storage, TTL and generation-based invalidation. |
+| **Keyset pagination** | Traverse large entity queries with forward/backward cursors, explicit sort fields and an optional lazy total count. |
 | **SQL-first queries** | PostgreSQL expressions and CTEs, with managed entity hydration or plain rows. |
 | **Built-in behaviors** | Timestampable, Blameable and SoftDelete built in — no extra behavior package required. |
 | **Built-in Statistics API** | Measure SQL, flush, batch, bulk, hydration and UnitOfWork phases; consume neutral operation events. |

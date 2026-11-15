@@ -55,6 +55,10 @@ A to-many fetch mapping denotes a **complete collection**. Applications must sel
 
 `toIterable()` supports streaming without collection fetch joins. Collection-fetch streaming and mixed streaming are rejected rather than returning incomplete graphs. Query limits/offsets are also rejected for collection fetch mappings. Read a page of roots and then load their associations when batching.
 
+## Cursor pagination
+
+For entity queries, `CursorPaginator(limit: 25, orderBy: ['createdAt' => 'DESC', 'id' => 'DESC'])` supports forward/backward keyset pagination. Sort fields are root PHP property names, must be non-null, and end with the primary key. The paginator replaces the builder's ORDER BY and snapshots raw database keys before hydrating the page. See [the cursor API, supported query shapes and index evidence](cursor-pagination.md).
+
 ## Root pagination with collections
 
 Paginator accepts two explicit SQL queries: ordered root IDs for the page and a hydration query with an ID parameter.

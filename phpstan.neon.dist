@@ -5,6 +5,10 @@ parameters:
     level: 5
     paths:
         - src
+        - tests/Unit/CursorTest.php
+        - tests/Unit/CursorPageTest.php
+        - tests/Unit/CursorQueryTest.php
+        - tests/Integration/CursorPaginationTest.php
         - tests/Unit/FullTextQueryBuilderTest.php
         - tests/Unit/FullTextMappingTest.php
         - tests/Unit/FullTextExpressionTest.php

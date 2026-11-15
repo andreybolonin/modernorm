@@ -6,6 +6,9 @@ namespace ModernORM;
 
 use Doctrine\DBAL\Query\QueryBuilder as SqlQueryBuilder;
 use Doctrine\DBAL\ParameterType;
+use Doctrine\DBAL\Query\UnionType;
+use Doctrine\DBAL\Query\ForUpdate\ConflictResolutionMode;
+use ModernORM\Tools\Pagination\CursorQuery;
 use ModernORM\Mapping\FullTextIndex;
 use ModernORM\Query\EntityResultPlan;
 use ModernORM\Query\ResultSetMapping;
@@ -22,6 +25,8 @@ class QueryBuilder extends SqlQueryBuilder
     /** @var array<string, array<string, array{vector: string, query: string}>> */
     private array $fullTextSearches = [];
     private int $fullTextParameterCounter = 0;
+    private bool $cursorUnsupportedOperation = false;
+    private bool $customResultSetMapping = false;
 
     public function __construct(private readonly EntityManagerInterface $em)
     {
@@ -253,7 +258,107 @@ class QueryBuilder extends SqlQueryBuilder
 
     public function setResultSetMapping(ResultSetMapping $mapping): self
     {
+        $this->customResultSetMapping = true;
         $this->mapping = clone $mapping;
+        return $this;
+    }
+
+    /** @internal Snapshot the entity SQL and append raw sorting columns for CursorPaginator.
+     *  @param non-empty-array<string, 'ASC'|'DESC'> $orderBy
+     */
+    public function getCursorPaginationSource(array $orderBy): CursorQuery
+    {
+        $roots = array_diff_key($this->mapping->aliasMap, $this->mapping->parentAliasMap);
+        if ($this->cursorUnsupportedOperation || $this->customResultSetMapping || count($roots) !== 1
+            || $this->mapping->scalarMappings !== [] || array_filter($this->mapping->partialAliases) !== []
+            || $this->getFirstResult() !== 0 || $this->getMaxResults() !== null) {
+            throw new \InvalidArgumentException('Cursor pagination requires an unlimited entity-only SELECT with one fromEntity() root, without a custom result mapping, UNION, CTEs, writes or row locks.');
+        }
+        $alias = array_key_first($roots);
+        if (! isset($this->entities[$alias]) || ($this->mapping->entityMappings[$alias] ?? null) !== null) {
+            throw new \InvalidArgumentException('Cursor pagination requires a root registered by fromEntity().');
+        }
+        foreach ($this->mapping->relationMap as $joined => $relation) {
+            $parent = $this->mapping->parentAliasMap[$joined];
+            $parentClass = $this->em->getClassMetadata($this->mapping->aliasMap[$parent]);
+            if ($parentClass->getAssociationMapping($relation)->isToMany()) {
+                throw new \InvalidArgumentException('Cursor pagination does not support collection fetch joins. Load collections separately.');
+            }
+        }
+        foreach (array_keys($this->getParameters()) as $parameter) {
+            if (! is_string($parameter)) {
+                throw new \InvalidArgumentException('Cursor pagination requires named parameters.');
+            }
+        }
+        $metadata = $this->em->getClassMetadata($roots[$alias]);
+        if (array_key_last($orderBy) !== $metadata->getSingleIdentifierFieldName()) {
+            throw new \InvalidArgumentException('Cursor sorting must end with the root primary key as a unique tie-breaker.');
+        }
+        $source = clone $this;
+        $source->resetOrderBy();
+        $keys = [];
+        foreach ($orderBy as $field => $direction) {
+            $mapping = $metadata->fieldMappings[$field] ?? null;
+            if ($mapping === null || $mapping->nullable === true || ! in_array($direction, ['ASC', 'DESC'], true)
+                || ! in_array($mapping->type, [
+                    'smallint', 'integer', 'bigint', 'string', 'text', 'guid', 'boolean', 'decimal', 'float', 'smallfloat',
+                    'date', 'date_immutable', 'time', 'time_immutable', 'datetime', 'datetime_immutable', 'datetimetz', 'datetimetz_immutable',
+                ], true)) {
+                throw new \InvalidArgumentException('Cursor sorting supports non-null built-in scalar fields of the root entity only.');
+            }
+            $column = 'orm_cursor_key_' . count($keys);
+            $source->addSelect($this->column($alias, $field) . ' AS ' . $column);
+            $keys[$field] = ['column' => $column, 'direction' => $direction];
+        }
+        return new CursorQuery($this->em, $metadata, $source->getSQL(), $source->getParameters(), $source->getParameterTypes(), clone $source->mapping, $keys);
+    }
+
+    public function insert(string $table): self
+    {
+        $this->cursorUnsupportedOperation = true;
+        parent::insert($table);
+        return $this;
+    }
+
+    public function update(string $table): self
+    {
+        $this->cursorUnsupportedOperation = true;
+        parent::update($table);
+        return $this;
+    }
+
+    public function delete(string $table): self
+    {
+        $this->cursorUnsupportedOperation = true;
+        parent::delete($table);
+        return $this;
+    }
+
+    public function union(string|SqlQueryBuilder $part): self
+    {
+        $this->cursorUnsupportedOperation = true;
+        parent::union($part);
+        return $this;
+    }
+
+    public function addUnion(string|SqlQueryBuilder $part, UnionType $type = UnionType::DISTINCT): self
+    {
+        $this->cursorUnsupportedOperation = true;
+        parent::addUnion($part, $type);
+        return $this;
+    }
+
+    public function with(string $name, string|SqlQueryBuilder $part, ?array $columns = null): self
+    {
+        $this->cursorUnsupportedOperation = true;
+        parent::with($name, $part, $columns);
+        return $this;
+    }
+
+    public function forUpdate(ConflictResolutionMode $conflictResolutionMode = ConflictResolutionMode::ORDINARY): self
+    {
+        $this->cursorUnsupportedOperation = true;
+        parent::forUpdate($conflictResolutionMode);
         return $this;
     }
 
