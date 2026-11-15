@@ -21,6 +21,7 @@ use ModernORM\Mapping\Driver\AttributeDriver;
 use ModernORM\Query;
 use ModernORM\Query\ResultSetMapping;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 
 final class HydrationCountingJson extends JsonType
 {
@@ -324,6 +325,51 @@ final class ObjectHydrationTest extends TestCase
             $id = $class === ObjectHydrator::class ? $result[0]->id : $result[0]['id'];
             self::assertSame(1, $id);
         }
+    }
+
+
+    public static function nestedArrayShapes(): iterable
+    {
+        yield 'plain' => [false, false];
+        yield 'indexed' => [true, false];
+        yield 'mixed' => [false, true];
+        yield 'indexed-mixed' => [true, true];
+    }
+
+    #[DataProvider('nestedArrayShapes')]
+    public function testNestedArraySharedParentKeepsIndependentCollectionPositions(bool $indexed, bool $mixed): void
+    {
+        $mapping = new ResultSetMapping();
+        $mapping->addEntityResult(HydrationChild::class, 'r');
+        $mapping->addFieldResult('r', 'r_id', 'id')->addFieldResult('r', 'r_name', 'name');
+        $mapping->addJoinedEntityResult(HydrationParent::class, 'p', 'r', 'parent');
+        $mapping->addFieldResult('p', 'p_id', 'id');
+        $mapping->addJoinedEntityResult(HydrationChild::class, 'c', 'p', 'children');
+        $mapping->addFieldResult('c', 'c_id', 'id')->addFieldResult('c', 'c_name', 'name');
+        if ($indexed) {
+            $mapping->addIndexBy('c', 'name');
+        }
+        if ($mixed) {
+            $mapping->addScalarResult('label', 'label', 'string');
+        }
+        $rows = [];
+        foreach ([[11, 11], [11, 12], [12, 12], [12, 11], [11, 12]] as [$root, $child]) {
+            $rows[] = ['r_id' => (string) $root, 'r_name' => 'root ' . $root, 'p_id' => '1',
+                'c_id' => (string) $child, 'c_name' => 'child ' . $child, 'label' => 'root ' . $root];
+        }
+        $rows[] = ['r_id' => '30', 'r_name' => 'empty', 'p_id' => '2', 'c_id' => null, 'c_name' => null, 'label' => 'empty'];
+        $result = (new ArrayHydrator($this->em))->hydrateAll($this->statement($rows), $mapping);
+        self::assertCount(3, $result);
+        foreach ([0, 1] as $index) {
+            $root = $mixed ? $result[$index][0] : $result[$index];
+            $ids = array_column($root['parent']['children'], 'id');
+            sort($ids);
+            self::assertSame([11, 12], $ids);
+            self::assertCount(2, $root['parent']['children']);
+            self::assertNotContains(null, $root['parent']['children']);
+        }
+        $empty = $mixed ? $result[2][0] : $result[2];
+        self::assertSame([], $empty['parent']['children']);
     }
 
     public function testArrayHydrationPreservesRepeatedFieldsEnumsAndMetaValues(): void

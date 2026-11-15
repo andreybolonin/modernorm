@@ -33,7 +33,7 @@ Statuses: **fixed** means reproduced on the recorded baseline and passing after 
 | `onFlush` schedules an INSERT/UPDATE from an initially empty queue | Fixed | Explicit `computeChangeSet()` / `recomputeSingleEntityChangeSet()` work is executed instead of discarded by the empty-flush branch. `testOnFlushCanScheduleWorkFromInitiallyEmptyQueue` |
 | Nested `flush()` from a callback | Fixed | Rejected with `LogicException` before re-entering UnitOfWork. The guard resets after failure. `testNestedFlushIsRejectedBeforeItCanWrite` |
 | Exception from `preUpdate` | Not reproduced | Database writes roll back, the manager closes and PHP values remain changed. `testPreUpdateFailureRollsBackAndClosesManager` |
-| Exception from `postFlush` | Fixed | Already completed database work is not undone; internal flush queues/change sets are cleared in `finally`. `testPostFlushFailureDoesNotReplayCommittedInsert` |
+| Exception from `postFlush` | Fixed | Already completed database work is not undone; completed flush queues/change sets are cleared before callbacks; newly scheduled postFlush operations survive for the next explicit flush. `testPostFlushFailureDoesNotReplayCommittedInsert` |
 | Manual outer transaction rollback after successful flush | Documented limitation | SQL rolls back, but PHP values and UnitOfWork snapshots are not restored. Clear/reload the context before reuse. `testExternalRollbackRequiresClearingTheManagedState` |
 | Outer failure through `wrapInTransaction()` | Not reproduced | Rollback closes the context and leaves the database unchanged. `testTransactionWrapperClosesContextAfterOuterRollback` |
 | Replace only the inverse collection without orphan removal | Documented limitation | Does not rewrite the owning FK; rows and links remain. `testReplacingInverseCollectionWithoutOrphanRemovalKeepsDatabaseLinks` |
@@ -52,9 +52,9 @@ EXTRA_LAZY indexed lookup includes association membership in its SQL. A managed 
 
 ## Flush and transaction contract
 
-Callbacks must not call `flush()` recursively, including from `postFlush`. Start any subsequent unit of work outside the callbacks, after the outer call returns; enqueuing new ORM work from `postFlush` is outside this audited contract. `preFlush` remains the normal point for changes before automatic detection. `onFlush` listeners must explicitly compute the change set for a new entity or recompute it for a changed managed entity. The audit covers these scalar/entity cases; arbitrary association graph changes during `onFlush` are not certified.
+Callbacks must not call `flush()` recursively, including from `postFlush`. Call the next flush outside the callbacks, after the outer call returns. PostFlush may persist/remove entities or explicitly schedule dirty checks for that next flush, as verified by the [critical persistence fix pass](critical-persistence-fixes.md). `preFlush` remains the normal point for changes before automatic detection. `onFlush` listeners must explicitly compute the change set for a new entity or recompute it for a changed managed entity. The audit covers these scalar/entity cases; arbitrary association graph changes during `onFlush` are not certified.
 
-`postFlush` runs after the flush's database transaction boundary. Without an outer transaction, its exception does not undo a commit. With an outer transaction, durability still depends on the caller's eventual commit/rollback. Cleanup clears completed flush state even if the callback throws; external side effects from callbacks are not rolled back by the ORM.
+`postFlush` runs after the flush's database transaction boundary. Without an outer transaction, its exception does not undo a commit. With an outer transaction, durability still depends on the caller's eventual commit/rollback. Cleanup clears completed flush state before callbacks while preserving newly scheduled operations even if a callback throws; external side effects from callbacks are not rolled back by the ORM.
 
 The ORM does not automatically solve intermediate UNIQUE conflicts. Use separate flushes inside one transaction when replacing a row:
 

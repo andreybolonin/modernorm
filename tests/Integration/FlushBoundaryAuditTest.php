@@ -28,6 +28,7 @@ use ModernORM\Statistics;
 use ModernORM\Statistics\Middleware;
 use ModernORM\Tools\SchemaTool;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\DataProvider;
 use RuntimeException;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
@@ -242,6 +243,84 @@ final class FlushBoundaryAuditTest extends TestCase
         $this->assertQueuesEmpty();
         $this->em->flush();
         $this->assertManagedResult($record, 'late-change', 'late-change', null);
+        $this->assertNextFlushDoesNoDml();
+    }
+
+
+    public static function postFlushInsertBoundaries(): iterable
+    {
+        foreach ([false, true] as $empty) {
+            foreach ([false, true] as $throwing) {
+                yield ($empty ? 'empty' : 'written') . ($throwing ? '-throwing' : '-returning') => [$empty, $throwing];
+            }
+        }
+    }
+
+    #[DataProvider('postFlushInsertBoundaries')]
+    public function testPostFlushInsertRemainsScheduledForNextFlush(bool $empty, bool $throwing): void
+    {
+        if (! $empty) {
+            $this->em->persist(new FlushBoundaryRecord('first', 'first'));
+        }
+        $added = new FlushBoundaryRecord('late', 'late');
+        $calls = 0;
+        $this->listen(Events::postFlush, function () use ($added, &$calls, $throwing): void {
+            if (++$calls === 1) {
+                $this->em->persist($added);
+                if ($throwing) {
+                    throw new RuntimeException('after commit');
+                }
+            }
+        });
+        try {
+            $this->em->flush();
+            self::assertFalse($throwing, 'Expected the listener exception.');
+        } catch (RuntimeException $error) {
+            self::assertTrue($throwing);
+            self::assertSame('after commit', $error->getMessage());
+        }
+        self::assertTrue($this->em->isOpen());
+        self::assertFalse($this->em->getConnection()->isTransactionActive());
+        self::assertSame($empty ? 0 : 1, (int) $this->em->getConnection()->fetchOne('SELECT COUNT(*) FROM modernorm_test_flush_boundaries'));
+        self::assertTrue($this->em->getUnitOfWork()->isScheduledForInsert($added));
+        $this->em->flush();
+        self::assertSame($empty ? 1 : 2, (int) $this->em->getConnection()->fetchOne('SELECT COUNT(*) FROM modernorm_test_flush_boundaries'));
+        $this->assertManagedResult($added, 'late', 'late', null);
+        $this->assertNextFlushDoesNoDml();
+    }
+
+    public function testPostFlushPersistRetainsExplicitDirtyCheckForNextFlush(): void
+    {
+        $metadata = $this->em->getClassMetadata(FlushBoundaryRecord::class);
+        $metadata->setChangeTrackingPolicy(ORM\ClassMetadata::CHANGETRACKING_DEFERRED_EXPLICIT);
+        $record = $this->seed();
+        $calls = 0;
+        $this->listen(Events::postFlush, function () use ($record, &$calls): void {
+            if (++$calls === 1) {
+                $record->name = 'late';
+                $this->em->persist($record);
+            }
+        });
+        $this->em->flush();
+        self::assertSame('original', $this->em->getConnection()->fetchOne('SELECT name FROM modernorm_test_flush_boundaries'));
+        $this->em->flush();
+        self::assertSame('late', $this->em->getConnection()->fetchOne('SELECT name FROM modernorm_test_flush_boundaries'));
+        $this->assertNextFlushDoesNoDml();
+    }
+
+    public function testPostFlushDeleteRemainsScheduledForNextFlush(): void
+    {
+        $record = $this->seed();
+        $calls = 0;
+        $this->listen(Events::postFlush, function () use ($record, &$calls): void {
+            if (++$calls === 1) {
+                $this->em->remove($record);
+            }
+        });
+        $this->em->flush();
+        self::assertSame(1, (int) $this->em->getConnection()->fetchOne('SELECT COUNT(*) FROM modernorm_test_flush_boundaries'));
+        $this->em->flush();
+        self::assertSame(0, (int) $this->em->getConnection()->fetchOne('SELECT COUNT(*) FROM modernorm_test_flush_boundaries'));
         $this->assertNextFlushDoesNoDml();
     }
 

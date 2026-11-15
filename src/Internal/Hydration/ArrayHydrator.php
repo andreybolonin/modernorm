@@ -67,6 +67,7 @@ class ArrayHydrator extends AbstractHydrator
         $id                 = $this->idTemplate; // initialize the id-memory
         $nonemptyComponents = [];
         $rowData            = $this->gatherRowData($row, $id, $nonemptyComponents);
+        $identifierPaths    = [];
 
         // 2) Now hydrate the data found in the current row.
         foreach ($rowData['data'] as $resultAlias => $data) {
@@ -77,6 +78,9 @@ class ArrayHydrator extends AbstractHydrator
 
                 $parent = $this->resultSetMapping()->parentAliasMap[$resultAlias];
                 $path   = $parent . '.' . $resultAlias;
+                // Shared entities are independent array copies under different root/ancestor paths.
+                $parentPath = serialize($identifierPaths[$parent] ?? []);
+                $identifierPaths[$resultAlias] = [...($identifierPaths[$parent] ?? []), $id[$resultAlias]];
 
                 // missing parent data, skipping as RIGHT JOIN hydration is not supported.
                 if (! isset($nonemptyComponents[$parent])) {
@@ -110,20 +114,22 @@ class ArrayHydrator extends AbstractHydrator
                     }
 
                     if (isset($nonemptyComponents[$resultAlias])) {
-                        $indexExists  = isset($this->identifierMap[$path][$id[$parent]][$id[$resultAlias]]);
-                        $index        = $indexExists ? $this->identifierMap[$path][$id[$parent]][$id[$resultAlias]] : false;
+                        $indexExists  = isset($this->identifierMap[$path][$parentPath][$id[$resultAlias]]);
+                        $index        = $indexExists ? $this->identifierMap[$path][$parentPath][$id[$resultAlias]] : false;
                         $indexIsValid = $index !== false ? isset($baseElement[$relationAlias][$index]) : false;
 
                         if (! $indexExists || ! $indexIsValid) {
                             $element = $data;
 
                             if (isset($this->resultSetMapping()->indexByMap[$resultAlias])) {
-                                $baseElement[$relationAlias][$row[$this->resultSetMapping()->indexByMap[$resultAlias]]] = $element;
+                                $index = $row[$this->resultSetMapping()->indexByMap[$resultAlias]];
+                                $baseElement[$relationAlias][$index] = $element;
                             } else {
                                 $baseElement[$relationAlias][] = $element;
+                                $index = array_key_last($baseElement[$relationAlias]);
                             }
 
-                            $this->identifierMap[$path][$id[$parent]][$id[$resultAlias]] = array_key_last($baseElement[$relationAlias]);
+                            $this->identifierMap[$path][$parentPath][$id[$resultAlias]] = $index;
                         }
                     }
                 } else {
@@ -148,6 +154,7 @@ class ArrayHydrator extends AbstractHydrator
                 // It's a root result element
 
                 $this->rootAliases[$resultAlias] = true; // Mark as root
+                $identifierPaths[$resultAlias] = [$id[$resultAlias]];
                 $entityKey                    = $this->resultSetMapping()->entityMappings[$resultAlias] ?: 0;
 
                 // if this row has a NULL value for the root result id then make it a null result.

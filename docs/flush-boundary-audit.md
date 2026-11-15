@@ -30,7 +30,7 @@ The matrix first identifies existing coverage, then records the additional cross
 
 `preUpdate` property changes are recomputed before UPDATE. `PreUpdateEventArgs::setNewValue()` changes the SQL changeset, not the PHP property. If a listener only calls setNewValue, the object and its PHP comparison baseline can intentionally differ from the database. A later no-op flush does not overwrite that SQL value; explicit refresh aligns the instance. Assign the property as well when the listener intends to keep both representations equal.
 
-A late scalar mutation in postFlush is outside the completed write cycle. Its previous written value remains the comparison baseline, so the next explicit flush can detect it, even if postFlush itself threw. Completed changesets and queues are cleared. This is scalar dirty detection on an already managed object; it does not establish support for adding new entities or scheduling new explicit operations from postFlush.
+A late scalar mutation in postFlush is outside the completed write cycle. Its previous written value remains the comparison baseline, so the next explicit flush can detect it, even if postFlush itself threw. Completed changesets and queues are cleared before postFlush runs. The subsequent [critical fix pass](critical-persistence-fixes.md) also verifies persist/remove and deferred-explicit dirty checks scheduled by postFlush for the next explicit flush, including a throwing listener.
 
 An SQL or write-phase callback failure closes the manager and clears its Identity Map, snapshots and scheduled work after rollback handling. PHP object fields remain modified. An ordinary postFlush failure after commit leaves the manager open and the database committed. Caller-owned outer transactions and unknown COMMIT outcomes retain their separate documented contracts.
 
@@ -38,6 +38,8 @@ An SQL or write-phase callback failure closes the manager and clears its Identit
 
 No new runtime defect was reproduced by these seven additional cases; no component was extracted and no runtime algorithm changed. The UnitOfWork commit-order comment is corrected to match the existing execution order: whole-collection deletes, entity inserts, entity updates, extra updates, collection updates, entity deletes.
 
-This is a bounded integration audit, not a proof for every listener combination. Association mutation from preUpdate, scheduling work for other entities during write callbacks/postFlush, throwing from onClear and arbitrary external transaction manipulation are not certified here. Existing documented UNIQUE ordering limitations and non-atomic PostgreSQL/L2 commit boundaries remain unchanged. No new Doctrine issue or inherited-bug claim follows from this audit.
+This is a bounded integration audit, not a proof for every listener combination. Association mutation from preUpdate, scheduling work for other entities during write callbacks, arbitrary postFlush collection-graph mutations, throwing from onClear and arbitrary external transaction manipulation are not certified here. Existing documented UNIQUE ordering limitations and non-atomic PostgreSQL/L2 commit boundaries remain unchanged. No new Doctrine issue or inherited-bug claim follows from this audit.
 
 Final validation: **739 tests pass on PHP 8.5.12 and PHP 8.4.27**, with PostgreSQL and disposable Redis, without skipped tests. The seven new focused tests pass with 198 assertions. PHPStan and PSR-12 pass without new baseline suppressions.
+
+The later [critical persistence fix pass](critical-persistence-fixes.md) changes the postFlush cleanup boundary and adds the new operation-scheduling regressions; the original seven-case results above remain historical evidence.

@@ -317,7 +317,7 @@ class UnitOfWork implements PropertyChangedListener
             $onFlushDispatched = true;
             // onFlush listeners may explicitly compute new work even when the initial queue was empty.
             if (! $this->hasPendingOperations()) {
-                $this->dispatchPostFlushAndCleanup();
+                $this->dispatchPostFlushAfterCleanup();
                 return;
             }
         }
@@ -450,7 +450,7 @@ class UnitOfWork implements PropertyChangedListener
     {
         $this->afterTransactionComplete();
         $this->synchronizeVisitedCollections();
-        $this->dispatchPostFlushAndCleanup();
+        $this->dispatchPostFlushAfterCleanup();
     }
 
     private function synchronizeVisitedCollections(): void
@@ -466,14 +466,11 @@ class UnitOfWork implements PropertyChangedListener
         }
     }
 
-    /** Shared by empty and successful flushes; callback failure must not retain completed queues. */
-    private function dispatchPostFlushAndCleanup(): void
+    /** Clear completed work before listeners can schedule operations for the next flush. */
+    private function dispatchPostFlushAfterCleanup(): void
     {
-        try {
-            $this->dispatchPostFlushEvent();
-        } finally {
-            $this->postCommitCleanup();
-        }
+        $this->postCommitCleanup();
+        $this->dispatchPostFlushEvent();
     }
 
     private function hasPendingOperations(): bool
@@ -2578,7 +2575,7 @@ class UnitOfWork implements PropertyChangedListener
                             $this->originalEntityData[$oid][$field] = $data[$field];
 
                             $class->propertyAccessors[$field]->setValue($entity, $data[$field]);
-                            $targetClass->propertyAccessors[$assoc->mappedBy]->setValue($data[$field], $entity);
+                            $this->hydrateToOneAssociation($data[$field], $assoc->mappedBy, $entity, $this->isHydrationRefresh($data[$field], $hints));
 
                             continue 2;
                         }
@@ -2692,7 +2689,7 @@ class UnitOfWork implements PropertyChangedListener
 
                     if ($assoc->inversedBy !== null && $assoc->isOneToOne() && $newValue !== null) {
                         $inverseAssoc = $targetClass->associationMappings[$assoc->inversedBy];
-                        $targetClass->propertyAccessors[$inverseAssoc->fieldName]->setValue($newValue, $entity);
+                        $this->hydrateToOneAssociation($newValue, $inverseAssoc->fieldName, $entity, $this->isHydrationRefresh($newValue, $hints));
                     }
 
                     break;
@@ -2899,6 +2896,42 @@ class UnitOfWork implements PropertyChangedListener
     public function getIdentityMap(): array
     {
         return $this->identityMap->all();
+    }
+
+    /** @internal Hydration must not overwrite a locally changed to-one, even after changeset computation. */
+    public function isToOneAssociationChanged(object $entity, string $field): bool
+    {
+        $oid = spl_object_id($entity);
+        $original = $this->originalEntityData[$oid] ?? [];
+        if (array_key_exists($field, $this->entityChangeSets[$oid] ?? [])) {
+            $original[$field] = $this->entityChangeSets[$oid][$field][0];
+        }
+        if (! array_key_exists($field, $original)) {
+            return false;
+        }
+        $accessor = $this->em->getClassMetadata($entity::class)->propertyAccessors[$field];
+        // Inspecting an unloaded property must not initialize its lazy owner recursively.
+        return ! $accessor->getUnderlyingReflector()->isLazy($entity)
+            && $accessor->getValue($entity) !== $original[$field];
+    }
+
+    /** @internal A targeted lazy initialization/refresh does not refresh unrelated managed entities.
+     *  @param array<string, mixed> $hints
+     */
+    public function isHydrationRefresh(object $entity, array $hints): bool
+    {
+        return isset($hints[Query::HINT_REFRESH])
+            && (! isset($hints[Query::HINT_REFRESH_ENTITY]) || $hints[Query::HINT_REFRESH_ENTITY] === $entity);
+    }
+
+    /** @internal Complete a bidirectional hydration link without discarding pending local changes. */
+    public function hydrateToOneAssociation(object $entity, string $field, ?object $value, bool $refresh = false): void
+    {
+        if (! $refresh && $this->isToOneAssociationChanged($entity, $field)) {
+            return;
+        }
+        $this->em->getClassMetadata($entity::class)->propertyAccessors[$field]->setValue($entity, $value);
+        $this->originalEntityData[spl_object_id($entity)][$field] = $value;
     }
 
     /**

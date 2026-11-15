@@ -1,0 +1,683 @@
+{
+  "php": "8.5.12",
+  "postgresql": "18.7 (Homebrew)",
+  "zend_assertions": "1",
+  "cases": [
+    {
+      "case": "metadata_mapping_after_cache",
+      "issues": [
+        12783,
+        11957
+      ],
+      "result": "probe-failed",
+      "exception": "Error",
+      "message": "Typed property ModernORM\\Mapping\\ClassMetadata::$typedFieldMapper must not be accessed before initialization",
+      "trace": [
+        "ModernORM\\Mapping\\ClassMetadata->validateAndCompleteTypedFieldMapping",
+        "ModernORM\\Mapping\\ClassMetadata->validateAndCompleteFieldMapping",
+        "ModernORM\\Mapping\\ClassMetadata->mapField",
+        "{closure:<repo>/tools/issue-audit/run.php:26}"
+      ]
+    },
+    {
+      "case": "metadata_typed_mapping_after_cache",
+      "issues": [
+        12783
+      ],
+      "result": "probe-failed",
+      "exception": "Error",
+      "message": "Typed property ModernORM\\Mapping\\ClassMetadata::$typedFieldMapper must not be accessed before initialization",
+      "trace": [
+        "ModernORM\\Mapping\\ClassMetadata->validateAndCompleteTypedFieldMapping",
+        "ModernORM\\Mapping\\ClassMetadata->validateAndCompleteFieldMapping",
+        "ModernORM\\Mapping\\ClassMetadata->mapField",
+        "{closure:<repo>/tools/issue-audit/run.php:31}"
+      ]
+    },
+    {
+      "case": "hooked_generated_identifier_delete",
+      "issues": [
+        12077
+      ],
+      "result": "probe-failed",
+      "exception": "Error",
+      "message": "Cannot unset hooked property ModernORM\\IssueAudit\\HookedId::$id",
+      "trace": [
+        "ModernORM\\IssueAudit\\HookedId->{closure:ModernORM\\Mapping\\PropertyAccessors\\TypedNoDefaultPropertyAccessor::setValue():51}",
+        "ModernORM\\Mapping\\PropertyAccessors\\TypedNoDefaultPropertyAccessor->setValue",
+        "ModernORM\\UnitOfWork->executeDeletions",
+        "ModernORM\\UnitOfWork->{closure:ModernORM\\UnitOfWork::commit():345}",
+        "ModernORM\\UnitOfWork->measurePhase",
+        "ModernORM\\UnitOfWork->commit"
+      ]
+    },
+    {
+      "case": "readonly_datetime_refresh",
+      "issues": [
+        9505
+      ],
+      "result": "probe-failed",
+      "exception": "LogicException",
+      "message": "Attempting to change readonly property ModernORM\\IssueAudit\\ReadonlyDate::$date.",
+      "trace": [
+        "ModernORM\\Mapping\\PropertyAccessors\\ReadonlyAccessor->setValue",
+        "ModernORM\\UnitOfWork->createEntity",
+        "ModernORM\\Internal\\Hydration\\ObjectHydrator->getEntity",
+        "ModernORM\\Internal\\Hydration\\ObjectHydrator->hydrateRowData",
+        "ModernORM\\Internal\\Hydration\\ObjectHydrator->hydrateAllData",
+        "ModernORM\\Internal\\Hydration\\AbstractHydrator->hydrateAll"
+      ]
+    },
+    {
+      "case": "cascade_refresh_new_child",
+      "issues": [
+        7169,
+        10499
+      ],
+      "result": "probe-failed",
+      "exception": "ModernORM\\Exception\\ORMInvalidArgumentException",
+      "message": "Entity ModernORM\\IssueAudit\\Child<isolated> is not managed. An entity is managed if its fetched from the database or registered as new through EntityManager#persist",
+      "trace": [
+        "ModernORM\\Exception\\ORMInvalidArgumentException::entityNotManaged",
+        "ModernORM\\UnitOfWork->doRefresh",
+        "ModernORM\\UnitOfWork->cascadeRefresh",
+        "ModernORM\\UnitOfWork->doRefresh",
+        "ModernORM\\UnitOfWork->refresh",
+        "ModernORM\\EntityManager->refresh"
+      ]
+    },
+    {
+      "case": "indexed_collection_reparent_before_initialization",
+      "issues": [
+        6589,
+        6339,
+        8324,
+        7932,
+        11093,
+        11572,
+        9427
+      ],
+      "result": "not-reproduced"
+    },
+    {
+      "case": "fetch_join_child_reparenting",
+      "issues": [
+        7812,
+        6339
+      ],
+      "result": "not-reproduced"
+    },
+    {
+      "case": "to_one_local_change_survives_old_reference_load",
+      "issues": [
+        8282,
+        8436
+      ],
+      "result": "not-reproduced"
+    },
+    {
+      "case": "lazy_owner_orphan_removal",
+      "issues": [
+        12352
+      ],
+      "result": "probe-failed",
+      "exception": "ModernORM\\Exception\\EntityNotFoundException",
+      "message": "Entity of type 'ModernORM\\IssueAudit\\File' for IDs id(1) was not found",
+      "trace": [
+        "ModernORM\\Exception\\EntityNotFoundException::fromClassNameAndIdentifier",
+        "ModernORM\\Proxy\\ProxyFactory::{closure:ModernORM\\Proxy\\ProxyFactory::getProxy():77}",
+        "ModernORM\\IssueAudit\\File->removed",
+        "ModernORM\\Event\\ListenersInvoker->invoke",
+        "ModernORM\\UnitOfWork->executeDeletions",
+        "ModernORM\\UnitOfWork->{closure:ModernORM\\UnitOfWork::commit():345}"
+      ]
+    },
+    {
+      "case": "cascade_remove_callback_entity",
+      "issues": [
+        7806,
+        6079
+      ],
+      "result": "probe-failed",
+      "exception": "ModernORM\\Exception\\EntityNotFoundException",
+      "message": "Entity of type 'ModernORM\\IssueAudit\\File' for IDs id(1) was not found",
+      "trace": [
+        "ModernORM\\Exception\\EntityNotFoundException::fromClassNameAndIdentifier",
+        "ModernORM\\Proxy\\ProxyFactory::{closure:ModernORM\\Proxy\\ProxyFactory::getProxy():77}",
+        "ModernORM\\IssueAudit\\File->removed",
+        "ModernORM\\Event\\ListenersInvoker->invoke",
+        "ModernORM\\UnitOfWork->executeDeletions",
+        "ModernORM\\UnitOfWork->{closure:ModernORM\\UnitOfWork::commit():345}"
+      ]
+    },
+    {
+      "case": "many_to_many_repository_criteria",
+      "issues": [
+        3752,
+        5770,
+        6173
+      ],
+      "result": "probe-failed",
+      "exception": "AssertionError",
+      "message": "assert($assoc !== null)",
+      "trace": [
+        "assert",
+        "ModernORM\\Persisters\\Entity\\BasicEntityPersister->getSelectConditionStatementColumnSQL",
+        "ModernORM\\Persisters\\Entity\\BasicEntityPersister->getSelectConditionStatementSQL",
+        "ModernORM\\Persisters\\Entity\\BasicEntityPersister->getSelectConditionSQL",
+        "ModernORM\\Persisters\\Entity\\BasicEntityPersister->getSelectSQL",
+        "ModernORM\\Persisters\\Entity\\BasicEntityPersister->loadAll"
+      ]
+    },
+    {
+      "case": "many_to_many_clear_delete_diff",
+      "issues": [
+        4173,
+        2272
+      ],
+      "result": "not-reproduced"
+    },
+    {
+      "case": "native_result_mapping_quoted_select",
+      "issues": [
+        3927
+      ],
+      "result": "probe-failed",
+      "exception": "Doctrine\\DBAL\\Exception\\InvalidFieldNameException",
+      "message": "An exception occurred while executing a query: SQLSTATE[42703]: Undefined column: 7 ERROR:  column q.selectvalue does not exist\nLINE 1: SELECT q.id AS id, q.SelectValue AS selectvalue FROM \"issue_...\n                           ^\nHINT:  Perhaps you meant to reference the column \"q.SelectValue\".",
+      "trace": [
+        "Doctrine\\DBAL\\Driver\\API\\PostgreSQL\\ExceptionConverter->convert",
+        "Doctrine\\DBAL\\Connection->handleDriverException",
+        "Doctrine\\DBAL\\Connection->convertExceptionDuringQuery",
+        "Doctrine\\DBAL\\Connection->executeQuery",
+        "ModernORM\\NativeQuery->_doExecute",
+        "ModernORM\\AbstractQuery->executeIgnoreQueryCache"
+      ]
+    },
+    {
+      "case": "reserved_table_schema_round_trip",
+      "issues": [
+        11898
+      ],
+      "result": "not-reproduced"
+    },
+    {
+      "case": "mapped_superclass_sequence_name",
+      "issues": [
+        12390
+      ],
+      "result": "probe-failed",
+      "exception": "UnexpectedValueException",
+      "message": "Inherited sequence name was lost: <isolated>.sequence_rows_id_seq",
+      "trace": [
+        "ModernORM\\IssueAudit\\check",
+        "{closure:<repo>/tools/issue-audit/run.php:178}"
+      ]
+    },
+    {
+      "case": "metadata_association_override_after_cache",
+      "issues": [
+        12783,
+        11957
+      ],
+      "result": "probe-failed",
+      "exception": "Error",
+      "message": "Typed property ModernORM\\Mapping\\ClassMetadata::$namingStrategy must not be accessed before initialization",
+      "trace": [
+        "ModernORM\\Mapping\\ClassMetadata->_validateAndCompleteAssociationMapping",
+        "ModernORM\\Mapping\\ClassMetadata->setAssociationOverride",
+        "{closure:<repo>/tools/issue-audit/run.php:187}"
+      ]
+    },
+    {
+      "case": "single_inverse_join_column_override",
+      "issues": [
+        11390
+      ],
+      "result": "probe-failed",
+      "exception": "TypeError",
+      "message": "ModernORM\\Mapping\\AssociationOverride::__construct(): Argument #3 ($inverseJoinColumns) must be of type ModernORM\\Mapping\\JoinColumn|array|null, ModernORM\\Mapping\\InverseJoinColumn given, called in <repo>/tools/issue-audit/run.php on line 193",
+      "trace": [
+        "ModernORM\\Mapping\\AssociationOverride->__construct",
+        "{closure:<repo>/tools/issue-audit/run.php:192}"
+      ]
+    },
+    {
+      "case": "inferred_version_type",
+      "issues": [
+        11110
+      ],
+      "result": "not-reproduced"
+    },
+    {
+      "case": "invalid_index_by_validation",
+      "issues": [
+        11608
+      ],
+      "result": "probe-failed",
+      "exception": "UnexpectedValueException",
+      "message": "Invalid indexBy passes mapping validation.",
+      "trace": [
+        "ModernORM\\IssueAudit\\check",
+        "{closure:<repo>/tools/issue-audit/run.php:200}"
+      ]
+    },
+    {
+      "case": "invalid_index_columns",
+      "issues": [
+        11223
+      ],
+      "result": "not-reproduced"
+    },
+    {
+      "case": "conflicting_column_association_attributes",
+      "issues": [
+        7513,
+        5978
+      ],
+      "result": "probe-failed",
+      "exception": "UnexpectedValueException",
+      "message": "Column plus ManyToOne attributes silently discard the association.",
+      "trace": [
+        "{closure:<repo>/tools/issue-audit/run.php:217}"
+      ]
+    },
+    {
+      "case": "invalid_nested_identifier",
+      "issues": [
+        11236,
+        8866
+      ],
+      "result": "not-reproduced"
+    },
+    {
+      "case": "refresh_discards_change_without_phantom_update",
+      "issues": [
+        9201
+      ],
+      "result": "not-reproduced"
+    },
+    {
+      "case": "refresh_does_not_cascade_without_mapping",
+      "issues": [
+        6031
+      ],
+      "result": "not-reproduced"
+    },
+    {
+      "case": "many_to_many_deleted_target_second_flush",
+      "issues": [
+        9124
+      ],
+      "result": "not-reproduced"
+    },
+    {
+      "case": "many_to_many_dirty_collection_refetch",
+      "issues": [
+        10003
+      ],
+      "result": "not-reproduced"
+    },
+    {
+      "case": "query_lock_preserves_managed_local_value",
+      "issues": [
+        6650,
+        3689
+      ],
+      "result": "probe-failed",
+      "exception": "UnexpectedValueException",
+      "message": "A locked query preserves the identity-map local value instead of implicitly refreshing.",
+      "trace": [
+        "ModernORM\\IssueAudit\\check",
+        "{closure:<repo>/tools/issue-audit/run.php:279}"
+      ]
+    },
+    {
+      "case": "repeated_find_lock_local_change",
+      "issues": [
+        12260
+      ],
+      "result": "probe-failed",
+      "exception": "UnexpectedValueException",
+      "message": "A repeated find with a pessimistic lock refreshes away local changes.",
+      "trace": [
+        "ModernORM\\IssueAudit\\check",
+        "{closure:<repo>/tools/issue-audit/run.php:292}"
+      ]
+    },
+    {
+      "case": "rsm_unknown_alias_validation",
+      "issues": [
+        7243
+      ],
+      "result": "probe-failed",
+      "exception": "ErrorException",
+      "message": "Undefined array key \"missing\"",
+      "trace": [
+        "{closure:{closure:<repo>/tools/issue-audit/run.php:306}:309}",
+        "ModernORM\\Query\\ResultSetMapping->addFieldResult",
+        "{closure:<repo>/tools/issue-audit/run.php:306}"
+      ]
+    },
+    {
+      "case": "transaction_decorator_callback",
+      "issues": [
+        7161
+      ],
+      "result": "probe-failed",
+      "exception": "UnexpectedValueException",
+      "message": "Transaction callback receives the wrapped manager instead of the decorator.",
+      "trace": [
+        "ModernORM\\IssueAudit\\check",
+        "{closure:<repo>/tools/issue-audit/run.php:321}"
+      ]
+    },
+    {
+      "case": "native_query_joined_columns_first",
+      "issues": [
+        2633
+      ],
+      "result": "not-reproduced"
+    },
+    {
+      "case": "custom_value_object_scalar_criteria",
+      "issues": [
+        9183
+      ],
+      "result": "not-reproduced"
+    },
+    {
+      "case": "custom_value_object_array_criteria",
+      "issues": [
+        11405,
+        11712
+      ],
+      "result": "not-reproduced"
+    },
+    {
+      "case": "quoted_custom_type_sql_conversion",
+      "issues": [
+        8191,
+        7460
+      ],
+      "result": "probe-failed",
+      "exception": "UnexpectedValueException",
+      "message": "Quoted custom-type write/query SQL conversion disagrees (INSERT may skip convertToDatabaseValueSQL).",
+      "trace": [
+        "ModernORM\\IssueAudit\\check",
+        "{closure:<repo>/tools/issue-audit/run.php:365}"
+      ]
+    },
+    {
+      "case": "datetime_array_repository_criteria",
+      "issues": [
+        6934
+      ],
+      "result": "not-reproduced"
+    },
+    {
+      "case": "ansi_quote_identifier_column_names",
+      "issues": [
+        10014
+      ],
+      "result": "probe-failed",
+      "exception": "UnexpectedValueException",
+      "message": "AnsiQuoteStrategy returns PHP identifier fields instead of mapped column names.",
+      "trace": [
+        "ModernORM\\IssueAudit\\check",
+        "{closure:<repo>/tools/issue-audit/run.php:382}"
+      ]
+    },
+    {
+      "case": "generated_field_local_change_tracking",
+      "issues": [
+        12017
+      ],
+      "result": "probe-failed",
+      "exception": "UnexpectedValueException",
+      "message": "Non-updatable generated field schedules an entity update.",
+      "trace": [
+        "ModernORM\\IssueAudit\\check",
+        "{closure:<repo>/tools/issue-audit/run.php:387}"
+      ]
+    },
+    {
+      "case": "many_to_many_pre_update_old_new_values",
+      "issues": [
+        7426
+      ],
+      "result": "probe-failed",
+      "exception": "UnexpectedValueException",
+      "message": "Collection-only clear does not dispatch the owner entity preUpdate event.",
+      "trace": [
+        "ModernORM\\IssueAudit\\check",
+        "{closure:<repo>/tools/issue-audit/run.php:395}"
+      ]
+    },
+    {
+      "case": "embedded_metadata_nullable",
+      "issues": [
+        7133
+      ],
+      "result": "probe-failed",
+      "exception": "ModernORM\\Exception\\MappingException",
+      "message": "No mapping found for field 'address' on class 'ModernORM\\IssueAudit\\EmbeddedRow'.",
+      "trace": [
+        "ModernORM\\Exception\\MappingException::mappingNotFound",
+        "ModernORM\\Mapping\\ClassMetadata->getFieldMapping",
+        "ModernORM\\Mapping\\ClassMetadata->isNullable",
+        "{closure:<repo>/tools/issue-audit/run.php:417}"
+      ]
+    },
+    {
+      "case": "mapped_superclass_namespace_chain",
+      "issues": [
+        12372
+      ],
+      "result": "not-reproduced"
+    },
+    {
+      "case": "deleted_row_refresh",
+      "issues": [
+        5750
+      ],
+      "result": "probe-failed",
+      "exception": "UnexpectedValueException",
+      "message": "Refreshing a deleted row silently leaves the object managed.",
+      "trace": [
+        "{closure:<repo>/tools/issue-audit/run.php:427}"
+      ]
+    },
+    {
+      "case": "scheduled_delete_preserves_identity",
+      "issues": [
+        11480
+      ],
+      "result": "probe-failed",
+      "exception": "UnexpectedValueException",
+      "message": "A scheduled-delete row is hydrated into the same identity-map instance.",
+      "trace": [
+        "ModernORM\\IssueAudit\\check",
+        "{closure:<repo>/tools/issue-audit/run.php:440}"
+      ]
+    },
+    {
+      "case": "generated_pending_orphan_collection_replacement",
+      "issues": [
+        8133
+      ],
+      "result": "probe-failed",
+      "exception": "UnexpectedValueException",
+      "message": "Discarded new orphan was still inserted before removal.",
+      "trace": [
+        "ModernORM\\IssueAudit\\check",
+        "{closure:<repo>/tools/issue-audit/run.php:448}"
+      ]
+    },
+    {
+      "case": "metadata_asset_filter_create_contract",
+      "issues": [
+        9625
+      ],
+      "result": "probe-failed",
+      "exception": "UnexpectedValueException",
+      "message": "Explicit mapped CREATE SQL is not constrained by the introspection asset filter.",
+      "trace": [
+        "ModernORM\\IssueAudit\\check",
+        "{closure:<repo>/tools/issue-audit/run.php:464}"
+      ]
+    },
+    {
+      "case": "many_to_many_event_values_with_entity_change",
+      "issues": [
+        4076
+      ],
+      "result": "probe-failed",
+      "exception": "UnexpectedValueException",
+      "message": "ManyToMany old event value is not the previous collection.",
+      "trace": [
+        "ModernORM\\IssueAudit\\check",
+        "class@anonymous\u0000<repo>/tools/issue-audit/run.php:474$2->preUpdate",
+        "Doctrine\\Common\\EventManager->dispatchEvent",
+        "ModernORM\\Event\\ListenersInvoker->invoke",
+        "ModernORM\\UnitOfWork->executeUpdates",
+        "ModernORM\\UnitOfWork->{closure:ModernORM\\UnitOfWork::commit():345}"
+      ]
+    },
+    {
+      "case": "custom_enum_type_criteria",
+      "issues": [
+        10432
+      ],
+      "result": "probe-failed",
+      "exception": "InvalidArgumentException",
+      "message": "StateType expects the domain enum, not its raw backing value.",
+      "trace": [
+        "ModernORM\\IssueAudit\\StateType->convertToDatabaseValue",
+        "Doctrine\\DBAL\\Connection->getBindingInfo",
+        "Doctrine\\DBAL\\Connection->bindParameters",
+        "Doctrine\\DBAL\\Connection->executeQuery",
+        "ModernORM\\Persisters\\Entity\\BasicEntityPersister->loadAll",
+        "ModernORM\\EntityRepository->findBy"
+      ]
+    },
+    {
+      "case": "eager_to_one_null_survives_refetch",
+      "issues": [
+        8205
+      ],
+      "result": "not-reproduced"
+    },
+    {
+      "case": "bidi_one_to_one_delete_second_flush",
+      "issues": [
+        11580
+      ],
+      "result": "not-reproduced"
+    },
+    {
+      "case": "collection_add_remove_diff_same_size",
+      "issues": [
+        7365
+      ],
+      "result": "not-reproduced"
+    },
+    {
+      "case": "post_flush_persist_survives_next_flush",
+      "issues": [
+        5732
+      ],
+      "result": "not-reproduced"
+    },
+    {
+      "case": "redundant_fk_index_with_covering_index",
+      "issues": [
+        6783
+      ],
+      "result": "probe-failed",
+      "exception": "UnexpectedValueException",
+      "message": "Redundant single-FK index remains beside a covering compound index.",
+      "trace": [
+        "ModernORM\\IssueAudit\\check",
+        "{closure:<repo>/tools/issue-audit/run.php:576}"
+      ]
+    },
+    {
+      "case": "one_to_one_unique_transfer_before_delete",
+      "issues": [
+        5685
+      ],
+      "result": "probe-failed",
+      "exception": "Doctrine\\DBAL\\Exception\\UniqueConstraintViolationException",
+      "message": "An exception occurred while executing a query: SQLSTATE[23505]: Unique violation: 7 ERROR:  duplicate key value violates unique constraint \"uniq_bf6844793cb796c\"\nDETAIL:  Key (file_id)=(1) already exists.",
+      "trace": [
+        "Doctrine\\DBAL\\Driver\\API\\PostgreSQL\\ExceptionConverter->convert",
+        "Doctrine\\DBAL\\Connection->handleDriverException",
+        "Doctrine\\DBAL\\Connection->convertExceptionDuringQuery",
+        "Doctrine\\DBAL\\Connection->executeStatement",
+        "ModernORM\\Persisters\\Entity\\BasicEntityPersister->updateTable",
+        "ModernORM\\Persisters\\Entity\\BasicEntityPersister->update"
+      ]
+    },
+    {
+      "case": "nested_array_hydration_shared_target_row_order",
+      "issues": [
+        9185
+      ],
+      "result": "not-reproduced"
+    },
+    {
+      "case": "custom_type_collection_index_domain_value",
+      "issues": [
+        10152
+      ],
+      "result": "probe-failed",
+      "exception": "UnexpectedValueException",
+      "message": "Custom-type indexBy uses database encoding rather than the PHP domain representation.",
+      "trace": [
+        "ModernORM\\IssueAudit\\check",
+        "{closure:<repo>/tools/issue-audit/run.php:637}"
+      ]
+    },
+    {
+      "case": "l2_embedded_noop_change_tracking",
+      "issues": [
+        7204
+      ],
+      "result": "not-reproduced"
+    },
+    {
+      "case": "foreign_key_replacement_ddl_statements",
+      "issues": [
+        7202
+      ],
+      "result": "probe-failed",
+      "exception": "UnexpectedValueException",
+      "message": "FK replacement emits separate DROP/ADD statements; apply the plan in a transaction.",
+      "trace": [
+        "ModernORM\\IssueAudit\\check",
+        "{closure:<repo>/tools/issue-audit/run.php:661}"
+      ]
+    },
+    {
+      "case": "cascade_delete_parent_with_featured_child_cycle",
+      "issues": [
+        5665
+      ],
+      "result": "probe-failed",
+      "exception": "ModernORM\\Exception\\CycleDetectedException",
+      "message": "A cycle has been detected, so a topological sort is not possible. The getCycle() method provides the list of nodes that form the cycle.",
+      "trace": [
+        "ModernORM\\Internal\\TopologicalSort->visit",
+        "ModernORM\\Internal\\TopologicalSort->visit",
+        "ModernORM\\Internal\\TopologicalSort->visit",
+        "ModernORM\\Internal\\TopologicalSort->sort",
+        "ModernORM\\Internal\\UnitOfWork\\WriteOrderPlanner->orderDeletes",
+        "ModernORM\\UnitOfWork->computeDeleteExecutionOrder"
+      ]
+    }
+  ],
+  "core_source_baseline": "ad789bc710eff617fcb86e6bc99b84f22572418d",
+  "revision": "working-tree critical persistence fixes",
+  "scope": "Follow-up run; original snapshot/probe evidence is retained unchanged."
+}

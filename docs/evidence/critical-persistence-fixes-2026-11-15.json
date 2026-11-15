@@ -1,0 +1,61 @@
+{
+  "baseline_core": "ad789bc710eff617fcb86e6bc99b84f22572418d",
+  "fix_revision": "working tree",
+  "baseline_focused_run": {
+    "tests": 42,
+    "assertions": 370,
+    "failures": 15,
+    "scope": "Initial regression set plus existing focused tests; excludes one subsequently added deferred-explicit postFlush test."
+  },
+  "new_phpunit_scenarios": 24,
+  "full_suite": {
+    "php84": {
+      "tests": 977,
+      "assertions": 7153,
+      "skipped": 21,
+      "skip_reason": "Redis was not started."
+    },
+    "php85": {
+      "tests": 977,
+      "assertions": 7153,
+      "skipped": 21,
+      "skip_reason": "Redis was not started."
+    }
+  },
+  "diagnostic_changes": [
+    {
+      "case": "to_one_local_change_survives_old_reference_load",
+      "before": "probe-failed",
+      "after": "not-reproduced",
+      "issues": [
+        8282,
+        8436
+      ]
+    },
+    {
+      "case": "eager_to_one_null_survives_refetch",
+      "before": "probe-failed",
+      "after": "not-reproduced",
+      "issues": [
+        8205
+      ]
+    },
+    {
+      "case": "post_flush_persist_survives_next_flush",
+      "before": "probe-failed",
+      "after": "not-reproduced",
+      "issues": [
+        5732
+      ]
+    },
+    {
+      "case": "nested_array_hydration_shared_target_row_order",
+      "before": "probe-failed",
+      "after": "not-reproduced",
+      "issues": [
+        9185
+      ]
+    }
+  ],
+  "diagnostic_case_count": 57
+}

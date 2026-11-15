@@ -9,6 +9,8 @@ Start with the [project README](../README.md) for key features, installation and
 | Architecture and component boundaries | [Architecture](architecture.md) |
 | Tested scenarios and exclusions | [Compatibility matrix](compatibility.md) |
 | Inherited persistence bugs, fixes and limitations | [Persistence audit](persistence-audit.md) |
+| All open upstream issues: applicability, probes and findings | [Doctrine issue audit](doctrine-open-issues-audit.md) |
+| Critical flush/hydration regressions and fixes | [Critical persistence fixes](critical-persistence-fixes.md) |
 | Attributes, identifiers and inheritance boundary | [Mapping scope](mapping-scope.md) |
 | Stored full-text vectors and GIN indexes | [Full-text indexes](full-text-index.md) |
 | Connection-scoped DBAL types | [DBAL type providers](dbal-types.md) |

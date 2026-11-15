@@ -402,6 +402,16 @@ class ObjectHydrator extends AbstractHydrator
                     // PATH B: Single-valued association
                     $reflFieldValue = $reflField->getValue($parentObject);
 
+                    if (! $this->uow->isHydrationRefresh($parentObject, $this->hints) && $this->uow->isToOneAssociationChanged($parentObject, $relationField)) {
+                        // Nested aliases follow the database row, while the parent's local link stays intact.
+                        if (isset($nonemptyComponents[$resultAlias])) {
+                            $resultPointers[$resultAlias] = $this->getEntity($data ?? $this->gatherEntityRowData($row, $resultAlias), $resultAlias);
+                        } else {
+                            unset($resultPointers[$resultAlias]);
+                        }
+                        continue;
+                    }
+
                     if (! $reflFieldValue || isset($this->hints[Query::HINT_REFRESH]) || $this->uow->isUninitializedObject($reflFieldValue)) {
                         // we only need to take action if this value is null,
                         // we refresh the entity or its an uninitialized proxy.
@@ -417,14 +427,12 @@ class ObjectHydrator extends AbstractHydrator
                                 if ($relation->inversedBy !== null) {
                                     $inverseAssoc = $targetClass->associationMappings[$relation->inversedBy];
                                     if ($inverseAssoc->isToOne()) {
-                                        $targetClass->propertyAccessors[$inverseAssoc->fieldName]->setValue($element, $parentObject);
-                                        $this->uow->setOriginalEntityProperty(spl_object_id($element), $inverseAssoc->fieldName, $parentObject);
+                                        $this->uow->hydrateToOneAssociation($element, $inverseAssoc->fieldName, $parentObject, $this->uow->isHydrationRefresh($element, $this->hints));
                                     }
                                 }
                             } else {
                                 // For sure bidirectional, as there is no inverse side in unidirectional mappings
-                                $targetClass->propertyAccessors[$relation->mappedBy]->setValue($element, $parentObject);
-                                $this->uow->setOriginalEntityProperty(spl_object_id($element), $relation->mappedBy, $parentObject);
+                                $this->uow->hydrateToOneAssociation($element, $relation->mappedBy, $parentObject, $this->uow->isHydrationRefresh($element, $this->hints));
                             }
 
                             // Update result pointer
