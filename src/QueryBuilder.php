@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace ModernORM;
 
 use Doctrine\DBAL\Query\QueryBuilder as SqlQueryBuilder;
+use Doctrine\DBAL\ParameterType;
+use ModernORM\Mapping\FullTextIndex;
 use ModernORM\Query\EntityResultPlan;
 use ModernORM\Query\ResultSetMapping;
 
@@ -17,6 +19,9 @@ class QueryBuilder extends SqlQueryBuilder
     private bool $includeDeleted = false;
     private bool $deletedOnly = false;
     private array $joinedAliases = [];
+    /** @var array<string, array<string, array{vector: string, query: string}>> */
+    private array $fullTextSearches = [];
+    private int $fullTextParameterCounter = 0;
 
     public function __construct(private readonly EntityManagerInterface $em)
     {
@@ -152,6 +157,85 @@ class QueryBuilder extends SqlQueryBuilder
     {
         return $this->entities[$alias]->columns[$field]
             ?? throw new \InvalidArgumentException('Unknown mapped SQL field.');
+    }
+
+    /** Append a web-style text search using a registered entity's FullTextIndex. */
+    public function andWhereFullText(string $alias, string $search, ?string $index = null): self
+    {
+        if (trim($search) === '') {
+            throw new \InvalidArgumentException('Full-text search requires nonempty user input.');
+        }
+        $mapping = $this->fullTextIndex($alias, $index);
+        if (isset($this->fullTextSearches[$alias][$mapping->name])) {
+            throw new \LogicException('A full-text search is already registered for this alias and index. Clone an unsearched base builder for alternatives.');
+        }
+        $configuration = $this->bindFullTextParameter($mapping->configuration);
+        $input = $this->bindFullTextParameter($search);
+        $query = 'pg_catalog.websearch_to_tsquery(CAST(' . $configuration . ' AS pg_catalog.regconfig), ' . $input . ')';
+        $vector = $alias . '.' . $this->em->getConnection()->getDatabasePlatform()->quoteSingleIdentifier($mapping->column);
+        $this->fullTextSearches[$alias][$mapping->name] = ['vector' => $vector, 'query' => $query];
+        $this->andWhere($vector . ' @@ ' . $query);
+        return $this;
+    }
+
+    /** Append rank ordering for a previously registered search. Add a unique tie-breaker separately. */
+    public function addOrderByFullTextRank(string $alias, string $direction = 'DESC', ?string $index = null): self
+    {
+        $direction = strtoupper($direction);
+        if (! in_array($direction, ['ASC', 'DESC'], true)) {
+            throw new \InvalidArgumentException('Full-text rank order must be ASC or DESC.');
+        }
+        $this->addOrderBy($this->fullTextRank($alias, $index), $direction);
+        return $this;
+    }
+
+    /** Add a floating-point score to mixed hydration results without adding an entity property. */
+    public function addFullTextRank(string $alias, string $resultAlias = 'rank', ?string $index = null): self
+    {
+        if (strlen($resultAlias) > 63 || ! preg_match('/^[a-zA-Z][a-zA-Z0-9_]*$/D', $resultAlias)
+            || in_array($resultAlias, $this->mapping->scalarMappings, true)) {
+            throw new \InvalidArgumentException('Full-text rank requires a distinct scalar result alias.');
+        }
+        $expression = $this->fullTextRank($alias, $index);
+        $number = count($this->mapping->scalarMappings);
+        do {
+            $column = 'orm_fts_rank_' . ++$number;
+        } while (isset($this->mapping->columnOwnerMap[$column]) || isset($this->mapping->scalarMappings[$column]));
+        return $this->addScalar($expression, $column, $resultAlias, 'float');
+    }
+
+    private function fullTextIndex(string $alias, ?string $name): FullTextIndex
+    {
+        if (! isset($this->entities[$alias], $this->mapping->aliasMap[$alias])) {
+            throw new \InvalidArgumentException('Full-text search requires an alias registered with fromEntity() or addJoinedEntity().');
+        }
+        $indexes = $this->em->getClassMetadata($this->mapping->aliasMap[$alias])->fullTextIndexes;
+        if ($name === null && count($indexes) === 1) {
+            return $indexes[0];
+        }
+        foreach ($indexes as $index) {
+            if ($index->name === $name) {
+                return $index;
+            }
+        }
+        throw new \InvalidArgumentException('Specify an existing FullTextIndex name; omission requires exactly one mapped full-text index.');
+    }
+
+    private function fullTextRank(string $alias, ?string $index): string
+    {
+        $mapping = $this->fullTextIndex($alias, $index);
+        $search = $this->fullTextSearches[$alias][$mapping->name]
+            ?? throw new \LogicException('Call andWhereFullText() for this alias and index before adding its rank.');
+        return 'pg_catalog.ts_rank(' . $search['vector'] . ', ' . $search['query'] . ')';
+    }
+
+    private function bindFullTextParameter(string $value): string
+    {
+        do {
+            $name = '__orm_fts_' . ++$this->fullTextParameterCounter;
+        } while (array_key_exists($name, $this->getParameters()));
+        $this->setParameter($name, $value, ParameterType::STRING);
+        return ':' . $name;
     }
 
     public function addScalar(string $expression, string $column, string $resultAlias, string $type = 'string'): self

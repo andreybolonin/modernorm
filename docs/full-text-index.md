@@ -50,20 +50,48 @@ DBAL's ordinary `Schema` model cannot represent these generated expressions and 
 
 ## Searching and ranking
 
-Use the existing SQL query API. Match the configuration used by the index and bind user input:
+Use the query builder helpers after registering the entity alias. They resolve the vector column and configuration from `FullTextIndex` and bind the input automatically:
 
 ```php
-$query = $em->createQueryBuilder()->fromEntity(Product::class, 'p')
-    ->where('p.search_vector @@ websearch_to_tsquery(:config::regconfig, :search)')
-    ->orderBy('ts_rank(p.search_vector, websearch_to_tsquery(:config::regconfig, :search))', 'DESC')
+$builder = $em->createQueryBuilder()->fromEntity(Product::class, 'p')
+    ->andWhereFullText('p', $userInput)
+    ->addOrderByFullTextRank('p')
     ->addOrderBy('p.id')
-    ->setParameter('config', 'pg_catalog.russian')
-    ->setParameter('search', $userInput)
-    ->getQuery();
-$products = $query->getResult();
+    ->setMaxResults(20);
+$products = $builder->getQuery()->getResult();
 ```
 
-Stored vectors follow database INSERT/UPDATE automatically, including writes outside the ORM. No search methods, score properties or query-language extensions are added. See PostgreSQL's documentation for [stored search vectors](https://www.postgresql.org/docs/17/textsearch-tables.html) and [ranking](https://www.postgresql.org/docs/17/textsearch-controls.html).
+`andWhereFullText()` appends an AND predicate, preserving existing filters and SoftDelete visibility. Call `where()` before it, and use `andWhere()` for further filters; DBAL's `where()` replaces prior predicates. The helper uses `websearch_to_tsquery`: unquoted words are combined with AND, double quotes search a phrase, `OR` introduces alternatives, and `-` excludes a term. Empty/whitespace-only input is rejected. Stopword-only or punctuation-only queries can produce no matches. The language always comes from the mapping, independently of `default_text_search_config`.
+
+`addOrderByFullTextRank()` appends `ts_rank` ordering with `DESC` by default; pass `direction: 'ASC'` for ascending scores. Add it before secondary ordering and include a unique tie-breaker such as the primary key when paging. Ranking uses the vector's mapped A/B/C/D labels and PostgreSQL's default rank weights and normalization.
+
+For a catalog showing relevance scores, add a scalar projection:
+
+```php
+$rows = $em->createQueryBuilder()->fromEntity(Product::class, 'p')
+    ->andWhereFullText('p', $userInput)
+    ->addFullTextRank('p', resultAlias: 'relevance')
+    ->addOrderByFullTextRank('p')->addOrderBy('p.id')
+    ->getQuery()->getResult();
+foreach ($rows as $row) {
+    $product = $row[0];          // Managed Product, with the usual Identity Map.
+    $score = $row['relevance'];  // float; no score property is added to the entity.
+}
+```
+
+The score alias defaults to `rank`. Adding it switches object hydration to the existing mixed entity/scalar result format. Scalar aliases must be distinct identifiers beginning with a letter. Ordering alone retains the ordinary entity result shape.
+
+When an entity has several full-text indexes, specify the attribute's **index name** on every helper; no index is selected implicitly:
+
+```php
+$builder->andWhereFullText('p', $userInput, index: 'product_search')
+    ->addFullTextRank('p', index: 'product_search')
+    ->addOrderByFullTextRank('p', index: 'product_search');
+```
+
+Both ranking helpers reuse the parameters of an earlier `andWhereFullText()` on the same alias/index. Each alias/index accepts one search per builder. Clone an unsearched base builder for alternative queries. Different indexes and explicitly mapped joined aliases can be searched independently; their predicates are combined with AND. Builder clones and `getQuery()` snapshots retain independent bindings and scalar mappings. Internal `__orm_fts_*` parameter names are reserved for the helpers; existing bindings with these names are skipped during allocation.
+
+Stored vectors follow database INSERT/UPDATE automatically, including writes outside the ORM. Direct SQL remains available for custom ranking, OR composition across vectors, highlighting or other PostgreSQL search functions. See PostgreSQL's documentation for [stored search vectors](https://www.postgresql.org/docs/17/textsearch-tables.html) and [query syntax and ranking](https://www.postgresql.org/docs/17/textsearch-controls.html).
 
 ## Supported changes and explicit migrations
 

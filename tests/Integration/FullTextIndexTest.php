@@ -28,6 +28,18 @@ final class FullTextProduct
     public ?string $note = null;
 }
 
+#[ORM\Entity, ORM\Table(name: 'search_notes'), ORM\SoftDelete]
+#[ORM\FullTextIndex(name: 'note_search', fields: ['name' => 'A'], configuration: 'pg_catalog.russian')]
+final class FullTextSearchNote
+{
+    use \ModernORM\Behavior\SoftDeleteTrait;
+
+    #[ORM\Id, ORM\Column(type: 'integer')]
+    public int $id;
+    #[ORM\Column(type: 'text')]
+    public string $name = 'оборудование';
+}
+
 final class FullTextIndexTest extends TestCase
 {
     private EntityManager $em;
@@ -180,6 +192,106 @@ final class FullTextIndexTest extends TestCase
         self::assertCount(1, $sql);
         $this->apply($sql);
         $this->assertConverged($tool);
+    }
+
+    private function seedSearchProducts(): void
+    {
+        foreach ([
+            [1, 'промышленное оборудование', null, 'tools'],
+            [2, 'станок', 'промышленное оборудование', 'other'],
+            [3, 'промышленное оборудование', null, 'tools'],
+            [4, 'оборудование промышленное', null, 'other'],
+            [5, 'промышленное оборудование брак', null, 'other'],
+            [6, 'насос', null, 'tools'],
+        ] as [$id, $name, $description, $note]) {
+            $this->em->getConnection()->executeStatement(
+                'INSERT INTO ' . $this->table . ' (id, "ProductName", description, note) VALUES (?, ?, ?, ?)',
+                [$id, $name, $description, $note],
+            );
+        }
+    }
+
+    public function testSearchHelpersCombineFiltersRankScoresIdentityMapAndPageLimits(): void
+    {
+        $this->create();
+        $this->seedSearchProducts();
+        $managed = $this->em->find(FullTextProduct::class, 1);
+        $builder = $this->em->createQueryBuilder()->fromEntity(FullTextProduct::class, 'p')
+            ->where('p.id <= :maximum')->setParameter('maximum', 3)
+            ->andWhereFullText('p', 'промышленное оборудование')->addFullTextRank('p', 'relevance')
+            ->addOrderByFullTextRank('p')->addOrderBy('p.id');
+        $rows = $builder->getQuery()->getResult();
+        self::assertSame([1, 3, 2], array_map(static fn ($row) => $row[0]->id, $rows));
+        self::assertSame($managed, $rows[0][0]);
+        self::assertIsFloat($rows[0]['relevance']);
+        self::assertGreaterThan($rows[2]['relevance'], $rows[0]['relevance']);
+        self::assertSame($rows[0]['relevance'], $rows[1]['relevance']);
+        $page = (clone $builder)->setFirstResult(1)->setMaxResults(1)->getQuery()->getResult();
+        self::assertCount(1, $page);
+        self::assertSame(3, $page[0][0]->id);
+        self::assertCount(3, $builder->getQuery()->getResult());
+    }
+
+    public static function userSearches(): iterable
+    {
+        yield 'quoted phrase and exclusion' => ['"промышленное оборудование" -брак', [1, 2, 3]];
+        yield 'alternatives' => ['насос OR станок', [2, 6]];
+        yield 'stemming' => ['промышленными', [1, 2, 3, 4, 5]];
+        yield 'stopwords' => ['и', []];
+        yield 'punctuation' => ['" )( \ !', []];
+    }
+
+    #[DataProvider('userSearches')]
+    public function testWebSearchInputUsesTheMappedLanguage(string $input, array $expected): void
+    {
+        $this->create();
+        $this->seedSearchProducts();
+        $this->em->getConnection()->executeStatement("SET default_text_search_config = 'pg_catalog.simple'");
+        $entities = $this->em->createQueryBuilder()->fromEntity(FullTextProduct::class, 'p')
+            ->andWhereFullText('p', $input)->orderBy('p.id')->getQuery()->getResult();
+        self::assertSame($expected, array_map(static fn ($entity) => $entity->id, $entities));
+    }
+
+    public function testSearchHelpersRespectSoftDeleteVisibility(): void
+    {
+        $metadata = $this->em->getClassMetadata(FullTextSearchNote::class);
+        $metadata->table['schema'] = $this->schema;
+        (new SchemaTool($this->em))->createSchema([$metadata]);
+        $deleted = new FullTextSearchNote();
+        $deleted->id = 1;
+        $active = new FullTextSearchNote();
+        $active->id = 2;
+        $this->em->persist($deleted);
+        $this->em->persist($active);
+        $this->em->flush();
+        $this->em->remove($deleted);
+        $this->em->flush();
+        $this->em->clear();
+        foreach (['active' => [2], 'all' => [1, 2], 'deleted' => [1]] as $visibility => $expected) {
+            $builder = $this->em->createQueryBuilder();
+            if ($visibility === 'all') {
+                $builder->withDeleted();
+            } elseif ($visibility === 'deleted') {
+                $builder->onlyDeleted();
+            }
+            $entities = $builder->fromEntity(FullTextSearchNote::class, 'n')->andWhereFullText('n', 'оборудование')
+                ->addOrderByFullTextRank('n')->addOrderBy('n.id')->getQuery()->getResult();
+            self::assertSame($expected, array_map(static fn ($entity) => $entity->id, $entities));
+        }
+    }
+
+    public function testSearchHelpersSelectAndRankExplicitIndexesIndependently(): void
+    {
+        $this->metadata->fullTextIndexes[] = new ORM\FullTextIndex('NoteSearch', ['note' => 'D'], 'pg_catalog.simple', 'NoteVector');
+        $this->create();
+        $this->seedSearchProducts();
+        $rows = $this->em->createQueryBuilder()->fromEntity(FullTextProduct::class, 'p')
+            ->andWhereFullText('p', 'оборудование', index: 'ProductSearch')
+            ->andWhereFullText('p', 'tools', index: 'NoteSearch')
+            ->addFullTextRank('p', 'relevance', index: 'ProductSearch')
+            ->addOrderByFullTextRank('p', index: 'ProductSearch')->addOrderBy('p.id')->getQuery()->getResult();
+        self::assertSame([1, 3], array_map(static fn ($row) => $row[0]->id, $rows));
+        self::assertIsFloat($rows[0]['relevance']);
     }
 
     public function testRemovingAttributeRequiresExplicitMigration(): void

@@ -5,6 +5,7 @@ parameters:
     level: 5
     paths:
         - src
+        - tests/Unit/FullTextQueryBuilderTest.php
         - tests/Unit/FullTextMappingTest.php
         - tests/Unit/FullTextExpressionTest.php
         - tests/Integration/FullTextIndexTest.php

@@ -115,3 +115,7 @@ ORM Filters and Criteria SQL are absent. Applications add tenant/access predicat
 - Use DBAL's expression builder. Replace old paginators with the explicit root-ID helper or application SQL.
 
 There is no drop-in doctrine/orm compatibility layer. Retained persistence concepts do not imply query API compatibility.
+
+## Full-text search
+
+For entities with `#[FullTextIndex]`, use `andWhereFullText()` to bind a web-style search using the mapped language and vector column. `addOrderByFullTextRank()` orders matches; `addFullTextRank()` adds a float score to mixed results. See [full-text search examples and constraints](full-text-index.md#searching-and-ranking).
