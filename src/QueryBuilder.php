@@ -306,7 +306,7 @@ class QueryBuilder extends SqlQueryBuilder
     {
         $roots = array_diff_key($this->mapping->aliasMap, $this->mapping->parentAliasMap);
         if ($this->cursorUnsupportedOperation || $this->customResultSetMapping || count($roots) !== 1
-            || $this->mapping->scalarMappings !== [] || array_filter($this->mapping->partialAliases) !== []
+            || $this->mapping->scalarMappings !== []
             || $this->getFirstResult() !== 0 || $this->getMaxResults() !== null) {
             throw new \InvalidArgumentException('Cursor pagination requires an unlimited entity-only SELECT with one fromEntity() root, without a custom result mapping, UNION, CTEs, writes or row locks.');
         }

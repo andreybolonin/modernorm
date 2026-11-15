@@ -211,12 +211,6 @@ parameters:
 			path: src/Persisters/Entity/BasicEntityPersister.php
 
 		-
-			message: '#^Anonymous function has an unused use \$classMetadata\.$#'
-			identifier: closure.unusedUse
-			count: 1
-			path: src/Proxy/ProxyFactory.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>relationMap" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 1
@@ -425,24 +419,6 @@ parameters:
 			identifier: return.unusedType
 			count: 1
 			path: src/Query/ParameterTypeInferer.php
-
-		-
-			message: '#^PHPDoc tag @param references unknown parameter\: \$alias$#'
-			identifier: parameter.notFound
-			count: 1
-			path: src/Query/ResultSetMapping.php
-
-		-
-			message: '#^PHPDoc tag @param references unknown parameter\: \$discrColumn$#'
-			identifier: parameter.notFound
-			count: 1
-			path: src/Query/ResultSetMapping.php
-
-		-
-			message: '#^PHPDoc tag @return with type \$this\(ModernORM\\Query\\ResultSetMapping\) is incompatible with native type void\.$#'
-			identifier: return.phpDocType
-			count: 1
-			path: src/Query/ResultSetMapping.php
 
 		-
 			message: '#^Parameter \#2 \$command of static method ModernORM\\Tools\\Console\\ConsoleRunner\:\:addCommandToApplication\(\) expects Symfony\\Component\\Console\\Command\\Command, Doctrine\\DBAL\\Tools\\Console\\Command\\ReservedWordsCommand given\.$#'

@@ -74,8 +74,4 @@ class HydrationException extends Exception implements ORMException
         ));
     }
 
-    public static function partialObjectHydrationDisallowed(): self
-    {
-        return new self('Hydration of entity objects is not allowed when the SQL result mapping is partial.');
-    }
 }

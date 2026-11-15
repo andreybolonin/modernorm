@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace ModernORM\Query;
 
+use ModernORM\EntityManagerInterface;
+use ModernORM\Exception\MappingException;
+
 use function count;
 
 /**
@@ -43,7 +46,7 @@ class ResultSetMapping
     public array $aliasMap = [];
 
     /**
-     * Whether this alias is for a partially loaded entity
+     * Legacy rejection marker. Partial managed entities are no longer supported.
      *
      * @var array<string, bool>
      */
@@ -227,33 +230,64 @@ class ResultSetMapping
     }
 
     /**
-     * Mark alias as partial entity result to this ResultSetMapping.
+     * Reject the obsolete partial managed entity marker.
      */
     public function markPartialEntityResult(string $alias): static
     {
-        $this->partialAliases[$alias] = true;
-
-        return $this;
+        throw new MappingException('Partial managed entity hydration is not supported. Use full entities or row/scalar/DTO projections.');
     }
 
-    /**
-     * Sets a discriminator column for an entity result or joined entity result.
-     * The discriminator column will be used to determine the concrete class name to
-     * instantiate.
-     *
-     * @param string $alias       The alias of the entity result or joined entity result the discriminator
-     *                            column should be used for.
-     * @param string $discrColumn The name of the discriminator column in the SQL result set.
-     *
-     * @return $this
-     *
-     * @todo Rename: addDiscriminatorColumn
-     */
+    /** Reject legacy mapping flags for unsupported features. */
     public function assertSupportedMapping(): void
     {
+        if (array_filter($this->partialAliases) !== []) {
+            throw new MappingException('Partial managed entity hydration is not supported. Use full entities or row/scalar/DTO projections.');
+        }
         if ($this->discriminatorColumns !== []) {
             throw new \ModernORM\Exception\MappingException('Discriminator result mapping is not supported; entity inheritance has been removed.');
         }
+    }
+
+    /**
+     * @internal Validate managed entity projections and return their SQL result columns.
+     * @return list<string>
+     */
+    public function getEntityColumnNames(EntityManagerInterface $em): array
+    {
+        $this->assertSupportedMapping();
+        $columns = [];
+        foreach ($this->aliasMap as $alias => $className) {
+            $class = $em->getClassMetadata($className);
+            $fields = [];
+            $meta = [];
+            foreach ($this->columnOwnerMap as $column => $owner) {
+                if ($owner !== $alias || isset($this->newObjectMappings[$column])) {
+                    continue;
+                }
+                if (isset($this->fieldMappings[$column])) {
+                    $fields[$this->fieldMappings[$column]] = true;
+                } elseif (isset($this->metaMappings[$column])) {
+                    $meta[$this->metaMappings[$column]] = true;
+                }
+                $columns[] = $column;
+            }
+            $missing = array_keys(array_diff_key($class->fieldMappings, $fields));
+            foreach ($class->associationMappings as $association) {
+                if (! $association->isToOneOwningSide()) {
+                    continue;
+                }
+                foreach ($association->joinColumns as $column) {
+                    if (! isset($meta[$column->name])) {
+                        $missing[] = $column->name;
+                    }
+                }
+            }
+            if ($missing !== []) {
+                throw new MappingException('Partial managed entity hydration is not supported: ' . $alias . ' (' . $className
+                    . ') is missing ' . implode(', ', $missing) . '. Use full entities or row/scalar/DTO projections.');
+            }
+        }
+        return $columns;
     }
 
     public function setDiscriminatorColumn(string $alias, string $discrColumn): static
@@ -415,13 +449,12 @@ class ResultSetMapping
      */
     public function addJoinedEntityResult(string $class, string $alias, string $parentAlias, string $relation, bool $isPartial = false): static
     {
+        if ($isPartial) {
+            throw new MappingException('Partial managed entity hydration is not supported. Use full entities or row/scalar/DTO projections.');
+        }
         $this->aliasMap[$alias]       = $class;
         $this->parentAliasMap[$alias] = $parentAlias;
         $this->relationMap[$alias]    = $relation;
-
-        if ($isPartial) {
-            $this->partialAliases[$alias] = true;
-        }
 
         return $this;
     }

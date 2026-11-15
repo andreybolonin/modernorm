@@ -541,25 +541,25 @@ final class L2BatchFetchingTest extends TestCase
         self::assertEqualsCanonicalizing(['USD', 'GBP'], array_values($this->recorder->parameters[0]));
     }
 
-    public function testPartialPeerUsesSingleLoadWithoutLosingLocalFields(): void
+    public function testFullPeerKeepsLocalFieldsAndIsExcludedFromBatch(): void
     {
         $mapping = new \ModernORM\Query\ResultSetMapping();
         $mapping->addEntityResult(L2BatchCurrency::class, 'c');
         $mapping->addFieldResult('c', 'code', 'code');
         $mapping->addFieldResult('c', 'name', 'name');
-        $mapping->partialAliases['c'] = true;
-        $peer = $this->em->createNativeQuery("SELECT code, name FROM modernorm_test_l2_batch_currencies WHERE code = 'EUR'", $mapping)->getSingleResult();
+        $mapping->addFieldResult('c', 'changed_at', 'changedAt');
+        $peer = $this->em->createNativeQuery("SELECT code, name, changedAt AS changed_at FROM modernorm_test_l2_batch_currencies WHERE code = 'EUR'", $mapping)->getSingleResult();
         $peer->name = 'local';
         $documents = $this->documents();
         $this->reset();
         self::assertSame('USD', $documents[0]->currency->name);
         self::assertSame($peer, $documents[1]->currency);
-        self::assertTrue($this->em->isUninitializedObject($peer));
+        self::assertFalse($this->em->isUninitializedObject($peer));
         self::assertSame('2026-01-01', $peer->changedAt->format('Y-m-d'));
         self::assertSame('local', $peer->name);
         self::assertSame('EUR', $this->em->getUnitOfWork()->getOriginalEntityData($peer)['name']);
-        self::assertSame(2, $this->statistics->snapshot()->sqlCount);
-        self::assertSame(['partial_reference' => 1], $this->statistics->snapshot()->batch->fallbackCounts);
+        self::assertSame(1, $this->statistics->snapshot()->sqlCount);
+        self::assertSame([], $this->statistics->snapshot()->batch->fallbackCounts);
     }
 
     public function testFailedSqlDoesNotHydrateCacheHitsAndQueueRemainsRetryable(): void

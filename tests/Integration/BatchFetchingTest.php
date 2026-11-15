@@ -281,20 +281,20 @@ final class BatchFetchingTest extends TestCase
         self::assertSame(2, $this->statistics->snapshot()->sqlCount);
     }
 
-    public function testPartialEntityIsExcludedFromPeerBatch(): void
+    public function testFullyLoadedEntityIsExcludedFromPeerBatch(): void
     {
         $mapping = new \ModernORM\Query\ResultSetMapping();
         $mapping->addEntityResult(BatchTarget::class, 't');
         $mapping->addFieldResult('t', 'id', 'id');
-        $mapping->partialAliases['t'] = true;
-        $partial = $this->em->createNativeQuery('SELECT id FROM modernorm_test_batch_targets WHERE id = 1', $mapping)->getSingleResult();
+        $mapping->addFieldResult('t', 'name', 'name');
+        $loaded = $this->em->createNativeQuery('SELECT id, name FROM modernorm_test_batch_targets WHERE id = 1', $mapping)->getSingleResult();
         $owners = $this->owners();
-        self::assertSame($partial, $owners[0]->target);
+        self::assertSame($loaded, $owners[0]->target);
         $this->statistics->reset();
         self::assertSame('target-2', $owners[1]->target->name);
-        self::assertTrue($this->em->isUninitializedObject($partial));
-        self::assertSame('target-1', $partial->name);
-        self::assertSame(2, $this->statistics->snapshot()->sqlCount);
+        self::assertFalse($this->em->isUninitializedObject($loaded));
+        self::assertSame('target-1', $loaded->name);
+        self::assertSame(1, $this->statistics->snapshot()->sqlCount);
     }
 
     public function testReferencesFromAnotherManagerAreNotBatched(): void

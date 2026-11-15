@@ -27,6 +27,7 @@ class SimpleObjectHydrator extends AbstractHydrator
 
     protected function prepare(): void
     {
+        $this->prepareEntityMapping();
         if (count($this->resultSetMapping()->aliasMap) !== 1) {
             throw new RuntimeException('Cannot use SimpleObjectHydrator with a ResultSetMapping that contains more than one object result.');
         }
@@ -37,7 +38,6 @@ class SimpleObjectHydrator extends AbstractHydrator
 
         $this->class = $this->getClassMetadata(reset($this->resultSetMapping()->aliasMap));
 
-        $this->hints['isPartial'] = count($this->rsm->partialAliases) > 0;
     }
 
     protected function cleanup(): void
@@ -70,6 +70,7 @@ class SimpleObjectHydrator extends AbstractHydrator
      */
     protected function hydrateRowData(array $row, array &$result): void
     {
+        $this->assertCompleteEntityRow($row);
         assert($this->class !== null);
         $entityName       = $this->class->name;
         $data             = [];

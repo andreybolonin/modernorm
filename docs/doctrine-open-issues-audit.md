@@ -1,6 +1,6 @@
 # Open Doctrine ORM issue audit — 2026-11-15
 
-EXTRA_LAZY has subsequently been [removed](extra-lazy-removal.md). Inventory classifications and historical evidence retain their original meaning; they do not imply that this mode is still supported.
+EXTRA_LAZY and partial managed entity hydration have subsequently been removed ([collections](extra-lazy-removal.md), [entity projections](partial-entity-removal.md)). Inventory classifications and historical evidence retain their original meaning; they do not imply that this mode is still supported.
 
 This is an issue inventory and a bounded executable audit of ModernORM, not a claim that every variant of every Doctrine bug is fixed. The initial audit did not change production ORM code. The [critical fix pass](critical-persistence-fixes.md) resolves four baseline problem families; the [first P1 mapping fix pass](p1-mapping-fixes.md) resolves four more in their linked regression scenarios. The initial audit used core `ad789bc`. Subsequent fixes are committed in `46eb4b8`, `e98c822`, `b70f8f5` and `eb60f37`; the table below records their current status. The [cascade refresh pass](p1-cascade-refresh-fixes.md) and [generated-field tracking pass](p1-generated-tracking-fixes.md) resolve two additional families. Doctrine status is a dated snapshot, not a permanent property of an issue.
 
@@ -26,7 +26,7 @@ The complete paginated GitHub API snapshot contains **335 open non-PR issues**, 
 | [P1 cascade refresh](p1-cascade-refresh-fixes.md) | This fix pass | 1 | 2 |
 | [P1 generated-field tracking](p1-generated-tracking-fixes.md) | This fix pass | 1 | 1 |
 
-The latest full PHPUnit suite reports **1071 tests / 7622 assertions / 21 skipped Redis tests** on each PHP version. The initial suite reported 953 tests / 6929 assertions; the separate 57 diagnostics are not PHPUnit regression tests. Follow-up reports link the regression coverage and diagnostic outcomes for each fix pass. Redis was not started, so this audit adds no new Redis concurrency certification.
+The latest full PHPUnit suite reports **1094 tests / 7683 assertions / 21 skipped Redis tests** on each PHP version. The initial suite reported 953 tests / 6929 assertions; the separate 57 diagnostics are not PHPUnit regression tests. Follow-up reports link the regression coverage and diagnostic outcomes for each fix pass. Redis was not started, so this audit adds no new Redis concurrency certification.
 
 The classification counts below describe the original snapshot. Fixed entries retain their historical baseline classification and carry a separate follow-up status.
 

@@ -10,7 +10,7 @@ This matrix includes READ_ONLY and UPDATE/invalidate behavior. **Implemented** m
 | Reads | Uncached targets with L2 enabled | ManyToOne/OneToMany/ManyToMany retain batching |
 | Reads | findBy/count/native/entity SQL | Ordinary SQL path, without automatic L2 result caching/fill |
 | Reads | EAGER/fetch joins | SQL path; no graph result cache |
-| Reads | Partial objects | Partial state is not published to L2; full lazy loading retains partial-field rules |
+| Reads | Partial managed objects | Removed from Query/RSM; full entities and native lazy references remain supported. [Migration](partial-entity-removal.md) |
 | Reads | Missing row | No negative cache; a missing trigger raises the ordinary lazy-load error |
 | Reads | Invalid/incompatible entry | Class/ID/signature/shape validation; invalid entries become misses, while conversion/backend errors are not hidden |
 | Data | Flat entity, scalar PK | Supported scope |

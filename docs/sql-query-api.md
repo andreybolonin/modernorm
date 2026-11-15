@@ -20,7 +20,7 @@ $builder->where($builder->column('c', 'address.city').' = :city')
     ->setParameter('city', 'Kazan');
 ```
 
-`fromEntity()` constructs a complete field/FK projection, SQL and ResultSetMapping for a concrete entity. MappedSuperclass fields belong to its concrete entity table; the superclass is not a query root. Replacing the projection with `select()` after `fromEntity()` is rejected to prevent accidental managed partial entities. Use a separate SQL builder for projections.
+`fromEntity()` constructs a complete field/FK projection, SQL and ResultSetMapping for a concrete entity. MappedSuperclass fields belong to its concrete entity table; the superclass is not a query root. Replacing the projection with `select()` after `fromEntity()` is rejected to prevent accidental managed partial entities. Use a separate SQL builder for projections. Partial managed entities are removed: manual RSM mappings must include every mapped scalar/embedded field and owning to-one FK for each managed alias, and SQL must return those columns. Nullable columns must be present even when null. See the [migration guide](partial-entity-removal.md).
 
 ## Rows and scalars
 

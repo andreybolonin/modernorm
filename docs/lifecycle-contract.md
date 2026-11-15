@@ -12,7 +12,7 @@ This is the tested boundary for ordinary entity writes. Bulk BYPASS, native SQL 
 | postPersist / postUpdate / postRemove | Do not rely on newly scheduled work being incorporated into the executing write cycle |
 | postFlush | Completed queues are cleaned; a direct scalar change on an already managed object can be detected by the next explicit flush. Scheduling new entities or explicit work here is outside the certified contract |
 
-Nested flush is rejected before re-entering UnitOfWork. Lazy loading preserves already loaded local values and their original baseline; explicit refresh overwrites them. Partial native SQL hydration and full-object initialization retain a single Identity Map instance.
+Nested flush is rejected before re-entering UnitOfWork. Full entity queries preserve managed local changes; explicit refresh overwrites them. Native lazy initialization retains a single Identity Map instance. Partial managed entity projections are [removed](partial-entity-removal.md).
 
 ## Failures
 

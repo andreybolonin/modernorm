@@ -48,7 +48,7 @@ SQL, flush and batch times overlap and must not be added together. Batch time in
 
 The queue records a fallback only when initialization chooses the ordinary loader. Candidate registration/filtering and scanning other pending objects do not generate fallback counts.
 
-Reasons are bounded enum values: size_one, partial_reference, cached_target, reentrant, not_queued, unmanaged, manager_closed, pending_delete, replaced_collection, unsupported_join and already_initialized. A fallback does not count as a selected batch and does not claim that the following single load succeeded.
+The historical `partial_reference` label remains a defensive fallback for native references with a nonempty snapshot; it does not enable partial SQL hydration. Reasons are bounded enum values: size_one, partial_reference, cached_target, reentrant, not_queued, unmanaged, manager_closed, pending_delete, replaced_collection, unsupported_join and already_initialized. A fallback does not count as a selected batch and does not claim that the following single load succeeded.
 
 Reference fallback events describe the reference queue, which also sees unqueued direct getReference/one-to-one ghosts. They cannot identify the originating association. ManyToOne batches group by target class and effective size across associations, so association is null. Collection events include the stable `SourceClass::field` role. configuredSize is zero when a reference was not queued and its effective size is unknown.
 
@@ -103,4 +103,4 @@ When disabled, no measurements/events are allocated and no timing clocks are rea
 
 ## Verification
 
-BatchStatisticsTest verifies disabled mode, immutable aggregates, per-kind totals, timestamps/outcomes, reset/toggle generations, bounded fallback reasons, exporter exception isolation and recursive suppression. PostgreSQL L2BatchFetchingTest verifies real group sizes, mixed cache counters, collection kinds, empty owners, cached-target/partial/reentrant fallback, failed SQL attempts, reset during PostLoad, disabled collection and observer failure preserving database behavior. Existing batching/L2 and SQL/flush suites remain regression coverage.
+BatchStatisticsTest verifies disabled mode, immutable aggregates, per-kind totals, timestamps/outcomes, reset/toggle generations, bounded fallback reasons, exporter exception isolation and recursive suppression. PostgreSQL L2BatchFetchingTest verifies real group sizes, mixed cache counters, collection kinds, empty owners, cached-target/reentrant fallback, failed SQL attempts, reset during PostLoad, disabled collection and observer failure preserving database behavior. Existing batching/L2 and SQL/flush suites remain regression coverage.

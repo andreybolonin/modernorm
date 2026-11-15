@@ -324,7 +324,7 @@ final class FlushBoundaryAuditTest extends TestCase
         $this->assertNextFlushDoesNoDml();
     }
 
-    public function testOnFlushLazyInitializationPreservesLocalValueAndExplicitRecompute(): void
+    public function testOnFlushFullEntityPreservesLocalValueAndExplicitRecompute(): void
     {
         $this->seed();
         $this->em->clear();
@@ -332,11 +332,12 @@ final class FlushBoundaryAuditTest extends TestCase
         $mapping->addEntityResult(FlushBoundaryRecord::class, 'r');
         $mapping->addFieldResult('r', 'id', 'id');
         $mapping->addFieldResult('r', 'note', 'note');
-        $mapping->partialAliases['r'] = true;
-        $record = $this->em->createNativeQuery('SELECT id, note FROM modernorm_test_flush_boundaries', $mapping)->getSingleResult();
+        $mapping->addFieldResult('r', 'name', 'name');
+        $mapping->addFieldResult('r', 'created_at', 'createdAt');
+        $record = $this->em->createNativeQuery('SELECT id, note, name, createdAt AS created_at FROM modernorm_test_flush_boundaries', $mapping)->getSingleResult();
         self::assertInstanceOf(FlushBoundaryRecord::class, $record);
         $record->note = 'local-before-init';
-        self::assertTrue($this->em->isUninitializedObject($record));
+        self::assertFalse($this->em->isUninitializedObject($record));
         $calls = 0;
         $this->listen(Events::onFlush, function () use ($record, &$calls): void {
             if (++$calls !== 1) {
@@ -344,7 +345,7 @@ final class FlushBoundaryAuditTest extends TestCase
             }
             self::assertSame('original', $record->name);
             self::assertSame('local-before-init', $record->note);
-            self::assertNull($this->em->getUnitOfWork()->getOriginalEntityData($record)['note']);
+            self::assertSame('local-before-init', $this->em->getUnitOfWork()->getOriginalEntityData($record)['note']);
             $this->em->getUnitOfWork()->recomputeSingleEntityChangeSet($this->em->getClassMetadata(FlushBoundaryRecord::class), $record);
         });
         $this->em->flush();

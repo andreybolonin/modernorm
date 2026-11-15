@@ -707,6 +707,9 @@ abstract class AbstractQuery
      */
     public function setHint(string $name, mixed $value): static
     {
+        if ($value && in_array($name, ['isPartial', 'modernorm.partial', 'doctrine.forcePartialLoad'], true)) {
+            throw new ORMMappingException('Partial managed entity hydration is not supported. Use full entities or row/scalar/DTO projections.');
+        }
         $this->hints[$name] = $value;
 
         return $this;
@@ -772,9 +775,17 @@ abstract class AbstractQuery
         if ($rsm->isMixed) {
             throw new LogicException('Streaming mixed entity/scalar results is not supported.');
         }
+        $this->assertCompleteEntityMapping();
         $stmt = $this->_doExecute();
 
         return $this->em->newHydrator($this->hydrationMode)->toIterable($stmt, $rsm, $this->hints);
+    }
+
+    private function assertCompleteEntityMapping(): void
+    {
+        if ($this->hydrationMode === self::HYDRATE_OBJECT || $this->hydrationMode === self::HYDRATE_SIMPLEOBJECT || is_string($this->hydrationMode)) {
+            $this->getResultSetMapping()?->getEntityColumnNames($this->em);
+        }
     }
 
     /**
@@ -808,6 +819,7 @@ abstract class AbstractQuery
             $this->setParameters($parameters);
         }
 
+        $this->assertCompleteEntityMapping();
         $setCacheEntry = static function ($data): void {
         };
 
@@ -886,6 +898,7 @@ abstract class AbstractQuery
         $queryCacheProfile      = $this->getHydrationCacheProfile();
         $hints                  = $this->getHints();
         $hints['hydrationMode'] = $this->getHydrationMode();
+        $hints['entityHydrationContract'] = 'full-v1';
 
         ksort($hints);
         assert($queryCacheProfile !== null);

@@ -54,6 +54,7 @@ class ObjectHydrator extends AbstractHydrator
 
     protected function prepare(): void
     {
+        $this->prepareEntityMapping();
         $this->customGatherRowData = (new ReflectionMethod($this, 'gatherRowData'))->getDeclaringClass()->name !== AbstractHydrator::class;
 
         if (! isset($this->hints[UnitOfWork::HINT_DEFEREAGERLOAD])) {
@@ -242,7 +243,6 @@ class ObjectHydrator extends AbstractHydrator
         }
 
         $this->hints['fetchAlias'] = $resultAlias;
-        $this->hints['isPartial']  = $this->rsm->partialAliases[$resultAlias] ?? false;
 
         return $this->uow->createEntity($className, $data, $this->hints);
     }
@@ -280,6 +280,7 @@ class ObjectHydrator extends AbstractHydrator
      */
     protected function hydrateRowData(array $row, array &$result): void
     {
+        $this->assertCompleteEntityRow($row);
         $rsm = $this->resultSetMapping();
 
         // Initialize

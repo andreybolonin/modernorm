@@ -19,10 +19,11 @@ The local core suite passed **418 tests / 2170 assertions** on PHP **8.4.27 and 
 | Associations and collections | Verified cases | Four association kinds, owning/inverse, cascades and orphan removal; not every combination |
 | Native lazy objects | Verified cases | Final entities, ID access without initialization, explicit initialization and missing rows; PHP readonly classes/properties not separately certified |
 | Immutable | Verified cases | INSERT/DELETE/schema management; ignored field/embedded/FK updates; mutable children, cascades/orphans, M:N links, versions/callbacks, lazy/refresh/cache metadata; [contract](immutable-entities.md) |
-| ManyToOne batching | Bounded | Scalar/string IDs, shared identities/sizes, size-one opt-out, missing/partial peers, lifecycle; cached targets combine L2 hits with one SQL IN for misses; transactional reads bypass L2 |
+| ManyToOne batching | Bounded | Scalar/string IDs, shared identities/sizes, size-one opt-out, missing/loaded peers, lifecycle; cached targets combine L2 hits with one SQL IN for misses; transactional reads bypass L2 |
 | OneToMany batching | Bounded | FK IN, empty owners, role queues, OrderBy/indexBy, string PKs, pending work, orphan removal, immutable owners, retry/lifecycle and fetch-mode/L2 fallback; [contract](collection-batch-fetching.md) |
 | ManyToMany batching | Bounded | Owning/inverse, shared/self-referencing targets, memberships, ordering/indexing, empty owners and pending changes; [contract](many-to-many-batch-fetching.md) |
 | EXTRA_LAZY | Removed | LAZY/EAGER mappings only; use [Association Query API](association-query-api.md) for explicit database operations. [Migration](extra-lazy-removal.md) |
+| Partial managed entity hydration | Removed | Complete field/embedded/FK mappings required; row/scalar/DTO/array projections and native lazy references remain supported. [Migration](partial-entity-removal.md) |
 | SQL QueryBuilder/Query | Verified cases | Concrete projections, mapped columns, parameters/arrays, entity/scalar/mixed/array hydration, CTE, cloned bindings/hints and plain streaming |
 | Explicit association fetch | Bounded | To-one/to-many joins, root deduplication, empty collections and Identity Map; filtered collections must not be represented as complete automatically |
 | Collection pagination | Verified cases | Explicit root-ID builder, count/offset/empty page/bindings/full collections; one scalar ID and application-managed scope/order |

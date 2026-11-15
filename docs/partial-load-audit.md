@@ -1,5 +1,7 @@
 # Partial-load tracking boundary and regression audit
 
+Historical report: partial managed entity hydration and PartialLoadTracker have since been [removed/replaced](partial-entity-removal.md). FullEntityLoadingTest preserves the applicable full-load/native-reference cases; CompleteEntityProjectionTest verifies rejection of partial entity projections.
+
 `Internal/UnitOfWork/PartialLoadTracker` records which scalar fields of a partially loaded object are known to be loaded. It uses weak object keys, returns field-list snapshots, selects known values from a supplied snapshot and forgets tracking on completion or context cleanup. It never reads properties, performs SQL, modifies entity data or dispatches lifecycle events.
 
 An empty field list represents a tracked association reference with no loaded scalar fields; null means that the object is not tracked. Loaded null values are retained when selecting known snapshot fields. Weak keys do not keep entities alive and do not transfer state to another object when PHP reuses an object ID.

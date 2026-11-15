@@ -19,7 +19,7 @@ use Doctrine\DBAL\DriverManager;
 use ModernORM\EntityManager;
 use ModernORM\Mapping as ORM;
 use ModernORM\ORMSetup;
-use ModernORM\Query\ResultSetMapping;
+use ModernORM\Query\ResultSetMappingBuilder;
 use ModernORM\Statistics;
 use ModernORM\Statistics\Middleware;
 use ModernORM\Tools\SchemaTool;
@@ -29,7 +29,7 @@ use Symfony\Component\Cache\Adapter\ArrayAdapter;
 use WeakReference;
 
 #[ORM\Entity, ORM\Table(name: 'modernorm_test_partial_tracking')]
-final class PartialTrackingRecord
+final class FullLoadingRecord
 {
     #[ORM\Id, ORM\Column]
     public int $id = 1;
@@ -50,26 +50,26 @@ final class PartialTrackingRecord
 }
 
 #[ORM\Entity, ORM\Table(name: 'modernorm_test_partial_details')]
-final class PartialTrackingDetail
+final class FullLoadingDetail
 {
     #[ORM\Id, ORM\Column]
     public int $id = 1;
 
-    #[ORM\OneToOne(targetEntity: PartialTrackingOwner::class, mappedBy: 'detail')]
-    public ?PartialTrackingOwner $owner = null;
+    #[ORM\OneToOne(targetEntity: FullLoadingOwner::class, mappedBy: 'detail')]
+    public ?FullLoadingOwner $owner = null;
 }
 
 #[ORM\Entity, ORM\Table(name: 'modernorm_test_partial_owners')]
-final class PartialTrackingOwner
+final class FullLoadingOwner
 {
     #[ORM\Id, ORM\Column]
     public int $id = 1;
 
-    #[ORM\OneToOne(targetEntity: PartialTrackingDetail::class, inversedBy: 'owner')]
-    public ?PartialTrackingDetail $detail = null;
+    #[ORM\OneToOne(targetEntity: FullLoadingDetail::class, inversedBy: 'owner')]
+    public ?FullLoadingDetail $detail = null;
 }
 
-final class PartialLoadTrackingTest extends TestCase
+final class FullEntityLoadingTest extends TestCase
 {
     private EntityManager $em;
     private Statistics $statistics;
@@ -84,7 +84,7 @@ final class PartialLoadTrackingTest extends TestCase
             'port' => getenv('PGPORT') ?: 5432, 'user' => getenv('PGUSER') ?: 'postgres',
             'password' => getenv('PGPASSWORD') ?: 'postgres', 'dbname' => getenv('PGDATABASE') ?: 'modernorm_test',
         ], $dbal), ORMSetup::createAttributeMetadataConfig([__DIR__], true, cache: new ArrayAdapter()));
-        $metadata = array_map($this->em->getClassMetadata(...), [PartialTrackingRecord::class, PartialTrackingDetail::class, PartialTrackingOwner::class]);
+        $metadata = array_map($this->em->getClassMetadata(...), [FullLoadingRecord::class, FullLoadingDetail::class, FullLoadingOwner::class]);
         $schema = new SchemaTool($this->em);
         $schema->dropSchema($metadata);
         $schema->createSchema($metadata);
@@ -100,26 +100,18 @@ final class PartialLoadTrackingTest extends TestCase
         $connection->close();
     }
 
-    private function partial(?string $title = null, bool $withDate = false): PartialTrackingRecord
+    private function loaded(?string $title = null): FullLoadingRecord
     {
-        $record = new PartialTrackingRecord();
+        $record = new FullLoadingRecord();
         $record->title = $title;
         $this->em->persist($record);
         $this->em->flush();
         $this->em->clear();
-        $mapping = new ResultSetMapping();
-        $mapping->addEntityResult(PartialTrackingRecord::class, 'r');
-        $mapping->addFieldResult('r', 'id', 'id');
-        $mapping->addFieldResult('r', 'title', 'title');
-        $mapping->partialAliases['r'] = true;
-        $columns = 'id, title';
-        if ($withDate) {
-            $mapping->addFieldResult('r', 'created_at', 'createdAt');
-            $columns .= ', createdAt AS created_at';
-        }
-        $result = $this->em->createNativeQuery('SELECT ' . $columns . ' FROM modernorm_test_partial_tracking WHERE id = 1', $mapping)->getSingleResult();
-        self::assertInstanceOf(PartialTrackingRecord::class, $result);
-        self::assertTrue($this->em->isUninitializedObject($result));
+        $mapping = new ResultSetMappingBuilder($this->em);
+        $mapping->addRootEntityFromClassMetadata(FullLoadingRecord::class, 'r');
+        $result = $this->em->createNativeQuery('SELECT ' . $mapping->generateSelectClause(['r' => 'r']) . ' FROM modernorm_test_partial_tracking r WHERE id = 1', $mapping)->getSingleResult();
+        self::assertInstanceOf(FullLoadingRecord::class, $result);
+        self::assertFalse($this->em->isUninitializedObject($result));
         return $result;
     }
 
@@ -130,11 +122,11 @@ final class PartialLoadTrackingTest extends TestCase
     }
 
     #[DataProvider('nullableChanges')]
-    public function testLazyInitializationPreservesLocalLoadedFieldsAndOriginalSnapshot(?string $stored, ?string $local): void
+    public function testFullLoadPreservesNullBaselinesAndLocalChanges(?string $stored, ?string $local): void
     {
-        $record = $this->partial($stored);
+        $record = $this->loaded($stored);
         $record->title = $local;
-        self::assertTrue($this->em->isUninitializedObject($record));
+        self::assertFalse($this->em->isUninitializedObject($record));
         self::assertSame('stored body', $record->body);
         self::assertSame($local, $record->title);
         $snapshot = $this->em->getUnitOfWork()->getOriginalEntityData($record);
@@ -149,9 +141,9 @@ final class PartialLoadTrackingTest extends TestCase
         self::assertSame(0, $this->statistics->snapshot()->dml->update->count);
     }
 
-    public function testRefreshDiscardsLocalChangesAndCompletesPartialTracking(): void
+    public function testRefreshDiscardsLocalChangesAndCompletesFullLoading(): void
     {
-        $record = $this->partial('stored');
+        $record = $this->loaded('stored');
         $record->title = 'local';
         $this->em->refresh($record);
         self::assertFalse($this->em->isUninitializedObject($record));
@@ -165,9 +157,9 @@ final class PartialLoadTrackingTest extends TestCase
 
     public function testLoadedDateTimeAndNoOpInitializationDoNotProduceUpdates(): void
     {
-        $record = $this->partial(withDate: true);
+        $record = $this->loaded();
         $date = $record->createdAt;
-        self::assertTrue($this->em->isUninitializedObject($record));
+        self::assertFalse($this->em->isUninitializedObject($record));
         self::assertSame('2026-01-01', $date->format('Y-m-d'));
         self::assertSame('stored body', $record->body);
         self::assertSame($date, $record->createdAt);
@@ -184,9 +176,9 @@ final class PartialLoadTrackingTest extends TestCase
     }
 
     #[DataProvider('releaseActions')]
-    public function testRemovingPartialObjectAllowsCollectionAndCleanReload(string $action): void
+    public function testRemovingFullObjectAllowsCollectionAndCleanReload(string $action): void
     {
-        $record = $this->partial('stored');
+        $record = $this->loaded('stored');
         $reference = WeakReference::create($record);
         if ($action === 'detach') {
             $this->em->detach($record);
@@ -196,8 +188,8 @@ final class PartialLoadTrackingTest extends TestCase
         unset($record);
         gc_collect_cycles();
         self::assertNull($reference->get());
-        $loaded = $this->em->find(PartialTrackingRecord::class, 1);
-        self::assertInstanceOf(PartialTrackingRecord::class, $loaded);
+        $loaded = $this->em->find(FullLoadingRecord::class, 1);
+        self::assertInstanceOf(FullLoadingRecord::class, $loaded);
         self::assertSame('stored', $loaded->title);
         $this->statistics->reset();
         $this->em->flush();
@@ -206,17 +198,17 @@ final class PartialLoadTrackingTest extends TestCase
 
     public function testCompletedProxyReconciliationIsNotRepeatedOnEveryFlush(): void
     {
-        $detail = new PartialTrackingDetail();
-        $owner = new PartialTrackingOwner();
+        $detail = new FullLoadingDetail();
+        $owner = new FullLoadingOwner();
         $owner->detail = $detail;
         $detail->owner = $owner;
         $this->em->persist($detail);
         $this->em->persist($owner);
         $this->em->flush();
         $this->em->clear();
-        $reference = $this->em->getReference(PartialTrackingDetail::class, 1);
+        $reference = $this->em->getReference(FullLoadingDetail::class, 1);
         self::assertTrue($this->em->isUninitializedObject($reference));
-        $loaded = $this->em->find(PartialTrackingOwner::class, 1);
+        $loaded = $this->em->find(FullLoadingOwner::class, 1);
         self::assertSame($reference, $loaded->detail);
         // Hydration sets the last outstanding inverse property without createEntity() for the detail.
         self::assertFalse($this->em->isUninitializedObject($reference));

@@ -238,6 +238,28 @@ abstract class AbstractHydrator
     {
     }
 
+    /** @var list<string>|null */
+    private ?array $entityColumns = null;
+
+    final protected function prepareEntityMapping(): void
+    {
+        $this->entityColumns = $this->resultSetMapping()->getEntityColumnNames($this->em);
+    }
+
+    /** Check actual SQL columns before registering any entity; result columns are stable across rows. */
+    final protected function assertCompleteEntityRow(array $row): void
+    {
+        if ($this->entityColumns === null) {
+            return;
+        }
+        foreach ($this->entityColumns as $column) {
+            if (! array_key_exists($column, $row)) {
+                throw new \ModernORM\Exception\MappingException('Partial managed entity hydration is not supported: SQL result is missing column ' . $column . '.');
+            }
+        }
+        $this->entityColumns = null;
+    }
+
     /**
      * Executes one-time preparation tasks, once each time hydration is started
      * through {@link hydrateAll} or {@link toIterable()}.
@@ -625,8 +647,7 @@ abstract class AbstractHydrator
         $id = [$fieldName => $data[$fieldName]];
 
         $uow = $this->em->getUnitOfWork();
-        // createEntity() merges partial snapshots or replaces them on explicit refresh.
-        // Re-registering a canonical object here would overwrite its loaded-field baseline first.
+        // Preserve the canonical object and let createEntity() handle explicit refresh.
         if (! $uow->isInIdentityMap($entity)) {
             $uow->registerManaged($entity, $id, $data);
         }

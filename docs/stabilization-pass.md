@@ -20,7 +20,7 @@ These are confirmed local schema defects. This report does not classify them as 
 
 ## Worker and L2 checks
 
-`WorkerContextTest` performs 200 partial/native hydration, lazy association, update, no-op flush and clear cycles. Every cycle verifies that the entity graph becomes collectible through WeakReference checks. A write-callback failure closes and clears the context; replacing it releases the failed manager and objects, and later cycles remain usable. Exception objects themselves must also be released by the caller: their stack traces can legitimately retain a context.
+`WorkerContextTest` performs 200 full/native hydration, lazy association, update, no-op flush and clear cycles. Every cycle verifies that the entity graph becomes collectible through WeakReference checks. A write-callback failure closes and clears the context; replacing it releases the failed manager and objects, and later cycles remain usable. Exception objects themselves must also be released by the caller: their stack traces can legitimately retain a context.
 
 Observed retained PHP heap after collection was 28,202,712 bytes at cycle 20 and 28,203,056 bytes at cycle 200 in the full-suite run. This is not an RSS bound or a universal memory budget; the exact collectible-object assertions are the deterministic check.
 

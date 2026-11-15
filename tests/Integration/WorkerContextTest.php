@@ -108,7 +108,7 @@ final class WorkerContextTest extends TestCase
         $this->connection->close();
     }
 
-    public function testRepeatedPartialLazyFlushClearAndFailureRecoveryReleaseObjectGraphs(): void
+    public function testRepeatedFullLoadLazyFlushClearAndFailureRecoveryReleaseObjectGraphs(): void
     {
         $samples = [];
         $start = hrtime(true);
@@ -143,8 +143,8 @@ final class WorkerContextTest extends TestCase
             $mapping->addEntityResult(WorkerOrder::class, 'o');
             $mapping->addFieldResult('o', 'id', 'id');
             $mapping->addFieldResult('o', 'value', 'value');
-            $mapping->partialAliases['o'] = true;
-            $order = $this->em->createNativeQuery('SELECT id, value FROM modernorm_worker_orders WHERE id = 1', $mapping)->getSingleResult();
+            $mapping->addMetaResult('o', 'customer_id', 'customer_id', false, 'integer');
+            $order = $this->em->createNativeQuery('SELECT id, value, customer_id FROM modernorm_worker_orders WHERE id = 1', $mapping)->getSingleResult();
             self::assertInstanceOf(WorkerOrder::class, $order);
             $order->value = 'cycle-' . $cycle;
             $peer = $this->em->find(WorkerOrder::class, 2);

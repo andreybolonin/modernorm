@@ -35,6 +35,6 @@ Membership and removal now require the stored object to be the supplied instance
 
 Twelve isolated cases in `tests/Unit/IdentityMapTest.php` cover registration, collision preservation, class separation, normalized keys, exact-instance removal, snapshot isolation, missing lookups, empty buckets and releasing references on clear.
 
-One hundred focused PostgreSQL tests pass across the new Identity Map cases, lazy/batch loading, L2 batch loading, SoftDelete and mutable L2 cache behavior. Existing coverage includes SoftDelete visibility with already-managed objects and cached entities, repeated foreign keys sharing one proxy, and partial/lazy initialization preserving local changes.
+One hundred focused PostgreSQL tests pass across the new Identity Map cases, lazy/batch loading, L2 batch loading, SoftDelete and mutable L2 cache behavior. Existing coverage includes SoftDelete visibility with already-managed objects and cached entities, repeated foreign keys sharing one proxy, and native lazy initialization preserving canonical identity. Partial managed SQL projections have subsequently been [removed](partial-entity-removal.md).
 
 Final validation: **720 tests pass on PHP 8.5.12 and PHP 8.4.27**, with PostgreSQL and disposable Redis, without skipped tests. PHPStan and PSR-12 checks pass without new baseline suppressions.
