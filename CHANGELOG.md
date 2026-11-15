@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fix ManyToMany repository membership criteria on both sides without duplicate roots, including arrays, empty relations, count and pagination. Apply custom-type SQL conversion to quoted INSERT columns and preserve enum domain values for custom DBAL criteria converters.
+
 - Remove doctrine/inflector; retain repository magic-method name conversion locally with its MIT notice.
 
 - Remove doctrine/instantiator: materialize entities and missing embeddables through cached PHP Reflection without calling constructors or serialization/clone hooks. Move ext-ctype to development requirements and drop the unused direct PHP 8.6 polyfill requirement (Collections still requires it transitively).

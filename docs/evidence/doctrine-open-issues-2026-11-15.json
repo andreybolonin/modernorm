@@ -1677,7 +1677,12 @@
       "reason": "Owning ManyToMany repository criteria reach the same missing association-context persister assertion as the membership probe.",
       "evidence": [
         "tools/issue-audit/run.php::many_to_many_repository_criteria"
-      ]
+      ],
+      "follow_up": {
+        "status": "fixed-working-tree",
+        "scope": "ManyToMany repository membership, quoted custom-type INSERT and custom enum criteria in the linked PostgreSQL regression scenarios.",
+        "report": "docs/p1-query-type-fixes.md"
+      }
     },
     {
       "number": 10524,
@@ -1746,7 +1751,12 @@
           "case": "custom_enum_type_criteria",
           "result": "probe-failed"
         }
-      ]
+      ],
+      "follow_up": {
+        "status": "fixed-working-tree",
+        "scope": "ManyToMany repository membership, quoted custom-type INSERT and custom enum criteria in the linked PostgreSQL regression scenarios.",
+        "report": "docs/p1-query-type-fixes.md"
+      }
     },
     {
       "number": 10407,
@@ -2765,7 +2775,12 @@
           "case": "quoted_custom_type_sql_conversion",
           "result": "probe-failed"
         }
-      ]
+      ],
+      "follow_up": {
+        "status": "fixed-working-tree",
+        "scope": "ManyToMany repository membership, quoted custom-type INSERT and custom enum criteria in the linked PostgreSQL regression scenarios.",
+        "report": "docs/p1-query-type-fixes.md"
+      }
     },
     {
       "number": 8181,
@@ -3500,7 +3515,12 @@
           "case": "quoted_custom_type_sql_conversion",
           "result": "probe-failed"
         }
-      ]
+      ],
+      "follow_up": {
+        "status": "fixed-working-tree",
+        "scope": "ManyToMany repository membership, quoted custom-type INSERT and custom enum criteria in the linked PostgreSQL regression scenarios.",
+        "report": "docs/p1-query-type-fixes.md"
+      }
     },
     {
       "number": 7439,
@@ -4271,7 +4291,12 @@
           "case": "many_to_many_repository_criteria",
           "result": "probe-failed"
         }
-      ]
+      ],
+      "follow_up": {
+        "status": "fixed-working-tree",
+        "scope": "ManyToMany repository membership, quoted custom-type INSERT and custom enum criteria in the linked PostgreSQL regression scenarios.",
+        "report": "docs/p1-query-type-fixes.md"
+      }
     },
     {
       "number": 6153,
@@ -4668,7 +4693,12 @@
           "case": "many_to_many_repository_criteria",
           "result": "probe-failed"
         }
-      ]
+      ],
+      "follow_up": {
+        "status": "fixed-working-tree",
+        "scope": "ManyToMany repository membership, quoted custom-type INSERT and custom enum criteria in the linked PostgreSQL regression scenarios.",
+        "report": "docs/p1-query-type-fixes.md"
+      }
     },
     {
       "number": 5754,
@@ -5235,7 +5265,12 @@
           "case": "many_to_many_repository_criteria",
           "result": "probe-failed"
         }
-      ]
+      ],
+      "follow_up": {
+        "status": "fixed-working-tree",
+        "scope": "ManyToMany repository membership, quoted custom-type INSERT and custom enum criteria in the linked PostgreSQL regression scenarios.",
+        "report": "docs/p1-query-type-fixes.md"
+      }
     },
     {
       "number": 3689,

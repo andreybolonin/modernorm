@@ -1,0 +1,31 @@
+{
+    "php": "8.4.27",
+    "postgresql": "18.7 (Homebrew)",
+    "zend_assertions": "1",
+    "cases": [
+        {
+            "case": "many_to_many_repository_criteria",
+            "issues": [
+                3752,
+                5770,
+                6173
+            ],
+            "result": "not-reproduced"
+        },
+        {
+            "case": "quoted_custom_type_sql_conversion",
+            "issues": [
+                8191,
+                7460
+            ],
+            "result": "not-reproduced"
+        },
+        {
+            "case": "custom_enum_type_criteria",
+            "issues": [
+                10432
+            ],
+            "result": "not-reproduced"
+        }
+    ]
+}

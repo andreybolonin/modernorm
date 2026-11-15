@@ -151,7 +151,14 @@ class PersisterHelper
                 break;
 
             case isset($class->associationMappings[$field]):
-                $assoc = $em->getMetadataFactory()->getOwningSide($class->associationMappings[$field]);
+                $mapping = $class->associationMappings[$field];
+                if ($mapping->isManyToMany()) {
+                    $targetClass = $em->getClassMetadata($mapping->targetEntity);
+                    $types[] = $targetClass->fieldMappings[$targetClass->getSingleIdentifierFieldName()]->type;
+                    break;
+                }
+
+                $assoc = $em->getMetadataFactory()->getOwningSide($mapping);
                 $class = $em->getClassMetadata($assoc->targetEntity);
 
                 if ($assoc->isManyToManyOwningSide()) {
@@ -225,13 +232,13 @@ class PersisterHelper
      *
      * @return list<mixed>
      */
-    public static function convertToParameterValue(mixed $value, EntityManagerInterface $em): array
+    public static function convertToParameterValue(mixed $value, EntityManagerInterface $em, bool $preserveEnum = false): array
     {
         if (is_array($value)) {
             $newValue = [];
 
             foreach ($value as $itemValue) {
-                foreach (self::convertToParameterValue($itemValue, $em) as $convertedValue) {
+                foreach (self::convertToParameterValue($itemValue, $em, $preserveEnum) as $convertedValue) {
                     $newValue[] = $convertedValue;
                 }
             }
@@ -239,18 +246,18 @@ class PersisterHelper
             return [$newValue];
         }
 
-        return self::convertIndividualValue($value, $em);
+        return self::convertIndividualValue($value, $em, $preserveEnum);
     }
 
     /** @phpstan-return list<mixed> */
-    private static function convertIndividualValue(mixed $value, EntityManagerInterface $em): array
+    private static function convertIndividualValue(mixed $value, EntityManagerInterface $em, bool $preserveEnum): array
     {
         if (! is_object($value)) {
             return [$value];
         }
 
         if ($value instanceof BackedEnum) {
-            return [$value->value];
+            return [$preserveEnum ? $value : $value->value];
         }
 
         $valueClass = DefaultProxyClassNameResolver::getClass($value);

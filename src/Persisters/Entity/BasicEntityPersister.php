@@ -1264,15 +1264,16 @@ class BasicEntityPersister implements EntityPersister
         $placeholders = [];
         $columns      = array_unique($columns);
 
+        $columnTypes = [];
+        foreach ($this->class->fieldMappings as $field => $mapping) {
+            $columnTypes[$this->quoteStrategy->getColumnName($field, $this->class, $this->platform)] = $mapping->type;
+        }
+
         foreach ($columns as $column) {
             $placeholder = '?';
 
-            if (
-                isset($this->class->fieldNames[$column])
-                && isset($this->columnTypes[$this->class->fieldNames[$column]])
-                && isset($this->class->fieldMappings[$this->class->fieldNames[$column]])
-            ) {
-                $type        = $this->conn->getConfiguration()->getTypeProvider()->get($this->columnTypes[$this->class->fieldNames[$column]]);
+            if (isset($columnTypes[$column])) {
+                $type = $this->conn->getConfiguration()->getTypeProvider()->get($columnTypes[$column]);
                 $placeholder = $type->convertToDatabaseValueSQL('?', $this->platform);
             }
 
@@ -1423,11 +1424,50 @@ class BasicEntityPersister implements EntityPersister
             . $this->getSQLTableAlias($this->class->name);
     }
 
+    private function getManyToManyMembershipSQL(AssociationMapping&ManyToManyAssociationMapping $mapping, mixed $value): string
+    {
+        if ($value === []) {
+            return '1 = 0';
+        }
+
+        $owning = $this->em->getMetadataFactory()->getOwningSide($mapping);
+        $owningClass = $this->em->getClassMetadata($owning->sourceEntity);
+        $sourceColumns = $mapping->isOwningSide() ? $owning->joinTable->joinColumns : $owning->joinTable->inverseJoinColumns;
+        $targetColumns = $mapping->isOwningSide() ? $owning->joinTable->inverseJoinColumns : $owning->joinTable->joinColumns;
+        if (count($sourceColumns) !== 1 || count($targetColumns) !== 1) {
+            throw new \LogicException('Many-to-many repository criteria require single-column identifiers.');
+        }
+
+        $source = $sourceColumns[0];
+        $target = $targetColumns[0];
+        $base = 'SELECT 1 FROM ' . $this->quoteStrategy->getJoinTableName($owning, $owningClass, $this->platform)
+            . ' orm_m2m WHERE orm_m2m.' . $this->quoteStrategy->getJoinColumnName($source, $owningClass, $this->platform)
+            . ' = ' . $this->getSQLTableAlias($this->class->name) . '.'
+            . $this->quoteStrategy->getReferencedJoinColumnName($source, $this->class, $this->platform);
+        $empty = 'NOT EXISTS (' . $base . ')';
+        $values = is_array($value) ? $value : [$value];
+        $nonNull = array_values(array_filter($values, static fn (mixed $item): bool => $item !== null));
+        if ($nonNull === []) {
+            return $empty;
+        }
+
+        $column = 'orm_m2m.' . $this->quoteStrategy->getJoinColumnName($target, $owningClass, $this->platform);
+        $predicate = count($nonNull) === 1 ? $column . ' = ?' : $column . ' IN (' . implode(', ', array_fill(0, count($nonNull), '?')) . ')';
+        $exists = 'EXISTS (' . $base . ' AND ' . $predicate . ')';
+
+        return count($nonNull) === count($values) ? $exists : '(' . $exists . ' OR ' . $empty . ')';
+    }
+
     public function getSelectConditionStatementSQL(
         string $field,
         mixed $value,
         AssociationMapping|null $assoc = null,
     ): string {
+
+        $mapping = $this->class->associationMappings[$field] ?? null;
+        if ($assoc === null && $mapping !== null && $mapping->isManyToMany()) {
+            return $this->getManyToManyMembershipSQL($mapping, $value);
+        }
 
         $selectedColumns = [];
         $columns         = $this->getSelectConditionStatementColumnSQL($field, $assoc);
@@ -1652,9 +1692,26 @@ class BasicEntityPersister implements EntityPersister
         return $this->conn->executeQuery($sql, $params, $types);
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    private function preservesEnumParameter(string $field): bool
+    {
+        $mapping = $this->class->fieldMappings[$field] ?? null;
+        if ($mapping === null || $mapping->enumType !== null) {
+            return false;
+        }
+
+        $phpType = $this->class->propertyAccessors[$field]->getUnderlyingReflector()->getType();
+        if ($phpType instanceof \ReflectionNamedType && $phpType->isBuiltin() && ! in_array($phpType->getName(), ['mixed', 'object'], true)) {
+            return false;
+        }
+
+        $type = $this->conn->getConfiguration()->getTypeProvider()->get($mapping->type);
+
+        // SQL-only custom types still inherit DBAL's scalar value converter.
+        $converter = new \ReflectionMethod($type, 'convertToDatabaseValue');
+
+        return ! str_starts_with($converter->getDeclaringClass()->getName(), 'Doctrine\\DBAL\\Types\\');
+    }
+
     public function expandParameters(array $criteria): array
     {
         $params = [];
@@ -1672,7 +1729,7 @@ class BasicEntityPersister implements EntityPersister
                         $types[] = $type;
                     }
 
-                    foreach (PersisterHelper::convertToParameterValue($item, $this->em) as $parameter) {
+                    foreach (PersisterHelper::convertToParameterValue($item, $this->em, $item instanceof BackedEnum && $this->preservesEnumParameter($field)) as $parameter) {
                         $params[] = $parameter;
                     }
                 }
@@ -1684,7 +1741,7 @@ class BasicEntityPersister implements EntityPersister
                 $types[] = $type;
             }
 
-            foreach (PersisterHelper::convertToParameterValue($value, $this->em) as $parameter) {
+            foreach (PersisterHelper::convertToParameterValue($value, $this->em, $value instanceof BackedEnum && $this->preservesEnumParameter($field)) as $parameter) {
                 $params[] = $parameter;
             }
         }
