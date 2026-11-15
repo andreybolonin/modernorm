@@ -10,13 +10,15 @@ Batch fetching, PostgreSQL bulk writes, entity L2 cache and built-in observabili
 
 | Feature | What you get |
 | --- | --- |
-| **Batch fetching** | Load lazy ManyToOne, OneToMany and ManyToMany associations in groups, configured directly on attributes. |
-| **PostgreSQL-native bulk** | Multi-row INSERT, UPSERT, UPDATE, DELETE and `RETURNING`, with explicit UnitOfWork policies. |
-| **Entity L2 cache** | Cache entities across EntityManagers with PSR-6 storage, TTL and generation-based invalidation. |
-| **Keyset pagination** | Traverse large entity queries with forward/backward cursors, explicit sort fields and an optional lazy total count. |
-| **SQL-first queries** | PostgreSQL expressions and CTEs, with managed entity hydration or plain rows. |
-| **Built-in behaviors** | Timestampable, Blameable and SoftDelete built in — no extra behavior package required. |
-| **Built-in Statistics API** | Measure SQL, flush, batch, bulk, hydration and UnitOfWork phases; consume neutral operation events. |
+| **[Batch fetching](docs/batch-fetching.md)** | Load lazy ManyToOne, OneToMany and ManyToMany associations in groups, configured directly on attributes. |
+| **[PostgreSQL-native bulk](docs/bulk-api.md)** | Multi-row INSERT, UPSERT, UPDATE, DELETE and `RETURNING`, with explicit UnitOfWork policies. |
+| **[Entity L2 cache](docs/read-only-l2-cache.md)** | Cache entities across EntityManagers with PSR-6 storage, TTL and generation-based invalidation. |
+| **[Keyset pagination](docs/cursor-pagination.md)** | Traverse large entity queries with forward/backward cursors, explicit sort fields and an optional lazy total count. |
+| **[Full-text search](docs/full-text-index.md)** | Declare weighted STORED search vectors and GIN indexes with `FullTextIndex`; search, rank and retrieve relevance scores through QueryBuilder. |
+| **[JSONB Query API](docs/jsonb-query-api.md)** | Filter mapped JSONB fields with containment, key existence, paths and typed comparisons, with automatic parameter binding and explicit null semantics. |
+| **[SQL-first queries](docs/sql-query-api.md)** | PostgreSQL expressions and CTEs, with managed entity hydration or plain rows. |
+| **[Built-in behaviors](docs/README.md#design-and-supported-behavior)** | [Timestampable](docs/timestampable.md), [Blameable](docs/blameable.md) and [SoftDelete](docs/soft-delete.md) built in — no extra behavior package required. |
+| **[Built-in Statistics API](docs/statistics.md)** | Measure SQL, flush, batch, bulk, hydration and UnitOfWork phases; consume neutral operation events. |
 
 PHP attributes, native lazy objects, Identity Map and UnitOfWork keep ordinary entity persistence familiar.
 
@@ -121,12 +123,12 @@ Real demonstration workload; displayed timings are not benchmark results. The bu
 
 ## Focused by design
 
-| Capability | ModernORM | Doctrine ORM |
-| --- | --- | --- |
-| Database | PostgreSQL only | Multiple databases through DBAL |
-| Queries | SQL QueryBuilder with entity hydration | DQL QueryBuilder and native SQL |
-| Association loading | Lazy batching for ManyToOne, OneToMany and ManyToMany | Fetch joins and eager to-one batching |
-| L2 cache | Entity-by-ID, PSR-6, `Cacheable` attribute | Entity, collection and query cache regions |
+| Capability | ModernORM | Another ORM                                     |
+| --- | --- |-------------------------------------------------|
+| Database | PostgreSQL only | Multiple databases through DBAL                 |
+| Queries | SQL QueryBuilder with entity hydration | DQL QueryBuilder and native SQL                 |
+| Association loading | Lazy batching for ManyToOne, OneToMany and ManyToMany | Fetch joins and eager to-one batching           |
+| L2 cache | Entity-by-ID, PSR-6, `Cacheable` attribute | Entity, collection and query cache regions      |
 | Statistics | SQL, flush, batch, bulk, hydration and UnitOfWork events | DBAL instrumentation and L2-specific statistics |
 | Mapping | Attributes and one scalar entity PK | Multiple drivers, inheritance and composite IDs |
 
