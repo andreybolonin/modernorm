@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add immutable EntityManager::association() queries for OneToMany and both ManyToMany sides: database count/exists, typed field conditions and keyset pages without collection initialization or automatic flush. Preserve EXTRA_LAZY compatibility. Fix quoted foreign keys when loading ordinary OneToMany collections.
+
 - Add SchemaTool::getSchemaMigrationSql() with reversible ordinary/FTS SQL plans for migration integrations, including initial schemas, missing assets and weight/configuration changes.
 - Add mapped JSONB query expressions with bound containment, existence, immutable paths, JSON/text extraction and explicit JSONB/text/numeric comparisons. Preserve JSON type distinctions, support precise decimal comparison values and distinguish missing paths, JSON null and SQL NULL.
 

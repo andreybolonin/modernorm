@@ -130,6 +130,9 @@ interface EntityManagerInterface extends ObjectManager
      */
     public function createQueryBuilder(): QueryBuilder;
 
+    /** Query persisted to-many membership independently of the collection state. */
+    public function association(object $owner, string $field): Query\AssociationQuery;
+
     /**
      * Finds an Entity by its identifier.
      *

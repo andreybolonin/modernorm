@@ -1632,7 +1632,9 @@ class BasicEntityPersister implements EntityPersister
         $tableAlias  = $this->getSQLTableAlias($this->class->name);
         assert($owningAssoc->isManyToOne());
 
-        foreach ($owningAssoc->targetToSourceKeyColumns as $sourceKeyColumn => $targetKeyColumn) {
+        foreach ($owningAssoc->joinColumns as $joinColumn) {
+            $sourceKeyColumn = $joinColumn->referencedColumnName;
+            $targetKeyColumn = $this->quoteStrategy->getJoinColumnName($joinColumn, $this->class, $this->platform);
             $field = $sourceClass->fieldNames[$sourceKeyColumn];
             $value = $sourceClass->propertyAccessors[$field]->getValue($sourceEntity);
 

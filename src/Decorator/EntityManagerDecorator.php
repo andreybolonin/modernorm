@@ -116,6 +116,11 @@ abstract class EntityManagerDecorator extends ObjectManagerDecorator implements 
         return $this->wrapped->createNativeQuery($sql, $rsm);
     }
 
+    public function association(object $owner, string $field): \ModernORM\Query\AssociationQuery
+    {
+        return $this->wrapped->association($owner, $field);
+    }
+
     public function createQueryBuilder(): QueryBuilder
     {
         return $this->wrapped->createQueryBuilder();

@@ -12,6 +12,7 @@ Start with the [project README](../README.md) for key features, installation and
 | Attributes, identifiers and inheritance boundary | [Mapping scope](mapping-scope.md) |
 | Stored full-text vectors and GIN indexes | [Full-text indexes](full-text-index.md) |
 | Connection-scoped DBAL types | [DBAL type providers](dbal-types.md) |
+| Queries scoped to OneToMany/ManyToMany associations | [Association Query API](association-query-api.md) |
 | Keyset pagination with forward/backward cursors | [Cursor pagination](cursor-pagination.md) |
 | JSONB predicates, paths and typed comparisons | [JSONB query API](jsonb-query-api.md) |
 | Queries, hydration, joins and pagination | [SQL query API](sql-query-api.md) |

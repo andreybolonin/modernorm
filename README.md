@@ -13,6 +13,7 @@ Batch fetching, PostgreSQL bulk writes, entity L2 cache and built-in observabili
 | **[Batch fetching](docs/batch-fetching.md)** | Load lazy ManyToOne, OneToMany and ManyToMany associations in groups, configured directly on attributes. |
 | **[PostgreSQL-native bulk](docs/bulk-api.md)** | Multi-row INSERT, UPSERT, UPDATE, DELETE and `RETURNING`, with explicit UnitOfWork policies. |
 | **[Entity L2 cache](docs/read-only-l2-cache.md)** | Cache entities across EntityManagers with PSR-6 storage, TTL and generation-based invalidation. |
+| **[Association Query API](docs/association-query-api.md)** | Count, check membership, filter and paginate OneToMany/ManyToMany directly in SQL without loading collections. |
 | **[Keyset pagination](docs/cursor-pagination.md)** | Traverse large entity queries with forward/backward cursors, explicit sort fields and an optional lazy total count. |
 | **[Full-text search](docs/full-text-index.md)** | Declare weighted STORED search vectors and GIN indexes with `FullTextIndex`; search, rank and retrieve relevance scores through QueryBuilder. |
 | **[JSONB Query API](docs/jsonb-query-api.md)** | Filter mapped JSONB fields with containment, key existence, paths and typed comparisons, with automatic parameter binding and explicit null semantics. |

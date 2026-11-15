@@ -265,6 +265,12 @@ class EntityManager implements EntityManagerInterface
         return $query;
     }
 
+    public function association(object $owner, string $field): Query\AssociationQuery
+    {
+        $this->errorIfClosed();
+        return new Query\AssociationQuery($this, $owner, $field);
+    }
+
     public function createQueryBuilder(): QueryBuilder
     {
         return new QueryBuilder($this);
