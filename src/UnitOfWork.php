@@ -701,6 +701,11 @@ class UnitOfWork implements PropertyChangedListener
             }
 
             foreach ($actualData as $propName => $actualValue) {
+                // Match the persister's UPDATE permissions before scheduling work or events.
+                if (isset($class->fieldMappings[$propName]->notUpdatable)) {
+                    continue;
+                }
+
                 if ($partialFields !== null) {
                     if (! in_array($propName, $partialFields, true)) {
                         continue;
@@ -872,9 +877,8 @@ class UnitOfWork implements PropertyChangedListener
      * populated, so every field would be silently and permanently
      * treated as "a partially omitted one" and skipped forever. We have
      * no reliable prior value for any of these fields, so force them
-     * into this change set (mirroring how brand-new entities are
-     * treated in computeChangeSet()) to make sure the entity's current
-     * value reaches the database, then adopt it as the baseline for
+     * into this change set when updatable, to make sure the entity's
+     * current writable values reach the database, then adopt them as the baseline for
      * future comparisons.
      *
      * @param ClassMetadata<object> $class
@@ -891,8 +895,9 @@ class UnitOfWork implements PropertyChangedListener
     ): void {
         foreach ($actualData as $propName => $actualValue) {
             if (
-                ! isset($class->associationMappings[$propName])
-                || $class->associationMappings[$propName]->isToOneOwningSide()
+                ! isset($class->fieldMappings[$propName]->notUpdatable)
+                && (! isset($class->associationMappings[$propName])
+                    || $class->associationMappings[$propName]->isToOneOwningSide())
             ) {
                 $changeSet[$propName] = [null, $actualValue];
             }
@@ -1114,6 +1119,10 @@ class UnitOfWork implements PropertyChangedListener
         $changeSet    = [];
 
         foreach ($actualData as $propName => $actualValue) {
+            if (! $this->flushQueues->hasInsertion($oid) && isset($class->fieldMappings[$propName]->notUpdatable)) {
+                continue;
+            }
+
             $orgValue = $originalData[$propName] ?? null;
 
             $fieldChange = FieldChangeComparator::compare(
@@ -2032,7 +2041,7 @@ class UnitOfWork implements PropertyChangedListener
      * @throws ORMInvalidArgumentException If the entity is not MANAGED.
      * @throws TransactionRequiredException
      */
-    private function doRefresh(object $entity, array &$visited, LockMode|int|null $lockMode = null): void
+    private function doRefresh(object $entity, array &$visited, LockMode|int|null $lockMode = null, bool $isCascade = false): void
     {
         switch (true) {
             case $lockMode === LockMode::PESSIMISTIC_READ:
@@ -2052,7 +2061,14 @@ class UnitOfWork implements PropertyChangedListener
 
         $class = $this->em->getClassMetadata($entity::class);
 
-        if ($this->getEntityState($entity) !== self::STATE_MANAGED) {
+        $state = $this->getEntityState($entity);
+        // New association members have no row to refresh. Explicitly persisted
+        // inserts remain scheduled; refreshing their owner must not flush or cancel them.
+        if ($isCascade && ($state === self::STATE_NEW || $this->isScheduledForInsert($entity))) {
+            return;
+        }
+
+        if ($state !== self::STATE_MANAGED) {
             throw ORMInvalidArgumentException::entityNotManaged($entity);
         }
 
@@ -2093,13 +2109,13 @@ class UnitOfWork implements PropertyChangedListener
                 case $relatedEntities instanceof Collection:
                 case is_array($relatedEntities):
                     foreach ($relatedEntities as $relatedEntity) {
-                        $this->doRefresh($relatedEntity, $visited, $lockMode);
+                        $this->doRefresh($relatedEntity, $visited, $lockMode, true);
                     }
 
                     break;
 
                 case $relatedEntities !== null:
-                    $this->doRefresh($relatedEntities, $visited, $lockMode);
+                    $this->doRefresh($relatedEntities, $visited, $lockMode, true);
                     break;
 
                 default:

@@ -5,6 +5,8 @@ parameters:
     level: 5
     paths:
         - src
+        - tests/Integration/GeneratedFieldTrackingRegressionTest.php
+        - tests/Integration/CascadeRefreshRegressionTest.php
         - tests/Integration/P1ReadonlyHookRegressionTest.php
         - tests/Integration/QueryTypeRegressionTest.php
         - tests/Unit/RepositoryMagicMethodsTest.php

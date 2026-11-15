@@ -596,7 +596,8 @@
       "follow_up": {
         "status": "fixed",
         "scope": "Generated non-nullable hooked identifier deletion and equivalent readonly DateTime refresh in the linked regression scenarios.",
-        "report": "docs/p1-readonly-hook-fixes.md"
+        "report": "docs/p1-readonly-hook-fixes.md",
+        "commit": "eb60f37f0796f31a2744fb4944a9a9dad7e66812"
       }
     },
     {
@@ -617,7 +618,12 @@
           "case": "generated_field_local_change_tracking",
           "result": "probe-failed"
         }
-      ]
+      ],
+      "follow_up": {
+        "status": "fixed",
+        "scope": "Exclude non-updatable fields from existing-entity UPDATE changes, recomputation and stale partial snapshot reconciliation; preserve INSERT permissions in the linked regression scenarios.",
+        "report": "docs/p1-generated-tracking-fixes.md"
+      }
     },
     {
       "number": 11991,
@@ -1740,7 +1746,12 @@
           "case": "cascade_refresh_new_child",
           "result": "probe-failed"
         }
-      ]
+      ],
+      "follow_up": {
+        "status": "fixed",
+        "scope": "Cascade refresh skips transient and pending-insert association members while preserving managed refresh and detached rejection in the linked regression scenarios.",
+        "report": "docs/p1-cascade-refresh-fixes.md"
+      }
     },
     {
       "number": 10432,
@@ -2122,7 +2133,8 @@
       "follow_up": {
         "status": "fixed",
         "scope": "Generated non-nullable hooked identifier deletion and equivalent readonly DateTime refresh in the linked regression scenarios.",
-        "report": "docs/p1-readonly-hook-fixes.md"
+        "report": "docs/p1-readonly-hook-fixes.md",
+        "commit": "eb60f37f0796f31a2744fb4944a9a9dad7e66812"
       }
     },
     {
@@ -3764,7 +3776,12 @@
           "case": "cascade_refresh_new_child",
           "result": "probe-failed"
         }
-      ]
+      ],
+      "follow_up": {
+        "status": "fixed",
+        "scope": "Cascade refresh skips transient and pending-insert association members while preserving managed refresh and detached rejection in the linked regression scenarios.",
+        "report": "docs/p1-cascade-refresh-fixes.md"
+      }
     },
     {
       "number": 7161,

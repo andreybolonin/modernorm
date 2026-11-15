@@ -43,8 +43,8 @@ Every row is an open non-PR issue from the same paginated snapshot. Status is th
 | [#12178](https://github.com/doctrine/orm/issues/12178) | Querybuilder: Expected =, <, <=, <>, >, >=, !=, got 'IN' | `not-applicable` | — |
 | [#12128](https://github.com/doctrine/orm/issues/12128) | Queries using `MEMBER OF` fail if the root entity has a composite primary key that contains a relation | `not-applicable` | — |
 | [#12084](https://github.com/doctrine/orm/issues/12084) | Explicitly set ID should be honored with `@GeneratedValue` or rejected | `not-bug-report` | — |
-| [#12077](https://github.com/doctrine/orm/issues/12077) | Deleting an entity with hooked identifier property on PHP 8.4 throws an error | `reproduced` | `fixed` |
-| [#12017](https://github.com/doctrine/orm/issues/12017) | Generated columns with insertable/updatable=false cause false positive change detection | `reproduced` | — |
+| [#12077](https://github.com/doctrine/orm/issues/12077) | Deleting an entity with hooked identifier property on PHP 8.4 throws an error | `reproduced` | `fixed (eb60f37)` |
+| [#12017](https://github.com/doctrine/orm/issues/12017) | Generated columns with insertable/updatable=false cause false positive change detection | `reproduced` | `fixed` |
 | [#11991](https://github.com/doctrine/orm/issues/11991) | [3.4.0, PHP <8.4] Cannot hydrate readonly properties from superclass of embeddable | `not-applicable` | — |
 | [#11964](https://github.com/doctrine/orm/issues/11964) | The order of JoinColumn Attributes affects the SQL statements of the repository methods | `not-applicable` | — |
 | [#11957](https://github.com/doctrine/orm/issues/11957) | Calling setAssociationOverride in prePersist/preUpdate throws an exception | `reproduced` | `fixed (e98c822)` |
@@ -119,7 +119,7 @@ Every row is an open non-PR issue from the same paginated snapshot. Status is th
 | [#10527](https://github.com/doctrine/orm/issues/10527) | Trying to access array offset on value of type null in BasicEntityPersister | `reproduced` | `fixed (b70f8f5)` |
 | [#10524](https://github.com/doctrine/orm/issues/10524) | Join are lost by the queryBuilder when building a Delete Query | `not-applicable` | — |
 | [#10514](https://github.com/doctrine/orm/issues/10514) | 2.14.0 BC Break: UOW::normalizeIdentifier() bug | `not-applicable` | — |
-| [#10499](https://github.com/doctrine/orm/issues/10499) | cascade refresh on entity that is managed but not saved yet | `reproduced` | — |
+| [#10499](https://github.com/doctrine/orm/issues/10499) | cascade refresh on entity that is managed but not saved yet | `reproduced` | `fixed` |
 | [#10432](https://github.com/doctrine/orm/issues/10432) | BC Break for findBy with custom enum types | `reproduced` | `fixed (b70f8f5)` |
 | [#10407](https://github.com/doctrine/orm/issues/10407) | Dropping schema should drop L2 caches | `not-bug-report` | — |
 | [#10314](https://github.com/doctrine/orm/issues/10314) | Add a new DQL construct to support initialization of to-many associations? | `not-applicable` | — |
@@ -143,7 +143,7 @@ Every row is an open non-PR issue from the same paginated snapshot. Status is th
 | [#9601](https://github.com/doctrine/orm/issues/9601) | Flush an object with NULL values in LOB fields leads to an error, OCI8 | `not-applicable` | — |
 | [#9575](https://github.com/doctrine/orm/issues/9575) | Check if Data Type implementes Stringable interface for Primary keys | `not-bug-report` | — |
 | [#9558](https://github.com/doctrine/orm/issues/9558) | Set `JoinColumn::referencedColumnName` based on the target entity instead of `id` | `not-bug-report` | — |
-| [#9505](https://github.com/doctrine/orm/issues/9505) | Bug: UnitOfWork attempts to update readonly property (object IDs don't match) | `reproduced` | `fixed` |
+| [#9505](https://github.com/doctrine/orm/issues/9505) | Bug: UnitOfWork attempts to update readonly property (object IDs don't match) | `reproduced` | `fixed (eb60f37)` |
 | [#9460](https://github.com/doctrine/orm/issues/9460) |  Add possibility to use `toIterable` for a join which does just a `SUM`. | `not-bug-report` | — |
 | [#9427](https://github.com/doctrine/orm/issues/9427) | Overwriting entities relation field when hydrating a collection | `probe-not-reproduced` | — |
 | [#9201](https://github.com/doctrine/orm/issues/9201) | After refresh my entity it is updated (doctrine do SQL UPDATE) | `probe-not-reproduced` | — |
@@ -242,7 +242,7 @@ Every row is an open non-PR issue from the same paginated snapshot. Status is th
 | [#7223](https://github.com/doctrine/orm/issues/7223) | Applying sort on fetch-joined table's column while using paginator with an output walker. | `not-applicable` | — |
 | [#7204](https://github.com/doctrine/orm/issues/7204) | Embedded class not changed, but keeps being marked as changed in the EntityChangeset | `probe-not-reproduced` | — |
 | [#7202](https://github.com/doctrine/orm/issues/7202) | ALTER TABLE ... DROP FOREIGN KEY, ALTER TABLE ... ADD FOREIGN KEY (mutliple queries, bad order, dangerous) | `observed-contract` | — |
-| [#7169](https://github.com/doctrine/orm/issues/7169) | New related entities not removed during cascade refresh of empty relationship | `reproduced` | — |
+| [#7169](https://github.com/doctrine/orm/issues/7169) | New related entities not removed during cascade refresh of empty relationship | `reproduced` | `fixed` |
 | [#7161](https://github.com/doctrine/orm/issues/7161) | EntityManagerDecorator::transactional injects wrapped EM into closure | `observed-contract` | — |
 | [#7151](https://github.com/doctrine/orm/issues/7151) | PersistentCollection::matching() lacks support for inheritance | `not-applicable` | — |
 | [#7133](https://github.com/doctrine/orm/issues/7133) | ClassMetadataInfo::getFieldMapping() MappingException not properly caught | `reproduced` | — |

@@ -1,0 +1,15 @@
+{
+    "php": "8.5.12",
+    "postgresql": "18.7 (Homebrew)",
+    "zend_assertions": "1",
+    "cases": [
+        {
+            "case": "cascade_refresh_new_child",
+            "issues": [
+                7169,
+                10499
+            ],
+            "result": "not-reproduced"
+        }
+    ]
+}

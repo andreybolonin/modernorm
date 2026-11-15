@@ -1,0 +1,14 @@
+{
+    "php": "8.5.12",
+    "postgresql": "18.7 (Homebrew)",
+    "zend_assertions": "1",
+    "cases": [
+        {
+            "case": "generated_field_local_change_tracking",
+            "issues": [
+                12017
+            ],
+            "result": "not-reproduced"
+        }
+    ]
+}
