@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Add repeatable class-level FullTextIndex mapping for weighted PostgreSQL STORED tsvector columns and GIN indexes. SchemaTool owns the technical assets, compares expressions without temporary DDL, repairs missing assets and updates weights/configuration. Removal, renames and source-type/set changes require explicit migrations; raw DBAL Schema export rejects FTS mappings. Metadata cache salt is V12.
+- Preserve explicitly selected tables through schema filters when generating DROP SQL.
+
 - Require DBAL 4.6 and resolve mapped types through the connection type provider across persistence, hydration, SQL generation, validation and L2 caching. Preserve DBAL Type parameter instances and isolate cached SQL projections by their type-specific SQL.
 
 - Add executed INSERT/UPDATE/DELETE attempts, errors, timings and known affected-row aggregates at the DBAL driver boundary; annotate existing SQL events without retaining SQL text or claiming transaction commit.

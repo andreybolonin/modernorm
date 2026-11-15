@@ -1,5 +1,7 @@
 # Full-text SchemaTool prototype
 
+This is historical prototype documentation. The public [FullTextIndex attribute](full-text-index.md) now integrates owned assets into SchemaTool and compares expressions without temporary DDL. The prototype below remains a standalone feasibility check; it also passes on DBAL 4.6.0 with PostgreSQL 18.7.
+
 The executable [prototype](../tools/full-text-schema-prototype.php) checks the schema feasibility of a future full-text mapping attribute using `configuration: 'pg_catalog.russian'`. It composes existing SchemaTool metadata/schema generation with a prototype PostgreSQL catalog comparison. It does not add a public mapping attribute or QueryBuilder API.
 
 ## Run

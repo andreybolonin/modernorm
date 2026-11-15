@@ -352,6 +352,9 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
      */
     public array $table;
 
+    /** @var list<FullTextIndex> */
+    public array $fullTextIndexes = [];
+
     /**
      * READ-ONLY: The registered lifecycle callbacks for entities of this class.
      *
@@ -608,6 +611,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
             'name',
             'namespace', // TODO: REMOVE
             'table',
+            'fullTextIndexes',
             'rootEntityName',
             'idGenerator', //TODO: Does not really need to be serialized. Could be moved to runtime.
         ];
@@ -1511,6 +1515,18 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     public function assertSupportedMapping(): void
     {
         $this->assertSupportedIdentifier();
+        $fullTextNames = [];
+        $fullTextColumns = [];
+        foreach ($this->fullTextIndexes as $index) {
+            $index->validate($this);
+            $name = strtolower($index->name);
+            $column = strtolower($index->column);
+            if (isset($fullTextNames[$name]) || isset($fullTextColumns[$column])) {
+                throw new MappingException('FullTextIndex names and technical columns must be distinct: ' . $this->name);
+            }
+            $fullTextNames[$name] = true;
+            $fullTextColumns[$column] = true;
+        }
         if ($this->cache !== null && (count($this->cache) !== 2
             || !isset($this->cache['ttl'], $this->cache['writePolicy'])
             || !is_int($this->cache['ttl']) || $this->cache['ttl'] < 0

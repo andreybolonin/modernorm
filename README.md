@@ -19,6 +19,8 @@ Batch fetching, PostgreSQL bulk writes, entity L2 cache and built-in observabili
 
 PHP attributes, native lazy objects, Identity Map and UnitOfWork keep ordinary entity persistence familiar.
 
+Declare stored PostgreSQL search vectors and GIN indexes with [`#[FullTextIndex]`](docs/full-text-index.md); search and rank through the existing SQL API.
+
 Behaviors are explicitly enabled per entity: [Timestampable](docs/timestampable.md), [Blameable](docs/blameable.md) and [SoftDelete](docs/soft-delete.md). SoftDelete is unreleased; beta.4 includes Timestampable and the Blameable provider/listener API.
 
 ## Fewer queries. The same entity workflow.

@@ -221,6 +221,12 @@ class AttributeDriver implements MappingDriver
 
         $metadata->setPrimaryTable($primaryTable);
 
+        if (isset($classAttributes[Mapping\FullTextIndex::class])) {
+            foreach ($classAttributes[Mapping\FullTextIndex::class] as $index) {
+                $metadata->fullTextIndexes[] = $index;
+            }
+        }
+
         if (isset($classAttributes[Mapping\Cacheable::class])) {
             if ($metadata->isMappedSuperclass || $metadata->isEmbeddedClass) {
                 throw new MappingException('Cacheable must be applied to a concrete Entity: ' . $className);

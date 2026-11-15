@@ -122,9 +122,9 @@ class SchemaTool
      */
     public function getCreateSchemaSql(array $classes): array
     {
-        $schema = $this->getSchemaFromMetadata($classes);
+        $schema = $this->getOrdinarySchemaFromMetadata($classes);
 
-        return $schema->toSql($this->platform);
+        return [...$schema->toSql($this->platform), ...(new FullText\SchemaExtension($this->em))->createSql($classes, $schema)];
     }
 
     /**
@@ -196,6 +196,17 @@ class SchemaTool
      * @throws NotSupported
      */
     public function getSchemaFromMetadata(array $classes): Schema
+    {
+        foreach ($classes as $class) {
+            if ($class->fullTextIndexes !== [] && ! $this->processingNotRequired($class, [])) {
+                throw new RuntimeException('DBAL Schema cannot represent FullTextIndex assets. Use SchemaTool getCreateSchemaSql/getUpdateSchemaSql for complete migration SQL.');
+            }
+        }
+        return $this->getOrdinarySchemaFromMetadata($classes);
+    }
+
+    /** @param list<ClassMetadata> $classes */
+    private function getOrdinarySchemaFromMetadata(array $classes): Schema
     {
         if ($this->useDbalEditorApi) {
             return $this->experimentalGetSchemaFromMetadata($classes);
@@ -1046,9 +1057,9 @@ class SchemaTool
      */
     public function getDropSchemaSQL(array $classes): array
     {
-        $schema = $this->getSchemaFromMetadata($classes);
+        $schema = $this->getOrdinarySchemaFromMetadata($classes);
 
-        $deployedSchema = $this->normalizeIntrospectedSchema($this->schemaManager->introspectSchema());
+        $deployedSchema = $this->createSchemaForComparison($schema);
 
         foreach ($schema->getTables() as $table) {
             if (! $deployedSchema->hasTable($this->getAssetName($table))) {
@@ -1119,11 +1130,13 @@ class SchemaTool
      * @param list<ClassMetadata> $classes The classes to consider.
      *
      * @return list<string> The sequence of SQL statements.
+     * @phpstan-impure Reads the live database schema.
      */
     public function getUpdateSchemaSql(array $classes): array
     {
-        $toSchema   = $this->getSchemaFromMetadata($classes);
+        $toSchema   = $this->getOrdinarySchemaFromMetadata($classes);
         $fromSchema = $this->createSchemaForComparison($toSchema);
+        $fullTextSql = (new FullText\SchemaExtension($this->em))->updateSql($classes, $fromSchema, $toSchema);
         $this->normalizeEquivalentIndexPredicates($fromSchema, $toSchema);
 
         if (class_exists(ComparatorConfig::class)) {
@@ -1134,7 +1147,7 @@ class SchemaTool
 
         $schemaDiff = $comparator->compareSchemas($fromSchema, $toSchema);
 
-        return $this->platform->getAlterSchemaSQL($schemaDiff);
+        return [...$this->platform->getAlterSchemaSQL($schemaDiff), ...$fullTextSql];
     }
 
     /**
