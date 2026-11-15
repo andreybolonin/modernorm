@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Retain generated non-nullable hooked IDs after deletion instead of attempting an illegal unset. Allow equivalent readonly DateTime refresh values while preserving object identity and change-tracking snapshots; changed readonly dates still reject refresh.
+
 - Fix ManyToMany repository membership criteria on both sides without duplicate roots, including arrays, empty relations, count and pagination. Apply custom-type SQL conversion to quoted INSERT columns and preserve enum domain values for custom DBAL criteria converters.
 
 - Remove doctrine/inflector; retain repository magic-method name conversion locally with its MIT notice.

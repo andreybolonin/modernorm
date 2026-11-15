@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace ModernORM\Mapping\PropertyAccessors;
 
+use DateTimeInterface;
 use InvalidArgumentException;
 use LogicException;
 use ReflectionProperty;
@@ -39,7 +40,12 @@ class ReadonlyAccessor implements PropertyAccessor
             return;
         }
 
-        if ($this->parent->getValue($object) !== $value) {
+        $current = $this->parent->getValue($object);
+        if ($current instanceof DateTimeInterface && $value instanceof DateTimeInterface && $current == $value) {
+            return;
+        }
+
+        if ($current !== $value) {
             throw new LogicException(sprintf(
                 'Attempting to change readonly property %s::$%s.',
                 $this->reflectionProperty->getDeclaringClass()->getName(),

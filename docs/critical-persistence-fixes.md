@@ -1,6 +1,6 @@
 # Critical persistence fixes — 2026-11-15
 
-This pass fixes four P0 problem families from the [open issue audit](doctrine-open-issues-audit.md): lost postFlush work, OneToOne back-reference clobbering, EAGER to-one clobbering and nested array hydration with shared targets. The fixes are in the current working tree. Six upstream references are linked to the covered scenarios: #5732, #8282, #8436, #5747, #8205 and #9185. This does not certify every variation of those reports or resolve the other twenty reproduced problem families.
+This pass fixes four P0 problem families from the [open issue audit](doctrine-open-issues-audit.md): lost postFlush work, OneToOne back-reference clobbering, EAGER to-one clobbering and nested array hydration with shared targets. The fixes are committed in `46eb4b8`. Six upstream references are linked to the covered scenarios: #5732, #8282, #8436, #5747, #8205 and #9185. This does not certify every variation of those reports or resolve the other twenty problem families that remained after this pass; see the audit for current status.
 
 ## Changes and regressions
 

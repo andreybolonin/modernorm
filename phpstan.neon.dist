@@ -5,6 +5,7 @@ parameters:
     level: 5
     paths:
         - src
+        - tests/Integration/P1ReadonlyHookRegressionTest.php
         - tests/Integration/QueryTypeRegressionTest.php
         - tests/Unit/RepositoryMagicMethodsTest.php
         - tests/Unit/ConstructorlessInstantiationTest.php

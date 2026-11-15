@@ -1,6 +1,6 @@
 # First P1 mapping fix pass — 2026-11-15
 
-This pass resolves four problem families from the [open issue audit](doctrine-open-issues-audit.md), linked to #12783, #11957, #12390, #10014 and #3927. The changes are in the working tree, based on core `46eb4b8`. The original issue classifications and initial diagnostic JSON remain historical baseline evidence. Sixteen other reproduced problem families still require work.
+This pass resolves four problem families from the [open issue audit](doctrine-open-issues-audit.md), linked to #12783, #11957, #12390, #10014 and #3927. The changes are committed in `e98c822`, based on core `46eb4b8`. The original issue classifications and initial diagnostic JSON remain historical baseline evidence. After this pass, sixteen other reproduced problem families remained; see the audit for current status.
 
 | Area | Fix | Regression coverage |
 | --- | --- | --- |

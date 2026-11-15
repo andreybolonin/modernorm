@@ -1248,9 +1248,16 @@ class UnitOfWork implements PropertyChangedListener
             // Entity with this $oid after deletion treated as NEW, even if the $oid
             // is obtained by a new entity because the old one went out of scope.
             //$this->entityStates[$oid] = self::STATE_NEW;
+            $identifierProperty = $class->propertyAccessors[$class->identifier[0]]->getUnderlyingReflector();
+            $identifierType = $identifierProperty->getType();
+            // PHP forbids unsetting backed hooked properties. Keep non-nullable
+            // hooked IDs after deletion, just as we retain readonly IDs.
+            $cannotResetHookedId = $identifierProperty->hasHooks()
+                && $identifierType !== null && ! $identifierType->allowsNull();
             if (
                 ! $class->isIdentifierNatural() &&
-                ! $class->propertyAccessors[$class->identifier[0]] instanceof ReadonlyAccessor
+                ! $identifierProperty->isReadOnly() &&
+                ! $cannotResetHookedId
             ) {
                 $class->propertyAccessors[$class->identifier[0]]->setValue($entity, null);
             }
@@ -2544,7 +2551,13 @@ class UnitOfWork implements PropertyChangedListener
 
         foreach ($data as $field => $value) {
             if (isset($class->fieldMappings[$field]) && ! array_key_exists($field, $existingData)) {
-                $class->propertyAccessors[$field]->setValue($entity, $value);
+                $accessor = $class->propertyAccessors[$field];
+                $accessor->setValue($entity, $value);
+                if ($accessor instanceof ReadonlyAccessor) {
+                    // An equivalent readonly date retains its original object.
+                    // Snapshot that actual value so refresh cannot schedule a phantom UPDATE.
+                    $this->originalEntityData[$oid][$field] = $accessor->getValue($entity);
+                }
             }
         }
 

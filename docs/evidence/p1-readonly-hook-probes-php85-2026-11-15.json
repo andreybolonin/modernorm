@@ -1,0 +1,21 @@
+{
+    "php": "8.5.12",
+    "postgresql": "18.7 (Homebrew)",
+    "zend_assertions": "1",
+    "cases": [
+        {
+            "case": "hooked_generated_identifier_delete",
+            "issues": [
+                12077
+            ],
+            "result": "not-reproduced"
+        },
+        {
+            "case": "readonly_datetime_refresh",
+            "issues": [
+                9505
+            ],
+            "result": "not-reproduced"
+        }
+    ]
+}

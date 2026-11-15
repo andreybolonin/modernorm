@@ -62,9 +62,10 @@
         }
       ],
       "follow_up": {
-        "status": "fixed-working-tree",
+        "status": "fixed",
         "scope": "The linked metadata/sequence/Ansi/RSM PHPUnit scenarios and diagnostic variants only.",
-        "report": "docs/p1-mapping-fixes.md"
+        "report": "docs/p1-mapping-fixes.md",
+        "commit": "e98c822e06de9988635458bb62e604c3b478a1e9"
       }
     },
     {
@@ -336,9 +337,10 @@
         }
       ],
       "follow_up": {
-        "status": "fixed-working-tree",
+        "status": "fixed",
         "scope": "The linked metadata/sequence/Ansi/RSM PHPUnit scenarios and diagnostic variants only.",
-        "report": "docs/p1-mapping-fixes.md"
+        "report": "docs/p1-mapping-fixes.md",
+        "commit": "e98c822e06de9988635458bb62e604c3b478a1e9"
       }
     },
     {
@@ -590,7 +592,12 @@
           "case": "hooked_generated_identifier_delete",
           "result": "probe-failed"
         }
-      ]
+      ],
+      "follow_up": {
+        "status": "fixed",
+        "scope": "Generated non-nullable hooked identifier deletion and equivalent readonly DateTime refresh in the linked regression scenarios.",
+        "report": "docs/p1-readonly-hook-fixes.md"
+      }
     },
     {
       "number": 12017,
@@ -664,9 +671,10 @@
         }
       ],
       "follow_up": {
-        "status": "fixed-working-tree",
+        "status": "fixed",
         "scope": "The linked metadata/sequence/Ansi/RSM PHPUnit scenarios and diagnostic variants only.",
-        "report": "docs/p1-mapping-fixes.md"
+        "report": "docs/p1-mapping-fixes.md",
+        "commit": "e98c822e06de9988635458bb62e604c3b478a1e9"
       }
     },
     {
@@ -1679,9 +1687,10 @@
         "tools/issue-audit/run.php::many_to_many_repository_criteria"
       ],
       "follow_up": {
-        "status": "fixed-working-tree",
+        "status": "fixed",
         "scope": "ManyToMany repository membership, quoted custom-type INSERT and custom enum criteria in the linked PostgreSQL regression scenarios.",
-        "report": "docs/p1-query-type-fixes.md"
+        "report": "docs/p1-query-type-fixes.md",
+        "commit": "b70f8f5adbc045f5ca06fa0b5074ce05023f0e30"
       }
     },
     {
@@ -1753,9 +1762,10 @@
         }
       ],
       "follow_up": {
-        "status": "fixed-working-tree",
+        "status": "fixed",
         "scope": "ManyToMany repository membership, quoted custom-type INSERT and custom enum criteria in the linked PostgreSQL regression scenarios.",
-        "report": "docs/p1-query-type-fixes.md"
+        "report": "docs/p1-query-type-fixes.md",
+        "commit": "b70f8f5adbc045f5ca06fa0b5074ce05023f0e30"
       }
     },
     {
@@ -1879,9 +1889,10 @@
         }
       ],
       "follow_up": {
-        "status": "fixed-working-tree",
+        "status": "fixed",
         "scope": "The linked metadata/sequence/Ansi/RSM PHPUnit scenarios and diagnostic variants only.",
-        "report": "docs/p1-mapping-fixes.md"
+        "report": "docs/p1-mapping-fixes.md",
+        "commit": "e98c822e06de9988635458bb62e604c3b478a1e9"
       }
     },
     {
@@ -2107,7 +2118,12 @@
           "case": "readonly_datetime_refresh",
           "result": "probe-failed"
         }
-      ]
+      ],
+      "follow_up": {
+        "status": "fixed",
+        "scope": "Generated non-nullable hooked identifier deletion and equivalent readonly DateTime refresh in the linked regression scenarios.",
+        "report": "docs/p1-readonly-hook-fixes.md"
+      }
     },
     {
       "number": 9460,
@@ -2777,9 +2793,10 @@
         }
       ],
       "follow_up": {
-        "status": "fixed-working-tree",
+        "status": "fixed",
         "scope": "ManyToMany repository membership, quoted custom-type INSERT and custom enum criteria in the linked PostgreSQL regression scenarios.",
-        "report": "docs/p1-query-type-fixes.md"
+        "report": "docs/p1-query-type-fixes.md",
+        "commit": "b70f8f5adbc045f5ca06fa0b5074ce05023f0e30"
       }
     },
     {
@@ -3517,9 +3534,10 @@
         }
       ],
       "follow_up": {
-        "status": "fixed-working-tree",
+        "status": "fixed",
         "scope": "ManyToMany repository membership, quoted custom-type INSERT and custom enum criteria in the linked PostgreSQL regression scenarios.",
-        "report": "docs/p1-query-type-fixes.md"
+        "report": "docs/p1-query-type-fixes.md",
+        "commit": "b70f8f5adbc045f5ca06fa0b5074ce05023f0e30"
       }
     },
     {
@@ -4293,9 +4311,10 @@
         }
       ],
       "follow_up": {
-        "status": "fixed-working-tree",
+        "status": "fixed",
         "scope": "ManyToMany repository membership, quoted custom-type INSERT and custom enum criteria in the linked PostgreSQL regression scenarios.",
-        "report": "docs/p1-query-type-fixes.md"
+        "report": "docs/p1-query-type-fixes.md",
+        "commit": "b70f8f5adbc045f5ca06fa0b5074ce05023f0e30"
       }
     },
     {
@@ -4695,9 +4714,10 @@
         }
       ],
       "follow_up": {
-        "status": "fixed-working-tree",
+        "status": "fixed",
         "scope": "ManyToMany repository membership, quoted custom-type INSERT and custom enum criteria in the linked PostgreSQL regression scenarios.",
-        "report": "docs/p1-query-type-fixes.md"
+        "report": "docs/p1-query-type-fixes.md",
+        "commit": "b70f8f5adbc045f5ca06fa0b5074ce05023f0e30"
       }
     },
     {
@@ -5240,9 +5260,10 @@
         }
       ],
       "follow_up": {
-        "status": "fixed-working-tree",
+        "status": "fixed",
         "scope": "The linked metadata/sequence/Ansi/RSM PHPUnit scenarios and diagnostic variants only.",
-        "report": "docs/p1-mapping-fixes.md"
+        "report": "docs/p1-mapping-fixes.md",
+        "commit": "e98c822e06de9988635458bb62e604c3b478a1e9"
       }
     },
     {
@@ -5267,9 +5288,10 @@
         }
       ],
       "follow_up": {
-        "status": "fixed-working-tree",
+        "status": "fixed",
         "scope": "ManyToMany repository membership, quoted custom-type INSERT and custom enum criteria in the linked PostgreSQL regression scenarios.",
-        "report": "docs/p1-query-type-fixes.md"
+        "report": "docs/p1-query-type-fixes.md",
+        "commit": "b70f8f5adbc045f5ca06fa0b5074ce05023f0e30"
       }
     },
     {

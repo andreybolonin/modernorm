@@ -7,7 +7,7 @@ Every row is an open non-PR issue from the same paginated snapshot. Status is th
 | Issue | Title | Baseline audit classification | Follow-up |
 | --- | --- | --- | --- |
 | [#12784](https://github.com/doctrine/orm/issues/12784) | Detaching native lazy objects leaves stale partial-loading state | `covered-related` | — |
-| [#12783](https://github.com/doctrine/orm/issues/12783) | ClassMetadata: namingStrategy and typedFieldMapper are not restored after metadata cache unserialization | `reproduced` | `fixed-working-tree` |
+| [#12783](https://github.com/doctrine/orm/issues/12783) | ClassMetadata: namingStrategy and typedFieldMapper are not restored after metadata cache unserialization | `reproduced` | `fixed (e98c822)` |
 | [#12774](https://github.com/doctrine/orm/issues/12774) | Dynamic properties | `not-bug-report` | — |
 | [#12773](https://github.com/doctrine/orm/issues/12773) | RFC: Support window functions (OVER) in DQL | `not-bug-report` | — |
 | [#12747](https://github.com/doctrine/orm/issues/12747) | Deprecate passing enumType to the DBAL layer | `not-bug-report` | — |
@@ -26,7 +26,7 @@ Every row is an open non-PR issue from the same paginated snapshot. Status is th
 | [#12428](https://github.com/doctrine/orm/issues/12428) | EntityIdentityCollisionException in OneToOne Id column with inheritance | `not-applicable` | — |
 | [#12417](https://github.com/doctrine/orm/issues/12417) | Chained identifying associations (nested #[ORM\Id]) cause "Object could not be converted to int" on lazy load | `not-applicable` | — |
 | [#12402](https://github.com/doctrine/orm/issues/12402) | `DateTime` object in `Criteria` is treated as `date` when used in `EntityRepository::matching()` but is treated as `datetime` when used in `QueryBuilder::addCriteria()` | `not-applicable` | — |
-| [#12390](https://github.com/doctrine/orm/issues/12390) | SequenceGenerator not working in MappedSuperclass | `reproduced` | `fixed-working-tree` |
+| [#12390](https://github.com/doctrine/orm/issues/12390) | SequenceGenerator not working in MappedSuperclass | `reproduced` | `fixed (e98c822)` |
 | [#12389](https://github.com/doctrine/orm/issues/12389) | Don't let EntityManager::getReference() return null | `not-bug-report` | — |
 | [#12381](https://github.com/doctrine/orm/issues/12381) | 💡 Support QueryBuilder CTE (Common Table Expression)  | `not-bug-report` | — |
 | [#12420](https://github.com/doctrine/orm/issues/12420) | Unnecessary changesets when using unsigned bigint | `not-applicable` | — |
@@ -43,11 +43,11 @@ Every row is an open non-PR issue from the same paginated snapshot. Status is th
 | [#12178](https://github.com/doctrine/orm/issues/12178) | Querybuilder: Expected =, <, <=, <>, >, >=, !=, got 'IN' | `not-applicable` | — |
 | [#12128](https://github.com/doctrine/orm/issues/12128) | Queries using `MEMBER OF` fail if the root entity has a composite primary key that contains a relation | `not-applicable` | — |
 | [#12084](https://github.com/doctrine/orm/issues/12084) | Explicitly set ID should be honored with `@GeneratedValue` or rejected | `not-bug-report` | — |
-| [#12077](https://github.com/doctrine/orm/issues/12077) | Deleting an entity with hooked identifier property on PHP 8.4 throws an error | `reproduced` | — |
+| [#12077](https://github.com/doctrine/orm/issues/12077) | Deleting an entity with hooked identifier property on PHP 8.4 throws an error | `reproduced` | `fixed` |
 | [#12017](https://github.com/doctrine/orm/issues/12017) | Generated columns with insertable/updatable=false cause false positive change detection | `reproduced` | — |
 | [#11991](https://github.com/doctrine/orm/issues/11991) | [3.4.0, PHP <8.4] Cannot hydrate readonly properties from superclass of embeddable | `not-applicable` | — |
 | [#11964](https://github.com/doctrine/orm/issues/11964) | The order of JoinColumn Attributes affects the SQL statements of the repository methods | `not-applicable` | — |
-| [#11957](https://github.com/doctrine/orm/issues/11957) | Calling setAssociationOverride in prePersist/preUpdate throws an exception | `reproduced` | `fixed-working-tree` |
+| [#11957](https://github.com/doctrine/orm/issues/11957) | Calling setAssociationOverride in prePersist/preUpdate throws an exception | `reproduced` | `fixed (e98c822)` |
 | [#11956](https://github.com/doctrine/orm/issues/11956) | Premature postLoad firing during fetch join result hydration with OneToOne association | `not-applicable` | — |
 | [#11936](https://github.com/doctrine/orm/issues/11936) | Can't use readonly class because of doctrine proxies | `not-applicable` | — |
 | [#11910](https://github.com/doctrine/orm/issues/11910) | [Feature] Ablity to write custom change detection logic for custom doctrine types | `not-bug-report` | — |
@@ -116,11 +116,11 @@ Every row is an open non-PR issue from the same paginated snapshot. Status is th
 | [#10783](https://github.com/doctrine/orm/issues/10783) | Warn about "ON DELETE RESTRICT" | `not-bug-report` | — |
 | [#10770](https://github.com/doctrine/orm/issues/10770) | Add field name into SchemaValidator error messages. | `not-bug-report` | — |
 | [#10576](https://github.com/doctrine/orm/issues/10576) | row constructors multi fields in() | `not-bug-report` | — |
-| [#10527](https://github.com/doctrine/orm/issues/10527) | Trying to access array offset on value of type null in BasicEntityPersister | `reproduced` | `fixed-working-tree` |
+| [#10527](https://github.com/doctrine/orm/issues/10527) | Trying to access array offset on value of type null in BasicEntityPersister | `reproduced` | `fixed (b70f8f5)` |
 | [#10524](https://github.com/doctrine/orm/issues/10524) | Join are lost by the queryBuilder when building a Delete Query | `not-applicable` | — |
 | [#10514](https://github.com/doctrine/orm/issues/10514) | 2.14.0 BC Break: UOW::normalizeIdentifier() bug | `not-applicable` | — |
 | [#10499](https://github.com/doctrine/orm/issues/10499) | cascade refresh on entity that is managed but not saved yet | `reproduced` | — |
-| [#10432](https://github.com/doctrine/orm/issues/10432) | BC Break for findBy with custom enum types | `reproduced` | `fixed-working-tree` |
+| [#10432](https://github.com/doctrine/orm/issues/10432) | BC Break for findBy with custom enum types | `reproduced` | `fixed (b70f8f5)` |
 | [#10407](https://github.com/doctrine/orm/issues/10407) | Dropping schema should drop L2 caches | `not-bug-report` | — |
 | [#10314](https://github.com/doctrine/orm/issues/10314) | Add a new DQL construct to support initialization of to-many associations? | `not-applicable` | — |
 | [#10226](https://github.com/doctrine/orm/issues/10226) | Proposal: Ability to select specific type when using inheritance | `not-applicable` | — |
@@ -128,7 +128,7 @@ Every row is an open non-PR issue from the same paginated snapshot. Status is th
 | [#10044](https://github.com/doctrine/orm/issues/10044) | setDefaultQueryHint in doctrine.yaml | `not-bug-report` | — |
 | [#10038](https://github.com/doctrine/orm/issues/10038) | Enums instead constants | `not-bug-report` | — |
 | [#10018](https://github.com/doctrine/orm/issues/10018) | Explicitly support traversable as parameter | `not-bug-report` | — |
-| [#10014](https://github.com/doctrine/orm/issues/10014) | AnsiQuoteStrategy does not convert field names to column names for identifiers | `reproduced` | `fixed-working-tree` |
+| [#10014](https://github.com/doctrine/orm/issues/10014) | AnsiQuoteStrategy does not convert field names to column names for identifiers | `reproduced` | `fixed (e98c822)` |
 | [#10003](https://github.com/doctrine/orm/issues/10003) | Fetching again an entity with unpersisted changes on a many-to-many relation makes UoW inconsistent | `probe-not-reproduced` | — |
 | [#9999](https://github.com/doctrine/orm/issues/9999) | Doctrine 'ORM\Cache' with inherited classes | `not-applicable` | — |
 | [#9952](https://github.com/doctrine/orm/issues/9952) | Paginator fails with `$fetchJoinCollection = true` and query ordered by a join column. | `not-applicable` | — |
@@ -143,7 +143,7 @@ Every row is an open non-PR issue from the same paginated snapshot. Status is th
 | [#9601](https://github.com/doctrine/orm/issues/9601) | Flush an object with NULL values in LOB fields leads to an error, OCI8 | `not-applicable` | — |
 | [#9575](https://github.com/doctrine/orm/issues/9575) | Check if Data Type implementes Stringable interface for Primary keys | `not-bug-report` | — |
 | [#9558](https://github.com/doctrine/orm/issues/9558) | Set `JoinColumn::referencedColumnName` based on the target entity instead of `id` | `not-bug-report` | — |
-| [#9505](https://github.com/doctrine/orm/issues/9505) | Bug: UnitOfWork attempts to update readonly property (object IDs don't match) | `reproduced` | — |
+| [#9505](https://github.com/doctrine/orm/issues/9505) | Bug: UnitOfWork attempts to update readonly property (object IDs don't match) | `reproduced` | `fixed` |
 | [#9460](https://github.com/doctrine/orm/issues/9460) |  Add possibility to use `toIterable` for a join which does just a `SUM`. | `not-bug-report` | — |
 | [#9427](https://github.com/doctrine/orm/issues/9427) | Overwriting entities relation field when hydrating a collection | `probe-not-reproduced` | — |
 | [#9201](https://github.com/doctrine/orm/issues/9201) | After refresh my entity it is updated (doctrine do SQL UPDATE) | `probe-not-reproduced` | — |
@@ -183,7 +183,7 @@ Every row is an open non-PR issue from the same paginated snapshot. Status is th
 | [#8255](https://github.com/doctrine/orm/issues/8255) | PHP 7.4, Type Hinted Properties, and Composite Primary key with a Foreign Key gives a type error | `not-applicable` | — |
 | [#8254](https://github.com/doctrine/orm/issues/8254) | LimitSubqueryOutputWalker walkSelectStatementWithoutRowNumber doesn't preserve order | `not-applicable` | — |
 | [#8205](https://github.com/doctrine/orm/issues/8205) | Refetching entity with eager relation overwrites nulled relation | `reproduced` | `fixed (46eb4b8)` |
-| [#8191](https://github.com/doctrine/orm/issues/8191) | convertToDatabaseValueSQL is not called when using a QuoteStrategy | `reproduced` | `fixed-working-tree` |
+| [#8191](https://github.com/doctrine/orm/issues/8191) | convertToDatabaseValueSQL is not called when using a QuoteStrategy | `reproduced` | `fixed (b70f8f5)` |
 | [#8181](https://github.com/doctrine/orm/issues/8181) | Entities with custom DBAL type identifier bound to DQL query parameters are not converted through DBAL types | `not-applicable` | — |
 | [#8177](https://github.com/doctrine/orm/issues/8177) | Support unique yet stable identifier generation in "Specification"-style designs | `not-bug-report` | — |
 | [#8164](https://github.com/doctrine/orm/issues/8164) | Querying Embeddables using a Criteria  | `not-applicable` | — |
@@ -229,7 +229,7 @@ Every row is an open non-PR issue from the same paginated snapshot. Status is th
 | [#7534](https://github.com/doctrine/orm/issues/7534) | Criteria::create()->orWhere() transform to And in Mysql | `not-applicable` | — |
 | [#7513](https://github.com/doctrine/orm/issues/7513) | Annotation conflict between Column and Relation does not throw an exception | `reproduced` | — |
 | [#7463](https://github.com/doctrine/orm/issues/7463) | Error on data hydration when field name equals discriminator column name | `not-applicable` | — |
-| [#7460](https://github.com/doctrine/orm/issues/7460) | Cannot use custom type with quoted field | `reproduced` | `fixed-working-tree` |
+| [#7460](https://github.com/doctrine/orm/issues/7460) | Cannot use custom type with quoted field | `reproduced` | `fixed (b70f8f5)` |
 | [#7439](https://github.com/doctrine/orm/issues/7439) | Comma Seperated lists, values are not trimmed for unique-constraint columns attribute XML Schema | `not-applicable` | — |
 | [#7426](https://github.com/doctrine/orm/issues/7426) | postUpdate event not triggered when removing from EXTRA_LAZY association | `observed-contract` | — |
 | [#7418](https://github.com/doctrine/orm/issues/7418) | Cascade remove to generate bulk delete SQL | `not-bug-report` | — |
@@ -274,7 +274,7 @@ Every row is an open non-PR issue from the same paginated snapshot. Status is th
 | [#6272](https://github.com/doctrine/orm/issues/6272) | When a RetryableException is thrown, entitymanager should not be closed | `not-bug-report` | — |
 | [#6255](https://github.com/doctrine/orm/issues/6255) | Allow private/protected lifecycle callbacks | `not-bug-report` | — |
 | [#6248](https://github.com/doctrine/orm/issues/6248) | UniqueConstraint declared in inheritance (child) entities is silently ignored. | `not-applicable` | — |
-| [#6173](https://github.com/doctrine/orm/issues/6173) | ManyToMany association can't use IN / OR criteria  | `reproduced` | `fixed-working-tree` |
+| [#6173](https://github.com/doctrine/orm/issues/6173) | ManyToMany association can't use IN / OR criteria  | `reproduced` | `fixed (b70f8f5)` |
 | [#6153](https://github.com/doctrine/orm/issues/6153) | Issue trying to persist Entity with composite relationship set as null | `not-applicable` | — |
 | [#6124](https://github.com/doctrine/orm/issues/6124) | OneToOne relationship with owning side having key of inverse side broken | `not-applicable` | — |
 | [#6100](https://github.com/doctrine/orm/issues/6100) | getOneOrNullResult contains duplicate code in Doctrine\ORM\AbstractQuery | `not-bug-report` | — |
@@ -299,7 +299,7 @@ Every row is an open non-PR issue from the same paginated snapshot. Status is th
 | [#5868](https://github.com/doctrine/orm/issues/5868) | Iterate with fetch join in subquery | `not-applicable` | — |
 | [#5857](https://github.com/doctrine/orm/issues/5857) | InExpression will give Syntax error if using non-named empty array | `not-applicable` | — |
 | [#5818](https://github.com/doctrine/orm/issues/5818) | About DQL order by (c1+c2) desc | `not-applicable` | — |
-| [#5770](https://github.com/doctrine/orm/issues/5770) | findBy / matching should work with join table | `reproduced` | `fixed-working-tree` |
+| [#5770](https://github.com/doctrine/orm/issues/5770) | findBy / matching should work with join table | `reproduced` | `fixed (b70f8f5)` |
 | [#5754](https://github.com/doctrine/orm/issues/5754) | Multiple GROUP BY clauses don't work | `not-applicable` | — |
 | [#5750](https://github.com/doctrine/orm/issues/5750) | Expected behvior when an entity is refreshed when its row has been deleted from DB. | `observed-contract` | — |
 | [#5747](https://github.com/doctrine/orm/issues/5747) | ObjectHydrator overwriting changes to entity of "$targetClass" | `reproduced` | `fixed (46eb4b8)` |
@@ -331,8 +331,8 @@ Every row is an open non-PR issue from the same paginated snapshot. Status is th
 | [#4153](https://github.com/doctrine/orm/issues/4153) | DDC-3354: Replacing indexed item on association with indexBy cannot comply with unicity constraint | `known-limitation` | — |
 | [#4106](https://github.com/doctrine/orm/issues/4106) | DDC-3311: Add ESCAPE clause support after LIKE pattern, in Expr class | `not-applicable` | — |
 | [#4076](https://github.com/doctrine/orm/issues/4076) | DDC-3285: \Doctrine\ORM\Event\PreUpdateEventArgs::getOldValue and ::getNewValue return wrong values for ManyToMany association | `reproduced` | — |
-| [#3927](https://github.com/doctrine/orm/issues/3927) | DDC-3148: ResultSetMappingBuilder::generateSelectClause ignores quoted column names | `reproduced` | `fixed-working-tree` |
-| [#3752](https://github.com/doctrine/orm/issues/3752) | DDC-2988: Notice: Undefined index: joinColumns in BasicEntityPersister.php | `reproduced` | `fixed-working-tree` |
+| [#3927](https://github.com/doctrine/orm/issues/3927) | DDC-3148: ResultSetMappingBuilder::generateSelectClause ignores quoted column names | `reproduced` | `fixed (e98c822)` |
+| [#3752](https://github.com/doctrine/orm/issues/3752) | DDC-2988: Notice: Undefined index: joinColumns in BasicEntityPersister.php | `reproduced` | `fixed (b70f8f5)` |
 | [#3689](https://github.com/doctrine/orm/issues/3689) | DDC-2929: Pessimistic lock on Query does not update the entity with the DB values if it's already cached | `observed-contract` | — |
 | [#3649](https://github.com/doctrine/orm/issues/3649) | DDC-2891: Impossible to pass a limit to a subquery | `not-applicable` | — |
 | [#3620](https://github.com/doctrine/orm/issues/3620) | DDC-2864: New type of lock: OPTIMISTIC_FORCE_INCREMENT | `not-bug-report` | — |
