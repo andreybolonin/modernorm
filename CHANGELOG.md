@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Remove doctrine/instantiator: materialize entities and missing embeddables through cached PHP Reflection without calling constructors or serialization/clone hooks. Move ext-ctype to development requirements and drop the unused direct PHP 8.6 polyfill requirement (Collections still requires it transitively).
+
 - Restore metadata runtime mapping services from the owning configuration after cache deserialization, preserving custom naming/typed-field services without serializing them. Inherit explicit MappedSuperclass sequence definitions while retaining independent concrete defaults. Fix AnsiQuoteStrategy PK column names and native RSM field/FK/result-alias quoting. Metadata cache salt is V13.
 
 - Preserve operations scheduled by postFlush for the next explicit flush, including callback failures and explicit dirty checking. Preserve local to-one changes and their baselines during lazy/EAGER hydration, with entity-scoped refresh. Scope nested array collection positions to the complete ancestor identity path. Add PostgreSQL and array-hydration regressions.

@@ -5,6 +5,7 @@ parameters:
     level: 5
     paths:
         - src
+        - tests/Unit/ConstructorlessInstantiationTest.php
         - tests/Integration/P1MappingRegressionTest.php
         - tests/Unit/MetadataRuntimeServicesTest.php
         - tests/Integration/CriticalHydrationRegressionTest.php

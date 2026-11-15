@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace ModernORM\Mapping\PropertyAccessors;
 
-use Doctrine\Instantiator\Instantiator;
+use ReflectionClass;
 use ReflectionProperty;
 
 /** @internal */
 class EmbeddablePropertyAccessor implements PropertyAccessor
 {
-    private static Instantiator|null $instantiator = null;
+    /** @var ReflectionClass<object>|null */
+    private ?ReflectionClass $embeddedReflection = null;
 
     public function __construct(
         private PropertyAccessor $parent,
@@ -25,9 +26,8 @@ class EmbeddablePropertyAccessor implements PropertyAccessor
         $embeddedObject = $this->parent->getValue($object);
 
         if ($embeddedObject === null) {
-            self::$instantiator ??= new Instantiator();
-
-            $embeddedObject = self::$instantiator->instantiate($this->embeddedClass);
+            $this->embeddedReflection ??= new ReflectionClass($this->embeddedClass);
+            $embeddedObject = $this->embeddedReflection->newInstanceWithoutConstructor();
 
             $this->parent->setValue($object, $embeddedObject);
         }

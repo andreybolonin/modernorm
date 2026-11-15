@@ -4,7 +4,7 @@ ModernORM is a PostgreSQL-first ORM for PHP 8.4+, intended for ERP workloads wit
 
 ## Runtime and mapping
 
-The core depends on DBAL 4.3+, Doctrine Collections 3.1+, Doctrine Persistence and PSR-6 contracts. It does not require Symfony FrameworkBundle, Console, a profiler or an exporter. PostgreSQL is the only database target; PHP native lazy objects are the only lazy-object implementation.
+The core depends on DBAL 4.6+, Doctrine Collections 3.1+, Doctrine Persistence and PSR-6 contracts. It does not require Symfony FrameworkBundle, Console, a profiler or an exporter. PostgreSQL is the only database target; PHP native lazy objects are the only lazy-object implementation. Entity and embeddable materialization uses cached PHP Reflection to create instances without invoking constructors; no separate instantiator package is required.
 
 Attributes are the only mapping source. Each concrete entity has one scalar primary key and an independent metadata root. MappedSuperclass and embeddables reuse mappings without introducing polymorphic SQL queries. Composite UNIQUE constraints and composite join-table keys remain valid. Entity inheritance, discriminator hydration, composite entity identifiers, XML/YAML mapping, Criteria SQL translation and ORM Filters are excluded. See [mapping scope](mapping-scope.md).
 

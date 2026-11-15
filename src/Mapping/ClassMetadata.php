@@ -11,8 +11,6 @@ use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Schema\DefaultExpression\CurrentTimestamp;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\Deprecations\Deprecation;
-use Doctrine\Instantiator\Instantiator;
-use Doctrine\Instantiator\InstantiatorInterface;
 use ModernORM\EntityRepository;
 use ModernORM\Id\AbstractIdGenerator;
 use ModernORM\Mapping\PropertyAccessors\EmbeddablePropertyAccessor;
@@ -479,8 +477,6 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     /** @var array<string, PropertyAccessor> */
     public array $propertyAccessors = [];
 
-    private InstantiatorInterface|null $instantiator = null;
-
     private TypedFieldMapper $typedFieldMapper;
 
     /**
@@ -494,7 +490,6 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     {
         $this->rootEntityName   = $name;
         $this->namingStrategy   = $namingStrategy ?? new DefaultNamingStrategy();
-        $this->instantiator     = new Instantiator();
         $this->typedFieldMapper = $typedFieldMapper ?? new DefaultTypedFieldMapper();
     }
 
@@ -694,7 +689,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
      */
     public function newInstance(): object
     {
-        return $this->instantiator->instantiate($this->name);
+        return ($this->reflClass ??= new ReflectionClass($this->name))->newInstanceWithoutConstructor();
     }
 
     /** @internal Rebind runtime services from the owning factory instead of serializing application services. */
@@ -713,8 +708,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     {
         $this->restoreMappingServices();
         // Restore ReflectionClass and properties
-        $this->reflClass    = $reflService->getClass($this->name);
-        $this->instantiator = $this->instantiator ?: new Instantiator();
+        $this->reflClass = $reflService->getClass($this->name);
 
         $parentAccessors = [];
 
