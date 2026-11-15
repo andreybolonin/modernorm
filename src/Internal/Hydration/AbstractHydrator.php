@@ -315,7 +315,7 @@ abstract class AbstractHydrator
     /**
      * Processes a row of the result set.
      *
-     * Used for identity-based hydration (HYDRATE_OBJECT and HYDRATE_ARRAY).
+     * Used for mapped object hydration and flat array projections.
      * Puts the elements of a result row into a new array, grouped by the result alias
      * they belong to. The column names in the result set are mapped to their
      * field names during this procedure as well as any necessary conversions on

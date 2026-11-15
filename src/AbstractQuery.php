@@ -53,7 +53,7 @@ abstract class AbstractQuery
     public const HYDRATE_OBJECT = 1;
 
     /**
-     * Hydrates an array graph.
+     * Hydrates flat mapped arrays without entity graph assembly.
      */
     public const HYDRATE_ARRAY = 2;
 
@@ -766,6 +766,7 @@ abstract class AbstractQuery
             throw new LogicException('Uninitialized result set mapping.');
         }
 
+        $this->assertCompleteEntityMapping();
         foreach ($rsm->relationMap as $alias => $relation) {
             $parent = $rsm->parentAliasMap[$alias];
             if ($this->em->getClassMetadata($rsm->aliasMap[$parent])->getAssociationMapping($relation)->isToMany()) {
@@ -775,7 +776,6 @@ abstract class AbstractQuery
         if ($rsm->isMixed) {
             throw new LogicException('Streaming mixed entity/scalar results is not supported.');
         }
-        $this->assertCompleteEntityMapping();
         $stmt = $this->_doExecute();
 
         return $this->em->newHydrator($this->hydrationMode)->toIterable($stmt, $rsm, $this->hints);
@@ -783,6 +783,10 @@ abstract class AbstractQuery
 
     private function assertCompleteEntityMapping(): void
     {
+        if ($this->hydrationMode === self::HYDRATE_ARRAY) {
+            $this->getResultSetMapping()?->assertFlatArrayMapping($this->em);
+            return;
+        }
         if ($this->hydrationMode === self::HYDRATE_OBJECT || $this->hydrationMode === self::HYDRATE_SIMPLEOBJECT || is_string($this->hydrationMode)) {
             $this->getResultSetMapping()?->getEntityColumnNames($this->em);
         }
@@ -898,7 +902,7 @@ abstract class AbstractQuery
         $queryCacheProfile      = $this->getHydrationCacheProfile();
         $hints                  = $this->getHints();
         $hints['hydrationMode'] = $this->getHydrationMode();
-        $hints['entityHydrationContract'] = 'full-v1';
+        $hints['entityHydrationContract'] = 'full-v2-flat-array';
 
         ksort($hints);
         assert($queryCacheProfile !== null);

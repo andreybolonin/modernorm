@@ -12,7 +12,7 @@ Use a surrogate scalar PK and a multi-column UNIQUE constraint when replacing a 
 
 Applications supply tenant/access predicates for every read/write path; automatic tenant isolation is not provided. Proxy generation, proxy directories/namespaces, alternate lazy-object switches and optional ID-collision compatibility switches are removed. PHP native lazy objects and Identity Map collision checks are always used.
 
-Managed SQL entity results require complete mapped fields and owning to-one FK columns. Partial managed entities are removed; use rows/scalars/DTO projections for subsets. Native lazy references remain supported. See [migration](partial-entity-removal.md).
+Managed SQL entity results require complete mapped fields and owning to-one FK columns. Partial managed entities are removed; use rows/scalars/DTO projections for subsets. Native lazy references remain supported. See [migration](partial-entity-removal.md). Array hydration is flat-only: one entity-style projection with its identifier, or scalar-only mappings. Nested array graphs are [removed](array-graph-removal.md).
 
 Association cascades support persist/remove only; all expands to those two operations. Cascade refresh/detach are removed and rejected. Explicit refresh/detach act on one entity; clear discards the whole context. See [migration](cascade-refresh-detach-removal.md).
 

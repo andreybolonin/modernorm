@@ -7,6 +7,7 @@ namespace ModernORM\Tests\Integration;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Configuration;
+use Doctrine\DBAL\Cache\QueryCacheProfile;
 use Doctrine\DBAL\DriverManager;
 use ModernORM\AbstractQuery;
 use ModernORM\EntityManager;
@@ -54,6 +55,11 @@ class ProjectionParent
         $this->records = new ArrayCollection();
     }
 }
+enum ProjectionStatus: string
+{
+    case Active = 'active';
+}
+
 final class ProjectionDto
 {
     public function __construct(public string $title)
@@ -270,6 +276,130 @@ final class CompleteEntityProjectionTest extends TestCase
         self::assertInstanceOf(ProjectionDto::class, $dto);
         self::assertSame('stored', $dto->title);
         self::assertSame(0, $this->em->getUnitOfWork()->size());
+    }
+    public static function unsupportedArrayMappings(): iterable
+    {
+        foreach (['join', 'two roots', 'mixed', 'wrapper', 'dto', 'nested dto', 'parent metadata', 'missing identifier'] as $shape) {
+            foreach ([false, true] as $stream) {
+                yield $shape . ($stream ? ': stream' : ': buffered') => [$shape, $stream];
+            }
+        }
+    }
+    #[DataProvider('unsupportedArrayMappings')]
+    public function testUnsupportedArrayShapesFailBeforeSql(string $shape, bool $stream): void
+    {
+        $mapping = $this->mapping();
+        switch ($shape) {
+            case 'join':
+                $mapping->addJoinedEntityResult(ProjectionParent::class, 'p', 'r', 'parent');
+                break;
+            case 'two roots':
+                $mapping->addEntityResult(ProjectionParent::class, 'p');
+                break;
+            case 'mixed':
+                $mapping->addScalarResult('total', 'total', 'integer');
+                break;
+            case 'wrapper':
+                $mapping->entityMappings['r'] = 'record';
+                break;
+            case 'dto':
+                $mapping = new ResultSetMapping();
+                $mapping->addScalarResult('title', 'title');
+                $mapping->newObjectMappings['title'] = ['className' => ProjectionDto::class, 'objIndex' => 0, 'argIndex' => 0];
+                break;
+            case 'nested dto':
+                $mapping->nestedEntities['r'] = ['ownerIndex' => 0, 'argIndex' => 0];
+                break;
+            case 'parent metadata':
+                $mapping->parentAliasMap['r'] = 'p';
+                break;
+            case 'missing identifier':
+                $mapping = $this->mapping('id');
+                break;
+        }
+        $query = $this->em->createNativeQuery('SELECT 1 WHERE false', $mapping);
+        $this->expectException(MappingException::class);
+        try {
+            if ($stream) {
+                iterator_to_array($query->toIterable(hydrationMode: AbstractQuery::HYDRATE_ARRAY));
+            } else {
+                $query->getArrayResult();
+            }
+        } finally {
+            self::assertSame(0, $this->statistics->snapshot()->sqlCount);
+            self::assertSame(0, $this->em->getUnitOfWork()->size());
+        }
+    }
+    public function testDirectArrayHydratorRejectsGraphs(): void
+    {
+        $mapping = $this->mapping();
+        $mapping->addJoinedEntityResult(ProjectionParent::class, 'p', 'r', 'parent');
+        $statement = $this->em->getConnection()->executeQuery('SELECT 1');
+        $this->expectException(MappingException::class);
+        try {
+            $this->em->newHydrator(AbstractQuery::HYDRATE_ARRAY)->hydrateAll($statement, $mapping);
+        } finally {
+            self::assertSame(0, $this->em->getUnitOfWork()->size());
+        }
+    }
+    public function testFlatArrayProjectionKeepsNullableFieldsAndForeignKeyValues(): void
+    {
+        $rows = $this->em->createNativeQuery('SELECT * FROM ' . $this->schema . '.projection_records', $this->mapping())->getArrayResult();
+        self::assertSame([['id' => 1, 'title' => 'stored', 'note' => null, 'address.city' => 'Paris', 'parent_id' => null]], $rows);
+        self::assertSame(0, $this->em->getUnitOfWork()->size());
+    }
+    public function testFlatScalarArraysKeepTypeAndEnumConversionsAndIndexing(): void
+    {
+        $mapping = new ResultSetMapping();
+        $mapping->addScalarResult('number', 'number', 'integer');
+        $mapping->addScalarResult('payload', 'payload', 'json');
+        $mapping->addScalarResult('state', 'state', 'string');
+        $mapping->addEnumResult('state', ProjectionStatus::class);
+        $mapping->addIndexByScalar('number');
+        $rows = $this->em->createNativeQuery("SELECT '42' AS number, '{\"ok\":true}' AS payload, 'active' AS state", $mapping)->getArrayResult();
+        self::assertSame([42 => ['number' => 42, 'payload' => ['ok' => true], 'state' => ProjectionStatus::Active]], $rows);
+        self::assertSame(0, $this->em->getUnitOfWork()->size());
+    }
+    public function testFlatRootIndexingKeepsItsExistingKeys(): void
+    {
+        $mapping = $this->mapping();
+        $mapping->addIndexBy('r', 'title');
+        $rows = $this->em->createNativeQuery('SELECT * FROM ' . $this->schema . '.projection_records', $mapping)->getArrayResult();
+        self::assertSame(['stored'], array_keys($rows));
+        self::assertSame(1, $rows['stored']['id']);
+    }
+    public function testFlatStreamingAndBufferedResultsPreserveDuplicateSqlRows(): void
+    {
+        $mapping = $this->mapping();
+        $sql = 'SELECT * FROM ' . $this->schema . '.projection_records UNION ALL SELECT * FROM ' . $this->schema . '.projection_records';
+        $query = $this->em->createNativeQuery($sql, $mapping);
+        $rows = $query->getArrayResult();
+        self::assertCount(2, $rows);
+        self::assertSame($rows[0], $rows[1]);
+        self::assertSame($rows, iterator_to_array($query->toIterable(hydrationMode: AbstractQuery::HYDRATE_ARRAY)));
+        self::assertSame(0, $this->em->getUnitOfWork()->size());
+    }
+    public function testOldNestedHydrationCacheCannotLeakIntoFlatResult(): void
+    {
+        $cache = new ArrayAdapter();
+        $profile = new QueryCacheProfile(0, 'array-migration', $cache);
+        $sql = 'SELECT * FROM ' . $this->schema . '.projection_records';
+        [$key, $hash] = $profile->generateCacheKeys($sql, [], [], ['entityHydrationContract' => 'full-v1', 'hydrationMode' => AbstractQuery::HYDRATE_ARRAY]);
+        $cache->save($cache->getItem($key)->set([$hash => [['id' => 1, 'children' => [['id' => 2]]]]]));
+        $query = $this->em->createNativeQuery($sql, $this->mapping());
+        $query->setHydrationCacheProfile($profile);
+        $rows = $query->getArrayResult();
+        self::assertSame([['id' => 1, 'title' => 'stored', 'note' => null, 'address.city' => 'Paris', 'parent_id' => null]], $rows);
+        self::assertSame(1, $this->statistics->snapshot()->sqlCount);
+        self::assertSame(0, $this->em->getUnitOfWork()->size());
+    }
+    public function testFlatArrayKeepsNullRootRepresentation(): void
+    {
+        $mapping = new ResultSetMapping();
+        $mapping->addEntityResult(ProjectionRecord::class, 'r');
+        $mapping->addFieldResult('r', 'id', 'id');
+        $mapping->addFieldResult('r', 'title', 'title');
+        self::assertSame([null], $this->em->createNativeQuery('SELECT NULL AS id, NULL AS title', $mapping)->getArrayResult());
     }
     public function testFullFetchJoinPreservesEmptyCollectionsAndNullableRows(): void
     {

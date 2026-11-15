@@ -147,7 +147,7 @@ Every row is an open non-PR issue from the same paginated snapshot. Status is th
 | [#9460](https://github.com/doctrine/orm/issues/9460) |  Add possibility to use `toIterable` for a join which does just a `SUM`. | `not-bug-report` | — |
 | [#9427](https://github.com/doctrine/orm/issues/9427) | Overwriting entities relation field when hydrating a collection | `probe-not-reproduced` | — |
 | [#9201](https://github.com/doctrine/orm/issues/9201) | After refresh my entity it is updated (doctrine do SQL UPDATE) | `probe-not-reproduced` | — |
-| [#9185](https://github.com/doctrine/orm/issues/9185) | Array hydrator returns null values instead of actual elements in one-to-many relationships | `reproduced` | `fixed (46eb4b8)` |
+| [#9185](https://github.com/doctrine/orm/issues/9185) | Array hydrator returns null values instead of actual elements in one-to-many relationships | `reproduced` | Removed ([migration](array-graph-removal.md)); previously fixed in `46eb4b8` |
 | [#9183](https://github.com/doctrine/orm/issues/9183) | `BasicEntityPersister::expandParameters()` expands criteria parameters with custom types wrong | `probe-not-reproduced` | — |
 | [#9178](https://github.com/doctrine/orm/issues/9178) | Condition using "CASE WHEN" not expecting "LIKE" keyword | `not-applicable` | — |
 | [#9124](https://github.com/doctrine/orm/issues/9124) | Undefined index on second flush removing an Entity that's into an initialized PersistentCollection | `probe-not-reproduced` | — |

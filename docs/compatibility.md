@@ -24,7 +24,8 @@ The local core suite passed **418 tests / 2170 assertions** on PHP **8.4.27 and 
 | ManyToMany batching | Bounded | Owning/inverse, shared/self-referencing targets, memberships, ordering/indexing, empty owners and pending changes; [contract](many-to-many-batch-fetching.md) |
 | EXTRA_LAZY | Removed | LAZY/EAGER mappings only; use [Association Query API](association-query-api.md) for explicit database operations. [Migration](extra-lazy-removal.md) |
 | Partial managed entity hydration | Removed | Complete field/embedded/FK mappings required; row/scalar/DTO/array projections and native lazy references remain supported. [Migration](partial-entity-removal.md) |
-| SQL QueryBuilder/Query | Verified cases | Concrete projections, mapped columns, parameters/arrays, entity/scalar/mixed/array hydration, CTE, cloned bindings/hints and plain streaming |
+| SQL QueryBuilder/Query | Verified cases | Concrete projections, mapped columns, parameters/arrays, entity/scalar/mixed-object/flat-array hydration, CTE, cloned bindings/hints and plain streaming |
+| Nested array graphs | Removed | HYDRATE_ARRAY is flat-only; managed entity fetch joins and object-mode DTOs remain supported. [Migration](array-graph-removal.md) |
 | Explicit association fetch | Bounded | To-one/to-many joins, root deduplication, empty collections and Identity Map; filtered collections must not be represented as complete automatically |
 | Collection pagination | Verified cases | Explicit root-ID builder, count/offset/empty page/bindings/full collections; one scalar ID and application-managed scope/order |
 | Native SQL/ResultSetMapping | Verified cases | Entity/join/scalar mappings and PostgreSQL integer/boolean conversion; no discriminator results |

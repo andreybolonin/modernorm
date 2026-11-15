@@ -14,11 +14,11 @@ $records = $em->createQueryBuilder()->fromEntity(Record::class, 'r')->getQuery()
 $rows = $em->createQueryBuilder()->select('id', 'title')->from('records')->fetchAllAssociative();
 ```
 
-Scalar mappings, scalar DTO constructor arguments and non-managed array hydration can still select a subset of columns. A DTO argument that is itself an entity must be a fully hydrated managed entity.
+Scalar mappings, scalar DTO constructor arguments and non-managed flat array hydration can still select a subset of columns (entity-style array mappings must include the identifier). Nested array graphs have subsequently been [removed](array-graph-removal.md). A DTO argument that is itself an entity must be a fully hydrated managed entity.
 
 Remove markPartialEntityResult(), partialAliases flags and the old partial argument to addJoinedEntityResult(). These legacy RSM entry points remain only to raise a clear exception, including when a serialized mapping restores a partial flag. Query::HINT_PARTIAL and HINT_FORCE_PARTIAL_LOAD are removed; their raw hint names and `isPartial` cannot enable the old behavior. Custom hydrators with managed entity mappings receive the same query mapping validation; custom code that calls internal UnitOfWork registration APIs remains responsible for its own contract.
 
-Hydration cache keys now include the `full-v1` entity hydration contract, preventing reuse of old partial hydration results even if an old RSM declared more fields than its SELECT returned. Invalidate/version application hydration/query caches and restart workers during deployment. Metadata cache salt remains V14; this change requires no schema migration.
+Hydration cache keys include a versioned entity hydration contract, preventing reuse of old partial hydration results even if an old RSM declared more fields than its SELECT returned. Invalidate/version application hydration/query caches and restart workers during deployment. Metadata cache salt remains V14; this change requires no schema migration.
 
 ## Retained lazy loading
 

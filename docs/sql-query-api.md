@@ -39,6 +39,10 @@ Rows do not enter UnitOfWork. `addScalar()` adds an SQL expression and explicit 
 
 Bind values through `setParameter()`. SQL structure/identifiers are trusted application code; QueryBuilder does not make arbitrary fragments safe. Positional placeholders are `?` with zero-based bind indexes. Use the appropriate DBAL ArrayParameterType for IN arrays.
 
+## Flat array results
+
+getArrayResult()/HYDRATE_ARRAY accepts one flat entity-style projection (including its identifier) or scalar-only mappings. It does not manage objects, deduplicate SQL rows or assemble associations. Joined/multiple entity aliases, mixed/named entity wrappers and DTO mappings are rejected in this mode. Root/scalar indexBy and typed field values remain supported. Use getResult() for managed fetch joins, object hydration for DTOs, or explicit rows/scalars for flat join results. See [migration](array-graph-removal.md).
+
 ## Association fetching
 
 ```php

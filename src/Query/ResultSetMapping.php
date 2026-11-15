@@ -248,6 +248,34 @@ class ResultSetMapping
         }
     }
 
+    /** @internal Array hydration supports one flat entity projection or scalar-only rows. */
+    public function assertFlatArrayMapping(EntityManagerInterface $em): void
+    {
+        $this->assertSupportedMapping();
+        if ($this->relationMap !== [] || $this->parentAliasMap !== [] || count($this->aliasMap) > 1
+            || $this->isMixed || ($this->aliasMap !== [] && $this->scalarMappings !== [])
+            || $this->newObjectMappings !== [] || $this->newObject !== []
+            || $this->nestedEntities !== [] || $this->nestedNewObjectArguments !== []) {
+            throw new MappingException('Array graph hydration has been removed. Use one flat entity projection, scalar-only rows, managed entity fetch joins or object-mode DTO projections.');
+        }
+        foreach ($this->aliasMap as $alias => $className) {
+            if (($this->entityMappings[$alias] ?? null) !== null) {
+                throw new MappingException('Named entity wrappers are not supported by flat array hydration.');
+            }
+            $identifier = $em->getClassMetadata($className)->getSingleIdentifierFieldName();
+            $hasIdentifier = false;
+            foreach ($this->fieldMappings as $column => $field) {
+                if ($field === $identifier && $this->columnOwnerMap[$column] === $alias) {
+                    $hasIdentifier = true;
+                    break;
+                }
+            }
+            if (! $hasIdentifier) {
+                throw new MappingException('Flat entity array projections require the identifier field. Use scalar mappings or rows for projections without an identifier.');
+            }
+        }
+    }
+
     /**
      * @internal Validate managed entity projections and return their SQL result columns.
      * @return list<string>

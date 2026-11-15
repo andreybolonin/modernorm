@@ -14,6 +14,7 @@ use Doctrine\DBAL\Types\JsonType;
 use Doctrine\DBAL\Types\Type;
 use ModernORM\Configuration;
 use ModernORM\EntityManager;
+use ModernORM\Exception\MappingException;
 use ModernORM\Internal\Hydration\ArrayHydrator;
 use ModernORM\Internal\Hydration\ObjectHydrator;
 use ModernORM\Mapping as ORM;
@@ -21,6 +22,7 @@ use ModernORM\Mapping\Driver\AttributeDriver;
 use ModernORM\Query;
 use ModernORM\Query\ResultSetMapping;
 use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 final class HydrationCountingJson extends JsonType
@@ -89,7 +91,7 @@ final class ObjectHydrationTest extends TestCase
     }
 
     /** @param list<array<string, mixed>> $rows */
-    private function statement(array $rows): Result
+    private function statement(array $rows): Result&MockObject
     {
         $statement = $this->createMock(Result::class);
         $statement->method('fetchAssociative')->willReturnOnConsecutiveCalls(...[...$rows, false]);
@@ -318,13 +320,9 @@ final class ObjectHydrationTest extends TestCase
         $second = $this->row(11) + ['second_id' => '888'];
         $fallback = $this->row(11) + ['second_id' => '1'];
         $fallback['p_id'] = null;
-        foreach ([ObjectHydrator::class, ArrayHydrator::class] as $class) {
-            $this->em->clear();
-            $result = (new $class($this->em))->hydrateAll($this->statement([$first, $second, $fallback]), $rsm);
-            self::assertCount(1, $result);
-            $id = $class === ObjectHydrator::class ? $result[0]->id : $result[0]['id'];
-            self::assertSame(1, $id);
-        }
+        $result = (new ObjectHydrator($this->em))->hydrateAll($this->statement([$first, $second, $fallback]), $rsm);
+        self::assertCount(1, $result);
+        self::assertSame(1, $result[0]->id);
     }
 
 
@@ -337,7 +335,7 @@ final class ObjectHydrationTest extends TestCase
     }
 
     #[DataProvider('nestedArrayShapes')]
-    public function testNestedArraySharedParentKeepsIndependentCollectionPositions(bool $indexed, bool $mixed): void
+    public function testNestedArrayGraphsAreRejected(bool $indexed, bool $mixed): void
     {
         $mapping = new ResultSetMapping();
         $mapping->addEntityResult(HydrationChild::class, 'r');
@@ -358,29 +356,22 @@ final class ObjectHydrationTest extends TestCase
                 'c_id' => (string) $child, 'c_name' => 'child ' . $child, 'label' => 'root ' . $root];
         }
         $rows[] = ['r_id' => '30', 'r_name' => 'empty', 'p_id' => '2', 'c_id' => null, 'c_name' => null, 'label' => 'empty'];
-        $result = (new ArrayHydrator($this->em))->hydrateAll($this->statement($rows), $mapping);
-        self::assertCount(3, $result);
-        foreach ([0, 1] as $index) {
-            $root = $mixed ? $result[$index][0] : $result[$index];
-            $ids = array_column($root['parent']['children'], 'id');
-            sort($ids);
-            self::assertSame([11, 12], $ids);
-            self::assertCount(2, $root['parent']['children']);
-            self::assertNotContains(null, $root['parent']['children']);
-        }
-        $empty = $mixed ? $result[2][0] : $result[2];
-        self::assertSame([], $empty['parent']['children']);
+        $statement = $this->statement($rows);
+        $statement->expects(self::never())->method('fetchAssociative');
+        $this->expectException(MappingException::class);
+        (new ArrayHydrator($this->em))->hydrateAll($statement, $mapping);
     }
 
     public function testArrayHydrationPreservesRepeatedFieldsEnumsAndMetaValues(): void
     {
-        $rsm = $this->mapping();
+        $rsm = $this->mapping(false);
         $rsm->addFieldResult('p', 'payload_again', 'payload');
         $rows = [$this->row() + ['payload_again' => '{"ignored":true}'], $this->row(11) + ['payload_again' => null]];
         $result = (new ArrayHydrator($this->em))->hydrateAll($this->statement($rows), $rsm);
         self::assertSame(['ok' => true], $result[0]['payload']);
         self::assertSame(HydrationStatus::Active, $result[0]['status']);
-        self::assertCount(2, $result[0]['children']);
+        self::assertCount(2, $result);
+        self::assertSame(1, $result[1]['id']);
         self::assertSame(2, HydrationCountingJson::$conversions);
         self::assertSame([], $this->em->getUnitOfWork()->getIdentityMap());
     }

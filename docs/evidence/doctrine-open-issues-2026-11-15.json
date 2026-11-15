@@ -2221,6 +2221,11 @@
         "scope": "Only the linked local regression scenarios; not a certification of every upstream variation.",
         "report": "docs/critical-persistence-fixes.md",
         "commit": "46eb4b8c0deabe70315259f335707fb02a1b45e9"
+      },
+      "current_scope": {
+        "status": "removed-feature",
+        "scope": "Nested array graph hydration is removed; flat array results remain supported. Historical baseline and fix evidence are retained.",
+        "report": "docs/array-graph-removal.md"
       }
     },
     {

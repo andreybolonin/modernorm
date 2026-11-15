@@ -150,14 +150,14 @@ final class QueryTest extends TestCase
         }
     }
 
-    public function testArrayHydrationProducesNestedValuesWithoutManagingEntities(): void
+    public function testArrayGraphHydrationIsRejectedWithoutManagingEntities(): void
     {
-        $rows = $this->graph()->getQuery()->getArrayResult();
-        self::assertCount(3, $rows);
-        self::assertSame('alpha', $rows[0]['name']);
-        self::assertCount(3, $rows[0]['tasks']);
-        self::assertSame([], $rows[2]['tasks']);
-        self::assertSame([], $this->em->getUnitOfWork()->getIdentityMap());
+        $this->expectException(\ModernORM\Exception\MappingException::class);
+        try {
+            $this->graph()->getQuery()->getArrayResult();
+        } finally {
+            self::assertSame([], $this->em->getUnitOfWork()->getIdentityMap());
+        }
     }
 
     public function testScalarAndMixedHydration(): void

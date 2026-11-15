@@ -36,6 +36,7 @@ Start with the [project README](../README.md) for key features, installation and
 
 ## Release and participation
 
+- [Array graph removal and migration](array-graph-removal.md)
 - [Cascade refresh/detach removal and migration](cascade-refresh-detach-removal.md)
 - [Partial managed entity removal and migration](partial-entity-removal.md)
 - [EXTRA_LAZY removal and migration](extra-lazy-removal.md)

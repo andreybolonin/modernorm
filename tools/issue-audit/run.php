@@ -626,13 +626,14 @@ $cases['nested_array_hydration_shared_target_row_order'] = [[9185], static funct
         $mapping->addFieldResult($alias, $column, $field);
     }
     $sql = 'SELECT r.id AS rid, r.name AS rname, o.id AS oid, o.name AS oname, c.id AS cid, c.name AS cname FROM (VALUES (' . $firstId . ',' . $firstId . ',1),(' . $firstId . ',' . $secondId . ',2),(' . $secondId . ',' . $secondId . ',3),(' . $secondId . ',' . $firstId . ',4)) v(rid,cid,position) JOIN ' . $children . ' r ON r.id = v.rid JOIN ' . $owners . ' o ON o.id = r.owner_id JOIN ' . $children . ' c ON c.id = v.cid ORDER BY v.position';
-    $rows = $em->createNativeQuery($sql, $mapping)->getArrayResult();
-    check(count($rows) === 2, 'Nested array hydration lost a root.');
-    foreach ($rows as $row) {
-        $ids = array_column($row['owner']['children'], 'id');
-        sort($ids);
-        check($ids === [$firstId, $secondId], 'Nested array hydration reused shared-target pointers across different row orders: ' . json_encode($rows, JSON_THROW_ON_ERROR));
+    // Historical graph input now verifies the explicit unsupported-feature boundary.
+    try {
+        $em->createNativeQuery($sql, $mapping)->getArrayResult();
+    } catch (\ModernORM\Exception\MappingException $error) {
+        check(str_contains($error->getMessage(), 'Array graph hydration has been removed'), 'Unexpected array mapping rejection.');
+        return;
     }
+    throw new RuntimeException('Nested array graph hydration must be rejected.');
 }];
 
 $cases['custom_type_collection_index_domain_value'] = [[10152], static function (EntityManager $em): void {

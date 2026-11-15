@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Remove nested array graph hydration. HYDRATE_ARRAY/getArrayResult now accept one flat entity projection (with identifier) or scalar-only rows; reject graph/mixed/wrapper/DTO mappings before SQL. Preserve typed flat values, indexing and streaming; managed fetch joins and object-mode DTOs remain supported. Version hydration cache keys with full-v2-flat-array.
+
 - Remove cascade refresh/detach and their builder/mapping helpers. all now expands to persist/remove only; reject removed options in mappings, listeners and cached metadata. Keep explicit refresh/detach scoped to one entity, including EAGER target state. Metadata cache salt is V15.
 
 - Remove obsolete PHP <8.4 compatibility branches and ObjectCastPropertyAccessor; native lazy/raw property access is always used on the supported PHP versions.
