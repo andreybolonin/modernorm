@@ -1952,35 +1952,10 @@ class UnitOfWork implements PropertyChangedListener
         }
     }
 
-    /**
-     * Detaches an entity from the persistence management. It's persistence will
-     * no longer be managed by Doctrine.
-     */
+    /** Detach only the given entity, cancelling its pending entity operations. */
     public function detach(object $entity): void
     {
-        $visited = [];
-
-        $this->doDetach($entity, $visited);
-    }
-
-    /**
-     * Executes a detach operation on the given entity.
-     *
-     * @param mixed[] $visited
-     * @param bool    $noCascade if true, don't cascade detach operation.
-     */
-    private function doDetach(
-        object $entity,
-        array &$visited,
-        bool $noCascade = false,
-    ): void {
         $oid = spl_object_id($entity);
-
-        if (isset($visited[$oid])) {
-            return; // Prevent infinite recursion
-        }
-
-        $visited[$oid] = $entity; // mark visited
 
         switch ($this->getEntityState($entity, self::STATE_DETACHED)) {
             case self::STATE_MANAGED:
@@ -2001,10 +1976,6 @@ class UnitOfWork implements PropertyChangedListener
             case self::STATE_DETACHED:
                 return;
         }
-
-        if (! $noCascade) {
-            $this->cascadeDetach($entity, $visited);
-        }
     }
 
     /**
@@ -2018,22 +1989,6 @@ class UnitOfWork implements PropertyChangedListener
      */
     public function refresh(object $entity, LockMode|int|null $lockMode = null): void
     {
-        $visited = [];
-
-        $this->doRefresh($entity, $visited, $lockMode);
-    }
-
-    /**
-     * Executes a refresh operation on an entity.
-     *
-     * @phpstan-param array<int, object>  $visited The already visited entities during cascades.
-     * @phpstan-param LockMode::*|null $lockMode
-     *
-     * @throws ORMInvalidArgumentException If the entity is not MANAGED.
-     * @throws TransactionRequiredException
-     */
-    private function doRefresh(object $entity, array &$visited, LockMode|int|null $lockMode = null, bool $isCascade = false): void
-    {
         switch (true) {
             case $lockMode === LockMode::PESSIMISTIC_READ:
             case $lockMode === LockMode::PESSIMISTIC_WRITE:
@@ -2044,117 +1999,18 @@ class UnitOfWork implements PropertyChangedListener
 
         $oid = spl_object_id($entity);
 
-        if (isset($visited[$oid])) {
-            return; // Prevent infinite recursion
-        }
-
-        $visited[$oid] = $entity; // mark visited
-
         $class = $this->em->getClassMetadata($entity::class);
 
         $state = $this->getEntityState($entity);
-        // New association members have no row to refresh. Explicitly persisted
-        // inserts remain scheduled; refreshing their owner must not flush or cancel them.
-        if ($isCascade && ($state === self::STATE_NEW || $this->isScheduledForInsert($entity))) {
-            return;
-        }
-
         if ($state !== self::STATE_MANAGED) {
             throw ORMInvalidArgumentException::entityNotManaged($entity);
         }
-
-        $this->cascadeRefresh($entity, $visited, $lockMode);
 
         $this->getEntityPersister($class->name)->refresh(
             array_combine($class->getIdentifierFieldNames(), $this->entityIdentifiers[$oid]),
             $entity,
             $lockMode,
         );
-    }
-
-    /**
-     * Cascades a refresh operation to associated entities.
-     *
-     * @phpstan-param array<int, object> $visited
-     * @phpstan-param LockMode::*|null $lockMode
-     */
-    private function cascadeRefresh(object $entity, array &$visited, LockMode|int|null $lockMode = null): void
-    {
-        $class = $this->em->getClassMetadata($entity::class);
-
-        $associationMappings = array_filter(
-            $class->associationMappings,
-            static fn (AssociationMapping $assoc): bool => $assoc->isCascadeRefresh(),
-        );
-
-        foreach ($associationMappings as $assoc) {
-            $relatedEntities = $class->propertyAccessors[$assoc->fieldName]->getValue($entity);
-
-            switch (true) {
-                case $relatedEntities instanceof PersistentCollection:
-                    // Unwrap so that foreach() does not initialize
-                    $relatedEntities = $relatedEntities->unwrap();
-                    // break; is commented intentionally!
-
-                    // no break
-                case $relatedEntities instanceof Collection:
-                case is_array($relatedEntities):
-                    foreach ($relatedEntities as $relatedEntity) {
-                        $this->doRefresh($relatedEntity, $visited, $lockMode, true);
-                    }
-
-                    break;
-
-                case $relatedEntities !== null:
-                    $this->doRefresh($relatedEntities, $visited, $lockMode, true);
-                    break;
-
-                default:
-                    // Do nothing
-            }
-        }
-    }
-
-    /**
-     * Cascades a detach operation to associated entities.
-     *
-     * @param array<int, object> $visited
-     */
-    private function cascadeDetach(object $entity, array &$visited): void
-    {
-        $class = $this->em->getClassMetadata($entity::class);
-
-        $associationMappings = array_filter(
-            $class->associationMappings,
-            static fn (AssociationMapping $assoc): bool => $assoc->isCascadeDetach(),
-        );
-
-        foreach ($associationMappings as $assoc) {
-            $relatedEntities = $class->propertyAccessors[$assoc->fieldName]->getValue($entity);
-
-            switch (true) {
-                case $relatedEntities instanceof PersistentCollection:
-                    // Unwrap so that foreach() does not initialize
-                    $relatedEntities = $relatedEntities->unwrap();
-                    // break; is commented intentionally!
-
-                    // no break
-                case $relatedEntities instanceof Collection:
-                case is_array($relatedEntities):
-                    foreach ($relatedEntities as $relatedEntity) {
-                        $this->doDetach($relatedEntity, $visited);
-                    }
-
-                    break;
-
-                case $relatedEntities !== null:
-                    $this->doDetach($relatedEntities, $visited);
-                    break;
-
-                default:
-                    // Do nothing
-            }
-        }
     }
 
     /**

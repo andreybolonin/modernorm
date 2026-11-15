@@ -119,7 +119,7 @@ Every row is an open non-PR issue from the same paginated snapshot. Status is th
 | [#10527](https://github.com/doctrine/orm/issues/10527) | Trying to access array offset on value of type null in BasicEntityPersister | `reproduced` | `fixed (b70f8f5)` |
 | [#10524](https://github.com/doctrine/orm/issues/10524) | Join are lost by the queryBuilder when building a Delete Query | `not-applicable` | — |
 | [#10514](https://github.com/doctrine/orm/issues/10514) | 2.14.0 BC Break: UOW::normalizeIdentifier() bug | `not-applicable` | — |
-| [#10499](https://github.com/doctrine/orm/issues/10499) | cascade refresh on entity that is managed but not saved yet | `reproduced` | `fixed` |
+| [#10499](https://github.com/doctrine/orm/issues/10499) | cascade refresh on entity that is managed but not saved yet | `reproduced` | Removed ([migration](cascade-refresh-detach-removal.md)); previously fixed in `184b24c` |
 | [#10432](https://github.com/doctrine/orm/issues/10432) | BC Break for findBy with custom enum types | `reproduced` | `fixed (b70f8f5)` |
 | [#10407](https://github.com/doctrine/orm/issues/10407) | Dropping schema should drop L2 caches | `not-bug-report` | — |
 | [#10314](https://github.com/doctrine/orm/issues/10314) | Add a new DQL construct to support initialization of to-many associations? | `not-applicable` | — |
@@ -242,7 +242,7 @@ Every row is an open non-PR issue from the same paginated snapshot. Status is th
 | [#7223](https://github.com/doctrine/orm/issues/7223) | Applying sort on fetch-joined table's column while using paginator with an output walker. | `not-applicable` | — |
 | [#7204](https://github.com/doctrine/orm/issues/7204) | Embedded class not changed, but keeps being marked as changed in the EntityChangeset | `probe-not-reproduced` | — |
 | [#7202](https://github.com/doctrine/orm/issues/7202) | ALTER TABLE ... DROP FOREIGN KEY, ALTER TABLE ... ADD FOREIGN KEY (mutliple queries, bad order, dangerous) | `observed-contract` | — |
-| [#7169](https://github.com/doctrine/orm/issues/7169) | New related entities not removed during cascade refresh of empty relationship | `reproduced` | `fixed` |
+| [#7169](https://github.com/doctrine/orm/issues/7169) | New related entities not removed during cascade refresh of empty relationship | `reproduced` | Removed ([migration](cascade-refresh-detach-removal.md)); previously fixed in `184b24c` |
 | [#7161](https://github.com/doctrine/orm/issues/7161) | EntityManagerDecorator::transactional injects wrapped EM into closure | `observed-contract` | — |
 | [#7151](https://github.com/doctrine/orm/issues/7151) | PersistentCollection::matching() lacks support for inheritance | `not-applicable` | — |
 | [#7133](https://github.com/doctrine/orm/issues/7133) | ClassMetadataInfo::getFieldMapping() MappingException not properly caught | `reproduced` | — |

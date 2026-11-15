@@ -800,7 +800,7 @@ class BasicEntityPersister implements EntityPersister
         $stmt             = $this->conn->executeQuery($sql, $params, $types);
 
         $hydrator = $this->em->newHydrator(Query::HYDRATE_OBJECT);
-        $hydrator->hydrateAll($stmt, $this->currentPersisterContext->rsm, [Query::HINT_REFRESH => true]);
+        $hydrator->hydrateAll($stmt, $this->currentPersisterContext->rsm, [Query::HINT_REFRESH => true, Query::HINT_REFRESH_ENTITY => $entity]);
     }
 
     public function count(array $criteria = []): int

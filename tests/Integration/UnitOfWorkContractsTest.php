@@ -24,7 +24,7 @@ final class ContractNode
     #[ORM\Id, ORM\Column, ORM\GeneratedValue]
     public ?int $id = null;
 
-    #[ORM\ManyToOne(targetEntity: self::class, cascade: ['persist', 'detach'])]
+    #[ORM\ManyToOne(targetEntity: self::class, cascade: ['persist'])]
     public ?self $peer = null;
 
     #[ORM\ManyToOne(targetEntity: self::class)]
@@ -196,7 +196,7 @@ final class UnitOfWorkContractsTest extends TestCase
         self::assertNotSame($node, $loaded);
     }
 
-    public function testCascadeDetachTraversesCyclicGraphWithoutRecursion(): void
+    public function testDetachOnlyAffectsRootOfCyclicGraph(): void
     {
         $first = new ContractNode('first');
         $second = new ContractNode('second');
@@ -208,16 +208,17 @@ final class UnitOfWorkContractsTest extends TestCase
         $this->queries->sql = [];
         $this->em->detach($first);
         self::assertFalse($this->em->contains($first));
-        self::assertFalse($this->em->contains($second));
+        self::assertTrue($this->em->contains($second));
+        $second->peer = null;
         $this->em->flush();
-        self::assertSame([], $this->queries->sql);
+        self::assertCount(1, $this->queries->sql);
         $loaded = $this->em->find(ContractNode::class, $first->id);
         self::assertSame('first', $loaded->name);
-        self::assertSame('second', $loaded->peer->name);
-        self::assertSame($loaded, $loaded->peer->peer);
+        self::assertSame('discarded', $loaded->peer->name);
+        self::assertNull($loaded->peer->peer);
     }
 
-    public function testDetachOfRemovedRootAlsoCascadesToDirtyPeer(): void
+    public function testDetachOfRemovedRootPreservesDirtyManagedPeer(): void
     {
         $root = new ContractNode('root');
         $peer = new ContractNode('peer');
@@ -228,14 +229,14 @@ final class UnitOfWorkContractsTest extends TestCase
         $this->em->remove($root);
         $this->em->detach($root);
         self::assertFalse($this->em->contains($root));
-        self::assertFalse($this->em->contains($peer));
+        self::assertTrue($this->em->contains($peer));
         self::assertFalse($this->em->getUnitOfWork()->isScheduledForDelete($root));
         $this->queries->sql = [];
         $this->em->flush();
-        self::assertSame([], $this->queries->sql);
+        self::assertCount(1, $this->queries->sql);
         $loaded = $this->em->find(ContractNode::class, $root->id);
         self::assertSame('root', $loaded->name);
-        self::assertSame('peer', $loaded->peer->name);
+        self::assertSame('discarded', $loaded->peer->name);
     }
 
     public function testExplicitTrackingRequiresPersistForEachFlush(): void

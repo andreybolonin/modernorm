@@ -1,8 +1,8 @@
 # Open Doctrine ORM issue audit — 2026-11-15
 
-EXTRA_LAZY and partial managed entity hydration have subsequently been removed ([collections](extra-lazy-removal.md), [entity projections](partial-entity-removal.md)). Inventory classifications and historical evidence retain their original meaning; they do not imply that this mode is still supported.
+EXTRA_LAZY, partial managed entity hydration and cascade refresh/detach have subsequently been removed ([collections](extra-lazy-removal.md), [entity projections](partial-entity-removal.md), [cascades](cascade-refresh-detach-removal.md)). Inventory classifications and historical evidence retain their original meaning; they do not imply that these features are still supported.
 
-This is an issue inventory and a bounded executable audit of ModernORM, not a claim that every variant of every Doctrine bug is fixed. The initial audit did not change production ORM code. The [critical fix pass](critical-persistence-fixes.md) resolves four baseline problem families; the [first P1 mapping fix pass](p1-mapping-fixes.md) resolves four more in their linked regression scenarios. The initial audit used core `ad789bc`. Subsequent fixes are committed in `46eb4b8`, `e98c822`, `b70f8f5` and `eb60f37`; the table below records their current status. The [cascade refresh pass](p1-cascade-refresh-fixes.md) and [generated-field tracking pass](p1-generated-tracking-fixes.md) resolve two additional families. Doctrine status is a dated snapshot, not a permanent property of an issue.
+This is an issue inventory and a bounded executable audit of ModernORM, not a claim that every variant of every Doctrine bug is fixed. The initial audit did not change production ORM code. The [critical fix pass](critical-persistence-fixes.md) resolves four baseline problem families; the [first P1 mapping fix pass](p1-mapping-fixes.md) resolves four more in their linked regression scenarios. The initial audit used core `ad789bc`. Subsequent fixes are committed in `46eb4b8`, `e98c822`, `b70f8f5`, `eb60f37` and `184b24c`; the table below records their current status. The historical [cascade refresh pass](p1-cascade-refresh-fixes.md) and [generated-field tracking pass](p1-generated-tracking-fixes.md) resolved two additional families; cascade refresh has since been removed. Doctrine status is a dated snapshot, not a permanent property of an issue.
 
 The complete paginated GitHub API snapshot contains **335 open non-PR issues**, including **60 with the Bug label**. Unlabeled reports were also reviewed. One additional issue has GitHub issue type Bug; it is included in the same inventory. Open PRs and closed issues are not part of this snapshot. Newest/oldest pagination and absence of duplicate issue numbers were checked.
 
@@ -15,7 +15,7 @@ The complete paginated GitHub API snapshot contains **335 open non-PR issues**, 
 
 **At baseline, 57 diagnostic scenarios ran on PostgreSQL 18.7 with PHP 8.4.27 and 8.5.12. All scenario outcomes agree across the two PHP versions.** There are 38 `probe-failed` observations and 19 `not-reproduced` observations per runtime. A failed probe is not automatically a distinct bug: several exercise an intentional contract, several overlap, and some encounter a different failure before reaching the original issue's mechanism.
 
-**33 open issue references map to 24 reproduced problem families** in the supported/adapted scenarios below. **15 families are fixed (23 references); 9 remain open (10 references): 2 P1 and 7 P2.** All four P0 families are fixed. Priorities are local audit recommendations, not upstream severity labels.
+**33 open issue references map to 24 reproduced problem families** in the supported/adapted scenarios below. **15 families are resolved (23 references): 14 fixed and one removed with cascade refresh; 9 remain open (10 references): 2 P1 and 7 P2.** All four P0 families are fixed. Priorities are local audit recommendations, not upstream severity labels.
 
 | Fix pass | Commit | Fixed families | Upstream references |
 | --- | --- | ---: | ---: |
@@ -23,10 +23,10 @@ The complete paginated GitHub API snapshot contains **335 open non-PR issues**, 
 | [P1 mapping](p1-mapping-fixes.md) | `e98c822` | 4 | 5 |
 | [P1 queries and types](p1-query-type-fixes.md) | `b70f8f5` | 3 | 7 |
 | [P1 hooked ID / readonly DateTime](p1-readonly-hook-fixes.md) | `eb60f37` | 2 | 2 |
-| [P1 cascade refresh](p1-cascade-refresh-fixes.md) | This fix pass | 1 | 2 |
-| [P1 generated-field tracking](p1-generated-tracking-fixes.md) | This fix pass | 1 | 1 |
+| [P1 cascade refresh](p1-cascade-refresh-fixes.md) | `184b24c` | 1 | 2 |
+| [P1 generated-field tracking](p1-generated-tracking-fixes.md) | `184b24c` | 1 | 1 |
 
-The latest full PHPUnit suite reports **1094 tests / 7683 assertions / 21 skipped Redis tests** on each PHP version. The initial suite reported 953 tests / 6929 assertions; the separate 57 diagnostics are not PHPUnit regression tests. Follow-up reports link the regression coverage and diagnostic outcomes for each fix pass. Redis was not started, so this audit adds no new Redis concurrency certification.
+The latest full PHPUnit suite reports **1131 tests / 7773 assertions / 21 skipped Redis tests** on each PHP version. The initial suite reported 953 tests / 6929 assertions; the separate 57 diagnostics are not PHPUnit regression tests. Follow-up reports link the regression coverage and diagnostic outcomes for each fix pass. Redis was not started, so this audit adds no new Redis concurrency certification.
 
 The classification counts below describe the original snapshot. Fixed entries retain their historical baseline classification and carry a separate follow-up status.
 
@@ -59,7 +59,7 @@ The classification counts below describe the original snapshot. Fixed entries re
 | P1 | Fixed ([report](p1-mapping-fixes.md), `e98c822`) | Cached metadata loses typedFieldMapper and namingStrategy for later mapping/overrides | [#12783](https://github.com/doctrine/orm/issues/12783), [#11957](https://github.com/doctrine/orm/issues/11957) | `metadata_association_override_after_cache` |
 | P1 | Fixed ([report](p1-readonly-hook-fixes.md), `eb60f37`) | Deleting a generated hooked ID tries to unset the hooked property | [#12077](https://github.com/doctrine/orm/issues/12077) | `hooked_generated_identifier_delete` |
 | P1 | Fixed ([report](p1-readonly-hook-fixes.md), `eb60f37`) | Unchanged readonly DateTime refresh throws on a separately converted object | [#9505](https://github.com/doctrine/orm/issues/9505) | `readonly_datetime_refresh` |
-| P1 | Fixed ([report](p1-cascade-refresh-fixes.md)) | Cascade refresh traverses an unpersisted child and throws | [#7169](https://github.com/doctrine/orm/issues/7169), [#10499](https://github.com/doctrine/orm/issues/10499) | `cascade_refresh_new_child` |
+| P1 | Removed ([migration](cascade-refresh-detach-removal.md)); previously fixed in `184b24c` | Cascade refresh traverses an unpersisted child and throws | [#7169](https://github.com/doctrine/orm/issues/7169), [#10499](https://github.com/doctrine/orm/issues/10499) | `cascade_refresh_new_child` |
 | P1 | Fixed ([report](p1-mapping-fixes.md), `e98c822`) | Explicit sequence name on MappedSuperclass is discarded | [#12390](https://github.com/doctrine/orm/issues/12390) | `mapped_superclass_sequence_name` |
 | P1 | Fixed ([report](p1-query-type-fixes.md), `b70f8f5`) | Owning ManyToMany findBy criteria lack association context | [#3752](https://github.com/doctrine/orm/issues/3752), [#5770](https://github.com/doctrine/orm/issues/5770), [#6173](https://github.com/doctrine/orm/issues/6173), [#10527](https://github.com/doctrine/orm/issues/10527) | `many_to_many_repository_criteria` |
 | P1 | Fixed ([report](p1-mapping-fixes.md), `e98c822`) | Native result builder does not quote mixed-case columns | [#3927](https://github.com/doctrine/orm/issues/3927) | `native_result_mapping_quoted_select` |

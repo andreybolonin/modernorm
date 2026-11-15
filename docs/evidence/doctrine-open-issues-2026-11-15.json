@@ -1751,6 +1751,11 @@
         "status": "fixed",
         "scope": "Cascade refresh skips transient and pending-insert association members while preserving managed refresh and detached rejection in the linked regression scenarios.",
         "report": "docs/p1-cascade-refresh-fixes.md"
+      },
+      "current_scope": {
+        "status": "removed-feature",
+        "scope": "Cascade refresh/detach are removed; explicit root refresh remains supported. Historical baseline and fix evidence are retained.",
+        "report": "docs/cascade-refresh-detach-removal.md"
       }
     },
     {
@@ -3781,6 +3786,11 @@
         "status": "fixed",
         "scope": "Cascade refresh skips transient and pending-insert association members while preserving managed refresh and detached rejection in the linked regression scenarios.",
         "report": "docs/p1-cascade-refresh-fixes.md"
+      },
+      "current_scope": {
+        "status": "removed-feature",
+        "scope": "Cascade refresh/detach are removed; explicit root refresh remains supported. Historical baseline and fix evidence are retained.",
+        "report": "docs/cascade-refresh-detach-removal.md"
       }
     },
     {

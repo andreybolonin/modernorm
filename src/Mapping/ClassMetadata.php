@@ -28,7 +28,6 @@ use Stringable;
 
 use function array_column;
 use function array_diff;
-use function array_intersect;
 use function array_key_exists;
 use function array_keys;
 use function array_map;
@@ -1205,15 +1204,16 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
         // Cascades
         $cascades = isset($mapping['cascade']) ? array_map('strtolower', $mapping['cascade']) : [];
 
-        $allCascades = ['remove', 'persist', 'refresh', 'detach'];
-        if (in_array('all', $cascades, true)) {
-            $cascades = $allCascades;
-        } elseif (count($cascades) !== count(array_intersect($cascades, $allCascades))) {
+        $allowedCascades = ['remove', 'persist', 'all'];
+        if (array_diff($cascades, $allowedCascades) !== []) {
             throw MappingException::invalidCascadeOption(
-                array_diff($cascades, $allCascades),
+                array_diff($cascades, $allowedCascades),
                 $this->name,
                 $mapping['fieldName'],
             );
+        }
+        if (in_array('all', $cascades, true)) {
+            $cascades = ['remove', 'persist'];
         }
 
         $mapping['cascade'] = $cascades;
@@ -1534,6 +1534,10 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
             throw new MappingException('Entity caching requires concrete Cacheable metadata with a nonnegative TTL and a CacheWritePolicy: ' . $this->name);
         }
         foreach ($this->associationMappings as $association) {
+            $unsupportedCascades = array_diff($association->cascade, ['persist', 'remove']);
+            if ($unsupportedCascades !== []) {
+                throw MappingException::invalidCascadeOption($unsupportedCascades, $this->name, $association->fieldName);
+            }
             if (! in_array($association->fetch, [self::FETCH_LAZY, self::FETCH_EAGER], true)) {
                 throw MappingException::invalidFetchMode($this->name, (string) $association->fetch);
             }

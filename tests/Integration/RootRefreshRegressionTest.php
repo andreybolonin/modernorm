@@ -19,21 +19,21 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
 #[ORM\Entity, ORM\Table(name: 'refresh_owners')]
-class CascadeRefreshOwner
+class RootRefreshOwner
 {
     #[ORM\Id, ORM\Column(type: 'integer'), ORM\GeneratedValue]
     public ?int $id = null;
     #[ORM\Column]
     public string $name = 'database';
-    /** @var Collection<int, CascadeRefreshChild>|array<CascadeRefreshChild> */
-    #[ORM\OneToMany(targetEntity: CascadeRefreshChild::class, mappedBy: 'owner', cascade: ['persist', 'refresh'])]
+    /** @var Collection<int, RootRefreshChild>|array<RootRefreshChild> */
+    #[ORM\OneToMany(targetEntity: RootRefreshChild::class, mappedBy: 'owner', cascade: ['all'])]
     public Collection|array $children;
-    /** @var Collection<int, CascadeRefreshTag> */
-    #[ORM\ManyToMany(targetEntity: CascadeRefreshTag::class, cascade: ['persist', 'refresh'])]
+    /** @var Collection<int, RootRefreshTag> */
+    #[ORM\ManyToMany(targetEntity: RootRefreshTag::class, cascade: ['persist'])]
     #[ORM\JoinTable(name: 'refresh_links')]
     public Collection $tags;
-    #[ORM\ManyToOne(targetEntity: CascadeRefreshChild::class, cascade: ['refresh'])]
-    public ?CascadeRefreshChild $favorite = null;
+    #[ORM\ManyToOne(targetEntity: RootRefreshChild::class)]
+    public ?RootRefreshChild $favorite = null;
     public function __construct()
     {
         $this->children = new ArrayCollection();
@@ -42,18 +42,18 @@ class CascadeRefreshOwner
 }
 
 #[ORM\Entity, ORM\Table(name: 'refresh_children')]
-class CascadeRefreshChild
+class RootRefreshChild
 {
     #[ORM\Id, ORM\Column(type: 'integer'), ORM\GeneratedValue]
     public ?int $id = null;
     #[ORM\Column]
     public string $name = 'database';
-    #[ORM\ManyToOne(targetEntity: CascadeRefreshOwner::class, inversedBy: 'children', cascade: ['refresh'])]
-    public ?CascadeRefreshOwner $owner = null;
+    #[ORM\ManyToOne(targetEntity: RootRefreshOwner::class, inversedBy: 'children')]
+    public ?RootRefreshOwner $owner = null;
 }
 
 #[ORM\Entity, ORM\Table(name: 'refresh_tags')]
-class CascadeRefreshTag
+class RootRefreshTag
 {
     #[ORM\Id, ORM\Column]
     public string $id;
@@ -65,20 +65,20 @@ class CascadeRefreshTag
     }
 }
 
-final class CascadeRefreshRegressionTest extends TestCase
+final class RootRefreshRegressionTest extends TestCase
 {
     private EntityManager $em;
     private string $schema;
     protected function setUp(): void
     {
-        $this->schema = 'cascade_refresh_' . bin2hex(random_bytes(5));
+        $this->schema = 'root_refresh_' . bin2hex(random_bytes(5));
         $db = DriverManager::getConnection([
             'driver' => 'pdo_pgsql', 'host' => getenv('PGHOST') ?: '127.0.0.1',
             'port' => getenv('PGPORT') ?: 5432, 'user' => getenv('PGUSER') ?: 'postgres',
             'password' => getenv('PGPASSWORD') ?: 'postgres', 'dbname' => getenv('PGDATABASE') ?: 'modernorm_test',
         ]);
         $this->em = new EntityManager($db, ORMSetup::createAttributeMetadataConfig([], true, cache: new ArrayAdapter()));
-        $metadata = array_map($this->em->getClassMetadata(...), [CascadeRefreshOwner::class, CascadeRefreshChild::class, CascadeRefreshTag::class]);
+        $metadata = array_map($this->em->getClassMetadata(...), [RootRefreshOwner::class, RootRefreshChild::class, RootRefreshTag::class]);
         foreach ($metadata as $class) {
             $class->table['schema'] = $this->schema;
             foreach ($class->associationMappings as $association) {
@@ -110,9 +110,9 @@ final class CascadeRefreshRegressionTest extends TestCase
     #[DataProvider('collections')]
     public function testRefreshDiscardsTransientCollectionMembers(string $field, bool $initialize): void
     {
-        $owner = new CascadeRefreshOwner();
-        $stored = $field === 'children' ? new CascadeRefreshChild() : new CascadeRefreshTag('stored');
-        if ($stored instanceof CascadeRefreshChild) {
+        $owner = new RootRefreshOwner();
+        $stored = $field === 'children' ? new RootRefreshChild() : new RootRefreshTag('stored');
+        if ($stored instanceof RootRefreshChild) {
             $stored->owner = $owner;
         }
         $owner->$field->add($stored);
@@ -121,14 +121,14 @@ final class CascadeRefreshRegressionTest extends TestCase
         $ownerId = $owner->id;
         $storedId = $stored->id;
         $this->em->clear();
-        $owner = $this->em->find(CascadeRefreshOwner::class, $ownerId);
+        $owner = $this->em->find(RootRefreshOwner::class, $ownerId);
         self::assertInstanceOf(PersistentCollection::class, $owner->$field);
         if ($initialize) {
             $owner->$field->toArray();
         }
         self::assertSame($initialize, $owner->$field->isInitialized());
-        $new = $field === 'children' ? new CascadeRefreshChild() : new CascadeRefreshTag('new');
-        if ($new instanceof CascadeRefreshChild) {
+        $new = $field === 'children' ? new RootRefreshChild() : new RootRefreshTag('new');
+        if ($new instanceof RootRefreshChild) {
             $new->owner = $owner;
         }
         $owner->$field->add($new);
@@ -143,33 +143,33 @@ final class CascadeRefreshRegressionTest extends TestCase
     }
     public function testRefreshSkipsTransientToOneAndRestoresDatabaseReference(): void
     {
-        $owner = new CascadeRefreshOwner();
-        $original = new CascadeRefreshChild();
+        $owner = new RootRefreshOwner();
+        $original = new RootRefreshChild();
         $owner->favorite = $original;
         $this->em->persist($original);
         $this->em->persist($owner);
         $this->em->flush();
-        $new = new CascadeRefreshChild();
+        $new = new RootRefreshChild();
         $owner->favorite = $new;
         $this->em->refresh($owner);
         self::assertSame($original, $owner->favorite);
         self::assertFalse($this->em->contains($new));
         $this->em->flush();
-        self::assertSame(1, $this->em->getRepository(CascadeRefreshChild::class)->count([]));
+        self::assertSame(1, $this->em->getRepository(RootRefreshChild::class)->count([]));
     }
-    public function testRefreshStillRefreshesManagedChildrenAndHandlesCycles(): void
+    public function testRefreshPreservesDirtyManagedChildrenInCycles(): void
     {
-        $owner = new CascadeRefreshOwner();
-        $stored = new CascadeRefreshChild();
+        $owner = new RootRefreshOwner();
+        $stored = new RootRefreshChild();
         $stored->owner = $owner;
         $owner->children->add($stored);
         $this->em->persist($owner);
         $this->em->flush();
         $stored->name = 'local child';
         $owner->name = 'local owner';
-        $owner->children->add(new CascadeRefreshChild());
+        $owner->children->add(new RootRefreshChild());
         $this->em->refresh($owner);
-        self::assertSame('database', $stored->name);
+        self::assertSame('local child', $stored->name);
         self::assertSame('database', $owner->name);
         self::assertSame($owner, $stored->owner);
         self::assertSame([$stored], $owner->children->toArray());
@@ -177,20 +177,20 @@ final class CascadeRefreshRegressionTest extends TestCase
     }
     public function testPlainArrayWithTransientChildCanBeRefreshed(): void
     {
-        $owner = new CascadeRefreshOwner();
+        $owner = new RootRefreshOwner();
         $this->em->persist($owner);
         $this->em->flush();
-        $owner->children = [new CascadeRefreshChild()];
+        $owner->children = [new RootRefreshChild()];
         $this->em->refresh($owner);
         self::assertInstanceOf(PersistentCollection::class, $owner->children);
         self::assertTrue($owner->children->isEmpty());
     }
     public function testExplicitlyScheduledChildInsertIsPreserved(): void
     {
-        $owner = new CascadeRefreshOwner();
+        $owner = new RootRefreshOwner();
         $this->em->persist($owner);
         $this->em->flush();
-        $child = new CascadeRefreshChild();
+        $child = new RootRefreshChild();
         $child->owner = $owner;
         $owner->children->add($child);
         $this->em->persist($child);
@@ -199,23 +199,92 @@ final class CascadeRefreshRegressionTest extends TestCase
         self::assertTrue($this->em->getUnitOfWork()->isScheduledForInsert($child));
         $this->em->flush();
         self::assertNotNull($child->id);
-        self::assertSame(1, $this->em->getRepository(CascadeRefreshChild::class)->count([]));
+        self::assertSame(1, $this->em->getRepository(RootRefreshChild::class)->count([]));
+    }
+    public function testRefreshDoesNotOverwriteDirtyEagerTarget(): void
+    {
+        $this->em->getClassMetadata(RootRefreshOwner::class)->associationMappings['favorite']->fetch = ORM\ClassMetadata::FETCH_EAGER;
+        $owner = new RootRefreshOwner();
+        $child = new RootRefreshChild();
+        $owner->favorite = $child;
+        $this->em->persist($child);
+        $this->em->persist($owner);
+        $this->em->flush();
+        $owner->name = 'local owner';
+        $child->name = 'local child';
+        $this->em->refresh($owner);
+        self::assertSame('database', $owner->name);
+        self::assertSame($child, $owner->favorite);
+        self::assertSame('local child', $child->name);
+        $this->em->flush();
+        $this->em->clear();
+        self::assertSame('local child', $this->em->find(RootRefreshChild::class, $child->id)->name);
+    }
+    public function testAllStillCascadesPersistAndRemove(): void
+    {
+        $owner = new RootRefreshOwner();
+        $child = new RootRefreshChild();
+        $child->owner = $owner;
+        $owner->children->add($child);
+        $this->em->persist($owner);
+        $this->em->flush();
+        self::assertNotNull($child->id);
+        self::assertSame(1, $this->em->getRepository(RootRefreshChild::class)->count([]));
+        $this->em->remove($owner);
+        $this->em->flush();
+        self::assertSame(0, $this->em->getRepository(RootRefreshOwner::class)->count([]));
+        self::assertSame(0, $this->em->getRepository(RootRefreshChild::class)->count([]));
+    }
+    public function testDetachDoesNotInitializeRootOrDetachItsManagedChild(): void
+    {
+        $owner = new RootRefreshOwner();
+        $child = new RootRefreshChild();
+        $child->owner = $owner;
+        $owner->children->add($child);
+        $this->em->persist($owner);
+        $this->em->flush();
+        $ownerId = $owner->id;
+        $childId = $child->id;
+        $this->em->clear();
+        $reference = $this->em->getReference(RootRefreshOwner::class, $ownerId);
+        $child = $this->em->find(RootRefreshChild::class, $childId);
+        self::assertTrue($this->em->isUninitializedObject($reference));
+        $this->em->detach($reference);
+        self::assertTrue($this->em->isUninitializedObject($reference));
+        self::assertFalse($this->em->contains($reference));
+        self::assertTrue($this->em->contains($child));
+    }
+    public function testDetachOnlyCancelsRootInsertAndPreservesPendingChildInsert(): void
+    {
+        $owner = new RootRefreshOwner();
+        $child = new RootRefreshChild();
+        $owner->children->add($child);
+        $this->em->persist($owner);
+        $this->em->detach($owner);
+        self::assertFalse($this->em->getUnitOfWork()->isScheduledForInsert($owner));
+        self::assertTrue($this->em->getUnitOfWork()->isScheduledForInsert($child));
+        $this->em->flush();
+        self::assertNull($owner->id);
+        self::assertNotNull($child->id);
+        self::assertSame(0, $this->em->getRepository(RootRefreshOwner::class)->count([]));
+        self::assertSame(1, $this->em->getRepository(RootRefreshChild::class)->count([]));
     }
     public function testDirectRefreshOfTransientRootStillThrows(): void
     {
         $this->expectException(ORMInvalidArgumentException::class);
-        $this->em->refresh(new CascadeRefreshOwner());
+        $this->em->refresh(new RootRefreshOwner());
     }
-    public function testDetachedAssociationStillThrows(): void
+    public function testRefreshReplacesDetachedAssociationWithoutTraversingIt(): void
     {
-        $child = new CascadeRefreshChild();
-        $owner = new CascadeRefreshOwner();
+        $child = new RootRefreshChild();
+        $owner = new RootRefreshOwner();
         $this->em->persist($child);
         $this->em->persist($owner);
         $this->em->flush();
         $this->em->detach($child);
         $owner->favorite = $child;
-        $this->expectException(ORMInvalidArgumentException::class);
         $this->em->refresh($owner);
+        self::assertNull($owner->favorite);
+        self::assertFalse($this->em->contains($child));
     }
 }

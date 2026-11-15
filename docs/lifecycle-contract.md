@@ -14,6 +14,8 @@ This is the tested boundary for ordinary entity writes. Bulk BYPASS, native SQL 
 
 Nested flush is rejected before re-entering UnitOfWork. Full entity queries preserve managed local changes; explicit refresh overwrites them. Native lazy initialization retains a single Identity Map instance. Partial managed entity projections are [removed](partial-entity-removal.md).
 
+Explicit refresh/detach affect only the given entity. Association cascades are persist/remove; all expands to those two. Related managed objects and their pending writes remain independent. Use explicit operations for known related objects or clear() for a whole-context reset. See [migration](cascade-refresh-detach-removal.md).
+
 ## Failures
 
 | Failure boundary | Context / database state | Application action |

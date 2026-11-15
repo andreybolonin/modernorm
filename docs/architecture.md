@@ -12,7 +12,7 @@ Attributes are the only mapping source. Each concrete entity has one scalar prim
 
 One EntityManager owns an Identity Map, UnitOfWork, persisters and lazy-loading queues. Entity queries, native SQL hydration and repository loaders use that same context. Bulk writes deliberately expose separate state policies rather than silently synchronizing objects.
 
-Snapshot and explicit change tracking, cascades, orphan removal, callbacks and basic locking remain part of the supported persistence model. Not every combination of inherited extension points is covered; the [compatibility matrix](compatibility.md) defines the tested boundary.
+Snapshot and explicit change tracking, persist/remove cascades, orphan removal, callbacks and basic locking remain part of the supported persistence model. Not every combination of inherited extension points is covered; the [compatibility matrix](compatibility.md) defines the tested boundary.
 
 `Internal/UnitOfWork/AssociationChangePlanner` owns the orphan candidate queue, scheduling reasons and removal policy. Collection mutations report candidates; replacement compares materialized membership arrays. The planner receives `AssociationMembership` facts and does not depend on EntityManager, metadata or PersistentCollection. It does not execute SQL or read entity properties.
 

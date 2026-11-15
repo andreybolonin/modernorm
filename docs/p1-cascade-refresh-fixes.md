@@ -1,5 +1,7 @@
 # P1 cascade refresh fix — 2026-11-15
 
+Historical fix report: cascade refresh has since been [removed](cascade-refresh-detach-removal.md). RootRefreshRegressionTest retains the applicable explicit refresh scenarios; recursive refresh/detach and their visited sets no longer exist.
+
 This pass resolves the supported cascade refresh scenario linked to #7169 and #10499 in the [audit](doctrine-open-issues-audit.md). It does not certify every upstream graph variation.
 
 Cascade refresh skips association members that are NEW or scheduled for INSERT, because they have no stored row to reload. Refreshing the owner restores its scalar fields and associations from the database, discarding transient collection members or local to-one replacements. Managed associated entities still refresh recursively; cycles remain guarded by the visited set. Detached associated entities still raise the existing exception. Direct refresh of an unmanaged root remains invalid.

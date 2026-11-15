@@ -17,7 +17,7 @@ class Owner
     public string $name = 'owner';
     public string $extra; // Intentionally unmapped: cache probes add this field at runtime.
     /** @var Collection<int, Child> */
-    #[ORM\OneToMany(targetEntity: Child::class, mappedBy: 'owner', cascade: ['persist', 'refresh'], indexBy: 'name')]
+    #[ORM\OneToMany(targetEntity: Child::class, mappedBy: 'owner', cascade: ['persist'], indexBy: 'name')]
     public Collection $children;
     /** @var Collection<int, Tag> */
     #[ORM\ManyToMany(targetEntity: Tag::class, inversedBy: 'owners', cascade: ['persist'])]

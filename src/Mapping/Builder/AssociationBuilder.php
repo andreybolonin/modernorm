@@ -61,22 +61,6 @@ class AssociationBuilder
     }
 
     /** @return $this */
-    public function cascadeDetach(): static
-    {
-        $this->mapping['cascade'][] = 'detach';
-
-        return $this;
-    }
-
-    /** @return $this */
-    public function cascadeRefresh(): static
-    {
-        $this->mapping['cascade'][] = 'refresh';
-
-        return $this;
-    }
-
-    /** @return $this */
     public function fetchEager(): static
     {
         $this->mapping['fetch'] = ClassMetadata::FETCH_EAGER;

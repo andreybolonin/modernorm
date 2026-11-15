@@ -427,12 +427,6 @@ parameters:
 			path: src/UnitOfWork.php
 
 		-
-			message: '#^Parameter &\$visited by\-ref type of method ModernORM\\UnitOfWork\:\:cascadeDetach\(\) expects array\<int, object\>, array\<mixed\> given\.$#'
-			identifier: parameterByRef.type
-			count: 2
-			path: src/UnitOfWork.php
-
-		-
 			message: '#^Result of method Doctrine\\DBAL\\Connection\:\:commit\(\) \(void\) is used\.$#'
 			identifier: method.void
 			count: 1

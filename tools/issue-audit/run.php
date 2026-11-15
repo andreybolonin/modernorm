@@ -46,6 +46,7 @@ $cases['readonly_datetime_refresh'] = [[9505], static function (EntityManager $e
     $em->flush();
     $em->refresh($entity);
 }];
+// Historical probe name: root refresh remains supported after cascade refresh removal.
 $cases['cascade_refresh_new_child'] = [[7169, 10499], static function (EntityManager $em): void {
     $owner = new Owner();
     $em->persist($owner);

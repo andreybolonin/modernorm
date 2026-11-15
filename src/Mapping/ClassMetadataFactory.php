@@ -39,7 +39,7 @@ use function is_int;
  */
 class ClassMetadataFactory extends AbstractClassMetadataFactory
 {
-    protected string $cacheSalt = '__MODERNORM_TYPED_MAPPING_V14__';
+    protected string $cacheSalt = '__MODERNORM_TYPED_MAPPING_V15__';
 
     public function getMetadataFor(string $className): ClassMetadata
     {

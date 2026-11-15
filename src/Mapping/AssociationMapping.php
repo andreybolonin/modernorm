@@ -18,7 +18,7 @@ abstract class AssociationMapping
     /**
      * The names of persistence operations to cascade on the association.
      *
-     * @var list<'persist'|'remove'|'detach'|'refresh'|'all'>
+     * @var list<'persist'|'remove'|'all'>
      */
     public array $cascade = [];
 
@@ -97,7 +97,7 @@ abstract class AssociationMapping
      *     fieldName: string,
      *     sourceEntity: class-string,
      *     targetEntity: class-string,
-     *     cascade?: list<'persist'|'remove'|'detach'|'refresh'|'all'>,
+     *     cascade?: list<'persist'|'remove'|'all'>,
      *     fetch?: ClassMetadata::FETCH_*|null,
      *     inherited?: class-string|null,
      *     declared?: class-string|null,
@@ -251,16 +251,6 @@ abstract class AssociationMapping
     final public function isCascadePersist(): bool
     {
         return in_array('persist', $this->cascade, true);
-    }
-
-    final public function isCascadeRefresh(): bool
-    {
-        return in_array('refresh', $this->cascade, true);
-    }
-
-    final public function isCascadeDetach(): bool
-    {
-        return in_array('detach', $this->cascade, true);
     }
 
     /** @return array<string, mixed> */

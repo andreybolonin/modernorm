@@ -9,14 +9,14 @@ The local core suite passed **418 tests / 2170 assertions** on PHP **8.4.27 and 
 | Capability | Status | Evidence and boundary |
 | --- | --- | --- |
 | CRUD, snapshot tracking, Identity Map, refresh/clear | Verified | PersistenceTest, AssociationsTest, QueryTest |
-| Detach/cascade detach | Verified cases | UnitOfWorkContractsTest: pending inserts/deletes, dirty objects and to-one cycles; not every collection/orphan combination |
+| Explicit refresh/detach | Verified cases | Root-only operations; pending inserts/deletes, dirty peers, EAGER targets and lazy references. Cascade refresh/detach are [removed](cascade-refresh-detach-removal.md) |
 | DEFERRED_EXPLICIT | Verified cases | Repeated persist, scheduling reset, existing-child cascade persist and explicit remove |
 | Flush cycles | Verified cases | Nullable/mixed cycles, required generated-ID cycle rejection, assigned-ID self-reference; nullable deletion after explicit unlink/flush |
 | ModernORM attributes | Verified | ModernORM mapping imports required; no Doctrine aliases |
 | Scalar PK, embeddables, MappedSuperclass | Verified cases | AdvancedMappingTest, IdentifierScopeTest, MappedSuperclassTest; no composite/association entity IDs |
 | Entity inheritance/discriminators | Excluded | Attributes, entity-to-entity inheritance, metadata hooks/cache and discriminator RSM are rejected |
 | Ordinary PHP inheritance/MappedSuperclass | Verified cases | Independent tables/identity, inherited ID/fields/association/callbacks/version, native lazy and SQL joins; superclass is not a query root |
-| Associations and collections | Verified cases | Four association kinds, owning/inverse, cascades and orphan removal; not every combination |
+| Associations and collections | Verified cases | Four association kinds, owning/inverse, persist/remove cascades and orphan removal; not every combination |
 | Native lazy objects | Verified cases | Final entities, ID access without initialization, explicit initialization and missing rows; PHP readonly classes/properties not separately certified |
 | Immutable | Verified cases | INSERT/DELETE/schema management; ignored field/embedded/FK updates; mutable children, cascades/orphans, M:N links, versions/callbacks, lazy/refresh/cache metadata; [contract](immutable-entities.md) |
 | ManyToOne batching | Bounded | Scalar/string IDs, shared identities/sizes, size-one opt-out, missing/loaded peers, lifecycle; cached targets combine L2 hits with one SQL IN for misses; transactional reads bypass L2 |

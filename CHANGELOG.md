@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Remove cascade refresh/detach and their builder/mapping helpers. all now expands to persist/remove only; reject removed options in mappings, listeners and cached metadata. Keep explicit refresh/detach scoped to one entity, including EAGER target state. Metadata cache salt is V15.
+
 - Remove obsolete PHP <8.4 compatibility branches and ObjectCastPropertyAccessor; native lazy/raw property access is always used on the supported PHP versions.
 
 - Remove partial managed entity hydration. Require complete field/embedded/FK projections for entity roots, joins and DTO entity arguments; reject legacy partial flags/hints and SQL missing declared columns. Retain row/scalar/DTO/array projections, native lazy references and batching. Replace partial-field snapshot tracking with weak lazy-reference markers and version hydration cache keys with the full-v1 contract.

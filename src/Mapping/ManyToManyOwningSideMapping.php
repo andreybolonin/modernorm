@@ -43,7 +43,7 @@ final class ManyToManyOwningSideMapping extends ToManyOwningSideMapping implemen
      *     fieldName: string,
      *     sourceEntity: class-string,
      *     targetEntity: class-string,
-     *     cascade?: list<'persist'|'remove'|'detach'|'refresh'|'all'>,
+     *     cascade?: list<'persist'|'remove'|'all'>,
      *     fetch?: ClassMetadata::FETCH_*|null,
      *     inherited?: class-string|null,
      *     declared?: class-string|null,

@@ -4,15 +4,17 @@ includes:
 parameters:
     level: 5
     scanFiles:
+        - tests/Fixtures/RemovedCascadeModes.php
         - tests/Fixtures/RemovedFetchModes.php
     paths:
         - src
+        - tests/Unit/CascadeScopeTest.php
         - tests/Integration/CompleteEntityProjectionTest.php
         - tests/Unit/FetchModeScopeTest.php
         - tests/Integration/LazyCollectionOperationsTest.php
         - tests/Integration/LazyManyToManyOperationsTest.php
         - tests/Integration/GeneratedFieldTrackingRegressionTest.php
-        - tests/Integration/CascadeRefreshRegressionTest.php
+        - tests/Integration/RootRefreshRegressionTest.php
         - tests/Integration/P1ReadonlyHookRegressionTest.php
         - tests/Integration/QueryTypeRegressionTest.php
         - tests/Unit/RepositoryMagicMethodsTest.php
