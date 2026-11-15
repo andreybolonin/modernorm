@@ -26,7 +26,7 @@ The complete paginated GitHub API snapshot contains **335 open non-PR issues**, 
 | [P1 cascade refresh](p1-cascade-refresh-fixes.md) | `184b24c` | 1 | 2 |
 | [P1 generated-field tracking](p1-generated-tracking-fixes.md) | `184b24c` | 1 | 1 |
 
-The latest full PHPUnit suite reports **1175 tests / 7862 assertions / 21 skipped Redis tests** on each PHP version. The initial suite reported 953 tests / 6929 assertions; the separate 57 diagnostics are not PHPUnit regression tests. Follow-up reports link the regression coverage and diagnostic outcomes for each fix pass. Redis was not started, so this audit adds no new Redis concurrency certification.
+The latest full PHPUnit suite reports **1202 tests / 7937 assertions / 21 skipped Redis tests** on each PHP version. The initial suite reported 953 tests / 6929 assertions; the separate 57 diagnostics are not PHPUnit regression tests. Follow-up reports link the regression coverage and diagnostic outcomes for each fix pass. Redis was not started, so this audit adds no new Redis concurrency certification.
 
 The classification counts below describe the original snapshot. Fixed entries retain their historical baseline classification and carry a separate follow-up status.
 

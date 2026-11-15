@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Extract owning to-one FK normalization and loading decisions into EntityHydrator with explicit ToOneHydrationMode results. Keep Identity Map, registration, SQL, snapshots, batching and inverse repair in UnitOfWork; preserve SoftDelete and deferred-EAGER hint behavior.
+
 - Extract scalar/embedded assignment into internal EntityHydrator. Keep Identity Map, registration, snapshots, associations and queues in UnitOfWork; apply readonly snapshot corrections in assignment order, preserving failure behavior.
 
 - Extract pure scalar/embedded snapshot comparison into ChangeSetComputer, reusing FieldChangeComparator. Keep state, lifecycle, associations and scheduling in UnitOfWork; preserve INSERT/UPDATE permissions, missing-baseline recompute behavior and changeset ordering.

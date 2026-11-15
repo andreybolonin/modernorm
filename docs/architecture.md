@@ -14,7 +14,7 @@ One EntityManager owns an Identity Map, UnitOfWork, persisters and lazy-loading 
 
 Snapshot and explicit change tracking, persist/remove cascades, orphan removal, callbacks and basic locking remain part of the supported persistence model. Not every combination of inherited extension points is covered; the [compatibility matrix](compatibility.md) defines the tested boundary.
 
-`Internal/UnitOfWork/EntityHydrator` assigns prepared scalar/embedded fields through existing accessors. It yields readonly snapshot corrections in assignment order; UnitOfWork applies them and retains Identity Map, registration, snapshots, associations and loading/event queues. See the [scalar assignment boundary](entity-hydrator.md).
+`Internal/UnitOfWork/EntityHydrator` assigns prepared scalar/embedded fields through existing accessors. It yields readonly snapshot corrections in assignment order and computes owning to-one identifiers/loading decisions from supplied facts. UnitOfWork applies the results and retains Identity Map, registration, snapshots, loading execution, associations and loading/event queues. See the [hydration boundary](entity-hydrator.md).
 
 `Internal/UnitOfWork/ChangeSetComputer` compares prepared scalar/embedded snapshots and returns old/new pairs, using FieldChangeComparator for individual values. UnitOfWork retains property access, baseline preparation, state, events, collections, associations and queue updates. The [comparison boundary](change-set-computer.md) records ordinary/recompute and INSERT/UPDATE differences.
 

@@ -10,6 +10,7 @@ use ModernORM\EntityManager;
 use ModernORM\Mapping as ORM;
 use ModernORM\ORMSetup;
 use ModernORM\Query;
+use ModernORM\UnitOfWork;
 use ModernORM\Tools\SchemaTool;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
@@ -197,4 +198,41 @@ final class CriticalHydrationRegressionTest extends TestCase
         self::assertNull($this->em->find(CriticalFile::class, $oldId));
         self::assertNotNull($this->em->find(CriticalFile::class, $newId));
     }
+
+    public static function eagerTargetFacts(): iterable
+    {
+        yield 'new target, deferred' => [false, true];
+        yield 'new target, immediate' => [false, false];
+        yield 'managed proxy, deferred' => [true, true];
+        yield 'managed proxy, disabled hint' => [true, false];
+    }
+
+    #[DataProvider('eagerTargetFacts')]
+    public function testToOnePlanExecutionPreservesIdentityAndDeferredHintBehavior(bool $managed, bool $defer): void
+    {
+        $item = new CriticalItem();
+        $item->owner = new CriticalOwner();
+        $this->em->persist($item);
+        $this->em->flush();
+        $itemId = $item->id;
+        $ownerId = $item->owner->id;
+        $this->em->clear();
+        $reference = $managed ? $this->em->getReference(CriticalOwner::class, $ownerId) : null;
+        $query = $this->em->createQueryBuilder()->fromEntity(CriticalItem::class, 'i')
+            ->where('i.id = :id')->setParameter('id', $itemId)->getQuery();
+        $loaded = $query->setHint(UnitOfWork::HINT_DEFEREAGERLOAD, $defer)->getSingleResult();
+        $owner = $loaded->owner;
+        self::assertSame($ownerId, $owner->id);
+        if ($reference !== null) {
+            self::assertSame($reference, $owner);
+        }
+        // Existing eager proxies retain the historical "hint present but false" queue behavior.
+        self::assertSame($managed && ! $defer, $this->em->isUninitializedObject($owner));
+        $this->em->getUnitOfWork()->triggerEagerLoads();
+        self::assertFalse($this->em->isUninitializedObject($owner));
+        self::assertSame($owner, $this->em->find(CriticalOwner::class, $ownerId));
+        self::assertSame($owner, $this->em->getUnitOfWork()->getOriginalEntityData($loaded)['owner']);
+        $this->em->flush();
+    }
+
 }

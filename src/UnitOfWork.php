@@ -43,6 +43,7 @@ use ModernORM\Internal\UnitOfWork\AssociationChangePlanner;
 use ModernORM\Internal\UnitOfWork\AssociationMembership;
 use ModernORM\Internal\UnitOfWork\ChangeSetComputer;
 use ModernORM\Internal\UnitOfWork\EntityHydrator;
+use ModernORM\Internal\UnitOfWork\ToOneHydrationMode;
 use ModernORM\Internal\UnitOfWork\FlushOperationQueues;
 use ModernORM\Internal\UnitOfWork\IdentityMap;
 use ModernORM\Internal\UnitOfWork\LazyReferenceTracker;
@@ -2377,83 +2378,60 @@ class UnitOfWork implements PropertyChangedListener
                         break;
                     }
 
-                    $associatedId = [];
-
                     assert($assoc->isToOneOwningSide());
-                    foreach ($assoc->targetToSourceKeyColumns as $targetColumn => $srcColumn) {
-                        $joinColumnValue = $data[$srcColumn] ?? null;
-
-                        if ($joinColumnValue !== null) {
-                            if ($joinColumnValue instanceof BackedEnum) {
-                                $joinColumnValue = $joinColumnValue->value;
-                            }
-
-                            $associatedId[$targetClass->fieldNames[$targetColumn]] = $joinColumnValue;
-                        } elseif (in_array($targetClass->getFieldForColumn($targetColumn), $targetClass->identifier, true)) {
-                            // the missing key is part of target's entity primary key
-                            $associatedId = [];
-                            break;
-                        }
+                    $associatedId = EntityHydrator::toOneIdentifier($assoc, $targetClass, $data);
+                    $relatedIdHash = '';
+                    $managedAssociation = null;
+                    // Preserve lookup ordering: NULL/SoftDelete targets bypass the raw Identity Map path.
+                    if ($associatedId !== [] && $targetClass->softDeleteField === null) {
+                        $relatedIdHash = self::getIdHashByIdentifier($associatedId);
+                        $managedAssociation = $this->identityMap->get($targetClass->name, $relatedIdHash);
                     }
+                    $mode = EntityHydrator::planToOneLoad(
+                        $targetClass,
+                        $associatedId,
+                        $managedAssociation,
+                        $hints['fetchMode'][$class->name][$field],
+                        $hints[self::HINT_DEFEREAGERLOAD] ?? null,
+                        $managedAssociation !== null
+                            && $hints['fetchMode'][$class->name][$field] === ClassMetadata::FETCH_EAGER
+                            && isset($hints[self::HINT_DEFEREAGERLOAD])
+                            && $this->isUninitializedObject($managedAssociation),
+                    );
 
-                    if (! $associatedId) {
-                        // Foreign key is NULL
-                        $class->propertyAccessors[$field]->setValue($entity, null);
-                        $this->originalEntityData[$oid][$field] = null;
+                    switch ($mode) {
+                        case ToOneHydrationMode::NULL_REFERENCE:
+                            $class->propertyAccessors[$field]->setValue($entity, null);
+                            $this->originalEntityData[$oid][$field] = null;
+                            break 2;
 
-                        break;
-                    }
+                        case ToOneHydrationMode::SOFT_DELETE_LOOKUP:
+                            $newValue = $this->em->find($targetClass->name, $associatedId);
+                            $class->propertyAccessors[$field]->setValue($entity, $newValue);
+                            $this->originalEntityData[$oid][$field] = $newValue;
+                            break 2;
 
-                    if ($targetClass->softDeleteField !== null) {
-                        $newValue = $this->em->find($targetClass->name, $associatedId);
-                        $class->propertyAccessors[$field]->setValue($entity, $newValue);
-                        $this->originalEntityData[$oid][$field] = $newValue;
-                        break;
-                    }
-
-                    // Foreign key is set
-                    // Check identity map first
-                    $relatedIdHash = self::getIdHashByIdentifier($associatedId);
-
-                    switch (true) {
-                        case ($managedAssociation = $this->identityMap->get($targetClass->name, $relatedIdHash)) !== null:
+                        case ToOneHydrationMode::MANAGED:
+                        case ToOneHydrationMode::MANAGED_DEFERRED:
+                            assert($managedAssociation !== null);
                             $newValue = $managedAssociation;
-
-                            // If this is an uninitialized proxy, we are deferring eager loads,
-                            // this association is marked as eager fetch, and its an uninitialized proxy (wtf!)
-                            // then we can append this entity for eager loading!
-                            if (
-                                $hints['fetchMode'][$class->name][$field] === ClassMetadata::FETCH_EAGER &&
-                                isset($hints[self::HINT_DEFEREAGERLOAD]) &&
-                                $this->isUninitializedObject($newValue)
-                            ) {
+                            if ($mode === ToOneHydrationMode::MANAGED_DEFERRED) {
                                 $this->eagerLoadingEntities[$targetClass->name][$relatedIdHash] = current($associatedId);
                             }
-
                             break;
 
-                        default:
-                            switch (true) {
-                                // We are negating the condition here. Other cases will assume it is valid!
-                                case $hints['fetchMode'][$class->name][$field] !== ClassMetadata::FETCH_EAGER:
-                                    $newValue = $this->em->getProxyFactory()->getProxy($assoc->targetEntity, $associatedId);
-                                    $this->registerManagedProxy($newValue, $associatedId);
-                                    break;
-
-                                case isset($hints[self::HINT_DEFEREAGERLOAD]) &&
-                                    $hints[self::HINT_DEFEREAGERLOAD]:
-                                    // TODO: Is there a faster approach?
-                                    $this->eagerLoadingEntities[$targetClass->name][$relatedIdHash] = current($associatedId);
-
-                                    $newValue = $this->em->getProxyFactory()->getProxy($assoc->targetEntity, $associatedId);
-                                    $this->registerManagedProxy($newValue, $associatedId);
-                                    break;
-
-                                default:
-                                    // TODO: This is very imperformant, ignore it?
-                                    $newValue = $this->em->find($assoc->targetEntity, $associatedId);
-                                    break;
+                        case ToOneHydrationMode::REFERENCE:
+                        case ToOneHydrationMode::REFERENCE_DEFERRED:
+                            if ($mode === ToOneHydrationMode::REFERENCE_DEFERRED) {
+                                $this->eagerLoadingEntities[$targetClass->name][$relatedIdHash] = current($associatedId);
                             }
+                            $newValue = $this->em->getProxyFactory()->getProxy($assoc->targetEntity, $associatedId);
+                            $this->registerManagedProxy($newValue, $associatedId);
+                            break;
+
+                        case ToOneHydrationMode::EAGER_LOOKUP:
+                            $newValue = $this->em->find($assoc->targetEntity, $associatedId);
+                            break;
                     }
 
                     if ($assoc->isManyToOne()
