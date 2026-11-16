@@ -1,0 +1,237 @@
+{
+    "php": "8.5.12",
+    "os": "Darwin",
+    "arch": "arm64",
+    "opcache_cli": "1",
+    "jit": "disable",
+    "deepclone": "0.8.10",
+    "mode": "orm",
+    "rows": 20000,
+    "rounds": 9,
+    "scope": "Creation and scalar\/embedded assignment only; no SQL or lifecycle events",
+    "compatibility_probes": {
+        "orm_registers_entity_before_failed_assignment": true,
+        "combined_returns_entity_on_failed_assignment": false,
+        "readonly_snapshot_before_later_failure_preserved_by_candidate": false,
+        "readonly_snapshot_before_later_failure_preserved_by_guarded": true,
+        "embedded_interleaved_partial_failure_preserved": true
+    },
+    "measurements": {
+        "create-flat-combined": {
+            "median_ms": 16.093167,
+            "median_peak_delta_bytes": 4369528,
+            "median_retained_delta_bytes": 4368440,
+            "samples_ms": [
+                15.934833,
+                16.937042,
+                16.093167,
+                16.070791,
+                16.074292,
+                16.140542,
+                15.88825,
+                16.545208,
+                16.626875
+            ],
+            "peak_delta_samples_bytes": [
+                4369528,
+                4369528,
+                4369528,
+                4369528,
+                4369528,
+                4369528,
+                4369528,
+                4369528,
+                4369528
+            ]
+        },
+        "create-flat-split": {
+            "median_ms": 16.068417,
+            "median_peak_delta_bytes": 4369528,
+            "median_retained_delta_bytes": 4368440,
+            "samples_ms": [
+                16.168542,
+                16.559916,
+                16.346917,
+                15.920042,
+                16.068417,
+                16.035125,
+                15.945791,
+                15.874666,
+                16.146166
+            ],
+            "peak_delta_samples_bytes": [
+                4369528,
+                4369528,
+                4369528,
+                4369528,
+                4369528,
+                4369528,
+                4369528,
+                4369528,
+                4369528
+            ]
+        },
+        "embedded-1-new": {
+            "median_ms": 15.548417,
+            "median_peak_delta_bytes": 3569112,
+            "median_retained_delta_bytes": 3568440,
+            "samples_ms": [
+                15.514542,
+                15.476375,
+                15.736833,
+                15.765125,
+                15.548417,
+                15.526209,
+                15.595791,
+                15.623708,
+                15.526542
+            ],
+            "peak_delta_samples_bytes": [
+                3569112,
+                3569112,
+                3569112,
+                3569112,
+                3569112,
+                3569112,
+                3569112,
+                3569112,
+                3569112
+            ]
+        },
+        "embedded-8-new": {
+            "median_ms": 46.73975,
+            "median_peak_delta_bytes": 6290600,
+            "median_retained_delta_bytes": 6288440,
+            "samples_ms": [
+                48.892166,
+                46.73975,
+                46.116958,
+                64.183625,
+                45.68175,
+                45.327583,
+                46.432334,
+                48.317875,
+                47.138959
+            ],
+            "peak_delta_samples_bytes": [
+                6290600,
+                6290600,
+                6290600,
+                6290600,
+                6290600,
+                6290600,
+                6290600,
+                6290600,
+                6290600
+            ]
+        },
+        "embedded-8-existing": {
+            "median_ms": 43.156083,
+            "median_peak_delta_bytes": 2504,
+            "median_retained_delta_bytes": 0,
+            "samples_ms": [
+                43.156083,
+                46.661041,
+                43.315833,
+                42.727667,
+                42.737375,
+                42.637875,
+                42.686708,
+                45.48375,
+                45.219291
+            ],
+            "peak_delta_samples_bytes": [
+                2504,
+                2504,
+                2504,
+                2504,
+                2504,
+                2504,
+                2504,
+                2504,
+                2504
+            ]
+        },
+        "readonly-1-new": {
+            "median_ms": 19.065166,
+            "median_peak_delta_bytes": 2449864,
+            "median_retained_delta_bytes": 2448816,
+            "samples_ms": [
+                19.065166,
+                18.66575,
+                19.237625,
+                19.250292,
+                18.749833,
+                18.622,
+                19.077083,
+                19.255625,
+                18.751083
+            ],
+            "peak_delta_samples_bytes": [
+                2449864,
+                2449864,
+                2449864,
+                2449864,
+                2449864,
+                2449864,
+                2449864,
+                2449864,
+                2449864
+            ]
+        },
+        "readonly-6-new": {
+            "median_ms": 52.186875,
+            "median_peak_delta_bytes": 4370240,
+            "median_retained_delta_bytes": 4368816,
+            "samples_ms": [
+                54.131125,
+                52.008375,
+                52.309208,
+                51.901541,
+                51.975542,
+                52.186875,
+                52.46875,
+                52.115333,
+                52.459
+            ],
+            "peak_delta_samples_bytes": [
+                4370240,
+                4370240,
+                4370240,
+                4370240,
+                4370240,
+                4370240,
+                4370240,
+                4370240,
+                4370240
+            ]
+        },
+        "readonly-6-existing-control": {
+            "median_ms": 59.187333,
+            "median_peak_delta_bytes": 1800,
+            "median_retained_delta_bytes": 376,
+            "samples_ms": [
+                60.544666,
+                59.187333,
+                60.361209,
+                59.517791,
+                60.33275,
+                58.64625,
+                57.013792,
+                57.45,
+                56.674791
+            ],
+            "peak_delta_samples_bytes": [
+                1800,
+                1800,
+                1800,
+                1800,
+                1800,
+                1800,
+                1800,
+                1800,
+                1800
+            ]
+        }
+    }
+}

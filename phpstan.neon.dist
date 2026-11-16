@@ -11,6 +11,8 @@ parameters:
         - src
         - tests/Unit/ToOneHydrationTest.php
         - tests/Unit/EntityHydratorTest.php
+        - tests/Unit/EmbeddedHydratorTest.php
+        - tests/Integration/EmbeddedBatchHydrationTest.php
         - tests/Unit/ChangeSetComputerTest.php
         - tests/Unit/CascadeScopeTest.php
         - tests/Integration/CompleteEntityProjectionTest.php

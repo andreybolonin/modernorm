@@ -35,8 +35,18 @@ final class EntityHydrator
             && function_exists('deepclone_hydrate')
             && defined('DEEPCLONE_HYDRATE_NO_LAZY_INIT');
 
-        if ($native && $metadata->embeddedClasses === [] && ! $metadata->reflClass?->isUninitializedLazyObject($entity) && self::tryHydrateWithDeepclone($metadata, $entity, $data)) {
-            return;
+        if ($native) {
+            if ($metadata->embeddedClasses === []) {
+                if (! $metadata->reflClass?->isUninitializedLazyObject($entity) && self::tryHydrateWithDeepclone($metadata, $entity, $data)) {
+                    return;
+                }
+            } elseif (count($metadata->fieldMappings) >= EmbeddedHydrator::MIN_BATCH_SIZE && ! $metadata->reflClass?->isUninitializedLazyObject($entity)) {
+                $plan = EmbeddedHydrator::plan($metadata);
+                if ($plan !== []) {
+                    yield from EmbeddedHydrator::hydrate($metadata, $entity, $data, $plan);
+                    return;
+                }
+            }
         }
 
         foreach ($data as $field => $value) {

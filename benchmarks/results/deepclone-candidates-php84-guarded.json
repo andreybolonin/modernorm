@@ -1,0 +1,102 @@
+{
+    "php": "8.4.27",
+    "os": "Darwin",
+    "arch": "arm64",
+    "opcache_cli": "1",
+    "jit": "disable",
+    "deepclone": "0.8.10",
+    "mode": "guarded",
+    "rows": 20000,
+    "rounds": 9,
+    "scope": "Creation and scalar\/embedded assignment only; no SQL or lifecycle events",
+    "compatibility_probes": {
+        "orm_registers_entity_before_failed_assignment": true,
+        "combined_returns_entity_on_failed_assignment": false,
+        "readonly_snapshot_before_later_failure_preserved_by_candidate": false,
+        "readonly_snapshot_before_later_failure_preserved_by_guarded": true,
+        "embedded_interleaved_partial_failure_preserved": true
+    },
+    "measurements": {
+        "readonly-1-new": {
+            "median_ms": 20.809375,
+            "median_peak_delta_bytes": 2449992,
+            "median_retained_delta_bytes": 2448816,
+            "samples_ms": [
+                20.783833,
+                20.809375,
+                20.84225,
+                20.804041,
+                20.904042,
+                20.93325,
+                20.795542,
+                20.933708,
+                20.775125
+            ],
+            "peak_delta_samples_bytes": [
+                2449992,
+                2449992,
+                2449992,
+                2449992,
+                2449992,
+                2449992,
+                2449992,
+                2449992,
+                2449992
+            ]
+        },
+        "readonly-6-new": {
+            "median_ms": 65.17825,
+            "median_peak_delta_bytes": 4370368,
+            "median_retained_delta_bytes": 4368816,
+            "samples_ms": [
+                65.028291,
+                65.683083,
+                65.105709,
+                65.129875,
+                64.99075,
+                65.17825,
+                65.278708,
+                65.712667,
+                65.249667
+            ],
+            "peak_delta_samples_bytes": [
+                4370368,
+                4370368,
+                4370368,
+                4370368,
+                4370368,
+                4370368,
+                4370368,
+                4370368,
+                4370368
+            ]
+        },
+        "readonly-6-existing-control": {
+            "median_ms": 83.976583,
+            "median_peak_delta_bytes": 2128,
+            "median_retained_delta_bytes": 376,
+            "samples_ms": [
+                83.951667,
+                84.115458,
+                84.581167,
+                83.940666,
+                83.833833,
+                83.976583,
+                87.833041,
+                84.057625,
+                83.818167
+            ],
+            "peak_delta_samples_bytes": [
+                2128,
+                2128,
+                2128,
+                2128,
+                2128,
+                2128,
+                2128,
+                2128,
+                2128
+            ]
+        }
+    }
+}

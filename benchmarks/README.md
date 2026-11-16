@@ -34,6 +34,26 @@ Peak and retained memory are PHP heap deltas after metadata/input setup, measure
 
 [Recorded PHP 8.4/8.5 comparison](results/deepclone.md).
 
+### Further deepclone candidates
+
+`deepclone-candidates.php` tests three extensions of the existing fast path: fused flat creation/assignment, writable embedded batching (one/eight fields, new/existing), and initial readonly assignment (one/six readonly fields). Its baseline is the current production `EntityHydrator`, with deepclone already enabled for flat entities. It needs no database server and changes no production code.
+
+```sh
+php -d opcache.enable_cli=1 -d extension=/tmp/modernorm-deepclone-src/modules/deepclone.so benchmarks/deepclone-candidates.php orm > candidates-orm.json
+php -d opcache.enable_cli=1 -d extension=/tmp/modernorm-deepclone-src/modules/deepclone.so benchmarks/deepclone-candidates.php candidate > candidates-native.json
+php -d opcache.enable_cli=1 -d extension=/tmp/modernorm-deepclone-src/modules/deepclone.so benchmarks/deepclone-candidates.php guarded > candidates-guarded.json
+```
+
+Use a separately built shared library for each PHP minor version, as above. Defaults are 20,000 entities, two warmups and nine measured rounds; `MODERNORM_BENCH_ROWS` and `MODERNORM_BENCH_ROUNDS` override them. `orm` and `candidate` cover eight scenarios, while `guarded` covers the three readonly scenarios only. Every timed result retains new entities until validation. Existing entities and an embedded-identity control list are prepared before timing. Field plans, metadata and input values are warmed outside timing; per-row filtering, argument/chunk construction, readonly checks/corrections, object creation and embedded attachment are timed. All values and object identities are verified outside timing, including constructor/hook bypass, ignored unmapped input, existing embedded identity and equivalent readonly-date snapshot identity.
+
+The flat split/fused prototypes use identical argument preparation. Compare those two prototype cases to isolate creation fusion: comparing fused creation with the production baseline also includes differences in mapping/eligibility plumbing. Embedded batching preserves contiguous input groups, attaches a missing embedded object before writing its fields, and retains existing objects. The initial readonly prototype emits corrections only after its native batch completes; its error-order probe deliberately exposes that incompatibility. `guarded` adds a generator, initialization/type checks and accessor fallback before writing, preserving the characterized partial-failure corrections. Fixed fixtures use named types and no enum conversion, nested embedded graphs, readonly children, custom accessors or referenced input values; these prototypes are not general production adapters.
+
+Additional untimed probes check actual UnitOfWork registration after a failed assignment versus combined creation, readonly corrections before a later type failure (both naive and guarded), and interleaved embedded/root writes before a later error. Expected incompatibilities are recorded as `false` in `compatibility_probes`; unexpected outcomes throw. Peak/retained memory values are incremental PHP heap bytes, not total process memory or RSS. There are no performance thresholds or end-to-end ORM claims.
+
+[Recorded candidate measurements and recommendations](results/deepclone-candidates.md).
+
+The [production embedded comparison](results/deepclone-embedded.md) measures the implemented batching against the pre-change EntityHydrator and EmbeddablePropertyAccessor. It includes runtime eligibility checks, the eight-field threshold and all fallback plumbing.
+
 Run against a dedicated disposable PostgreSQL database, using PHP 8.4+ and installed Composer dependencies. Connection settings use `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD` and `PGDATABASE`; the default database is `modernorm_test`. Scripts create randomly named schemas and remove them in `finally`. An interrupted/killed process may require manual cleanup of its benchmark schema.
 
 ```sh

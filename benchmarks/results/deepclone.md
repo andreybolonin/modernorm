@@ -23,6 +23,8 @@ Raw measurements:
 
 ## Guarded production implementation
 
+This comparison predates embedded batching. The [later embedded comparison](deepclone-embedded.md) covers the additional production path.
+
 The implemented automatic fast path adds metadata-plan caching and eligibility checks. It handles compatible scalar backed-enum properties natively, but retains the entire accessor path for embedded/readonly/custom mappings, enum arrays and uninitialized lazy objects. Inputs requiring special null or enum conversion also fall back before any writes. This differs from the experimental adapter above, which mixed native writes and accessors within each entity.
 
 The production comparison uses the same workload, PHP configuration and sample counts; both processes load the extension. The `accessors` mode explicitly runs the accessor loop rather than automatic extension detection, while `orm` invokes the real EntityHydrator. Results from the final implementation:

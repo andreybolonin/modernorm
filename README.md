@@ -11,6 +11,7 @@ Batch fetching, PostgreSQL bulk writes, entity L2 cache and built-in observabili
 | Feature | What you get |
 | --- | --- |
 | **[Batch fetching](docs/batch-fetching.md)** | Load lazy ManyToOne, OneToMany and ManyToMany associations in groups, configured directly on attributes. |
+| **[Native hydration acceleration](docs/entity-hydrator.md#optional-deepclone-acceleration)** | Automatically use `deepclone_hydrate()` from optional `ext-deepclone` for eligible scalar fields and large embedded batches, with accessor fallback. |
 | **[PostgreSQL-native bulk](docs/bulk-api.md)** | Multi-row INSERT, UPSERT, UPDATE, DELETE and `RETURNING`, with explicit UnitOfWork policies. |
 | **[Entity L2 cache](docs/read-only-l2-cache.md)** | Cache entities across EntityManagers with PSR-6 storage, TTL and generation-based invalidation. |
 | **[Association Query API](docs/association-query-api.md)** | Count, check membership, filter and paginate OneToMany/ManyToMany directly in SQL without loading collections. |

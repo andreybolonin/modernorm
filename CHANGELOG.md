@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Batch eight or more contiguous writable scalar fields of one embedded object with optional deepclone. Preserve embedded identity, constructor/hook bypass, root/child assignment order and readonly snapshot corrections; retain accessor fallback for small groups, nested/custom/readonly/enum/object mappings, runtime subclasses, lazy objects and null-to-uninitialized writes.
+
 - Fix the CI hydration benchmark after removal of nested array graphs: measure and validate a supported flat array projection instead of the obsolete collection-graph scenario.
 
 - Suggest optional ext-deepclone >=0.8.10 and automatically accelerate flat scalar entity hydration when available. Preserve accessor hydration for embedded/readonly/custom mappings, enum arrays, uninitialized lazy objects and inputs requiring ORM-specific conversion. Keep constructor bypass, property-hook bypass, assignment order and snapshots unchanged; exercise both paths in PHP 8.4/8.5 CI.
