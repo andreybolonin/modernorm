@@ -9,6 +9,9 @@ use ModernORM\Internal\UnitOfWork\FlushOperationQueues;
 use ModernORM\Internal\UnitOfWork\InsertBatch;
 use ModernORM\Mapping\ClassMetadata;
 use ModernORM\Persisters\Entity\EntityPersister;
+use ModernORM\Persisters\Collection\CollectionPersister;
+use ModernORM\PersistentCollection;
+use Doctrine\Common\Collections\ArrayCollection;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
@@ -210,6 +213,80 @@ final class FlushExecutorTest extends TestCase
         } catch (RuntimeException $error) {
             self::assertSame($failure, $error);
             self::assertSame(['remove identity first'], $trace);
+        }
+    }
+
+
+    public static function collectionWriteKinds(): array
+    {
+        return ['delete' => ['delete'], 'update' => ['update']];
+    }
+
+    #[DataProvider('collectionWriteKinds')]
+    public function testCollectionWritesStayLazyAndDoNotSynchronizeSnapshots(string $kind): void
+    {
+        $initial = new stdClass();
+        $first = new PersistentCollection(null, null, new ArrayCollection([$initial]));
+        $second = new PersistentCollection(null, null, new ArrayCollection([$initial]));
+        foreach ([$first, $second] as $collection) {
+            $collection->takeSnapshot();
+            $collection->add(new stdClass());
+        }
+        $trace = [];
+        $persister = $this->createMock(CollectionPersister::class);
+        $persister->expects(self::exactly(2))->method($kind)->willReturnCallback(static function (PersistentCollection $collection) use (&$trace, $first): void {
+            $trace[] = $collection === $first ? 'SQL first' : 'SQL second';
+        });
+        $operations = static function () use (&$trace, $first, $second, $persister): \Generator {
+            $trace[] = 'prepare first';
+            yield [$first, $persister];
+            $trace[] = 'prepare second';
+            yield [$second, $persister];
+        };
+        if ($kind === 'delete') {
+            FlushExecutor::executeCollectionDeletions($operations());
+        } else {
+            FlushExecutor::executeCollectionUpdates($operations());
+        }
+        self::assertSame(['prepare first', 'SQL first', 'prepare second', 'SQL second'], $trace);
+        foreach ([$first, $second] as $collection) {
+            self::assertSame([$initial], $collection->getSnapshot());
+            self::assertTrue($collection->isDirty());
+        }
+    }
+
+    #[DataProvider('collectionWriteKinds')]
+    public function testFailedSecondCollectionStopsBeforeLaterPreparation(string $kind): void
+    {
+        $first = new PersistentCollection(null, null, new ArrayCollection());
+        $second = new PersistentCollection(null, null, new ArrayCollection());
+        $failure = new RuntimeException('second collection failed');
+        $trace = [];
+        $persister = $this->createMock(CollectionPersister::class);
+        $persister->expects(self::exactly(2))->method($kind)->willReturnCallback(static function (PersistentCollection $collection) use (&$trace, $first, $failure): void {
+            $trace[] = $collection === $first ? 'SQL first' : 'SQL second';
+            if ($collection !== $first) {
+                throw $failure;
+            }
+        });
+        $operations = static function () use (&$trace, $first, $second, $persister): \Generator {
+            $trace[] = 'prepare first';
+            yield [$first, $persister];
+            $trace[] = 'prepare second';
+            yield [$second, $persister];
+            $trace[] = 'prepare third';
+            yield [$first, $persister];
+        };
+        try {
+            if ($kind === 'delete') {
+                FlushExecutor::executeCollectionDeletions($operations());
+            } else {
+                FlushExecutor::executeCollectionUpdates($operations());
+            }
+            self::fail('Second collection failure must propagate.');
+        } catch (RuntimeException $error) {
+            self::assertSame($failure, $error);
+            self::assertSame(['prepare first', 'SQL first', 'prepare second', 'SQL second'], $trace);
         }
     }
 

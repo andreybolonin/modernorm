@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Route collection deletions and updates through FlushExecutor's lazy operation streams. Keep deferred-explicit owner checks, queues, phase ordering and post-commit collection snapshots in UnitOfWork; preserve collection state across SQL/COMMIT failures.
+
 - Route DELETE writes through FlushExecutor's lazy operation stream. Keep dependency ordering, pre-SQL Identity Map removal, post-SQL state/ID cleanup and deferred postRemove in UnitOfWork; preserve rollback and event-failure behavior.
 
 - Route ordinary and extra UPDATE writes through FlushExecutor's lazy operation stream. Keep sorting, readonly skips, preUpdate/recomputation, changeset installation, queue cleanup and postUpdate in UnitOfWork; stop without later coordination on preparation/SQL/event failure and retain transaction rollback ownership.

@@ -6,7 +6,7 @@ UnitOfWork computes dependency order and prepares batches with InsertBatch::batc
 
 Persisters still own SQL generation, identity/RETURNING handling and calls to UnitOfWork::assignPostInsertId(). That method retains ID conversion, entity identifiers/state/snapshots and Identity Map registration. UnitOfWork collects postPersist events only after successful batch execution and dispatches them after all INSERT batches and their generated IDs are complete. A later failed batch prevents the deferred events from being dispatched.
 
-Transactions/savepoints, statistics, rollback, uncertain COMMIT/L2 recovery and successful-flush cleanup remain in UnitOfWork. Collection execution is unchanged. The executor has no EntityManager or UnitOfWork dependency and no access to their state arrays.
+Transactions/savepoints, statistics, rollback, uncertain COMMIT/L2 recovery and successful-flush cleanup remain in UnitOfWork. The executor has no EntityManager or UnitOfWork dependency and no access to their state arrays.
 
 ## Ordinary and extra UPDATE
 
@@ -24,6 +24,12 @@ If SQL throws, the generator is not resumed past that yield: no post-write clean
 
 The next entity is prepared only after that cleanup. Once all deletes complete, the generator dispatches the collected postRemove events in their existing order. A SQL failure stops before the failed entity's cleanup and all deferred postRemove events; an event failure propagates after successful SQL/state cleanup. UnitOfWork's unchanged failure handler rolls back and closes the manager in either case. ID values already reset before a failure are not restored, matching the previous implementation.
 
+## Collections
+
+`executeCollectionDeletions()` and `executeCollectionUpdates()` consume lazy `[collection, collectionPersister]` streams supplied by UnitOfWork. Owner lookup, metadata inspection, deferred-implicit/explicit policy and dirty-check scheduling checks remain in the deletion generator. Persisters are selected only when the next operation is requested. The executor calls delete/update in observation order without modifying queues, collections, dirty flags or snapshots.
+
+Flush phases remain: collection deletions → entity INSERT → ordinary UPDATE → extra UPDATE → collection updates → entity DELETE. Successful COMMIT/savepoint completion, visited-collection synchronization and postFlush remain under UnitOfWork. A failure does not synchronize collection snapshots. This preserves their pre-flush state; `PersistentCollection::clear()` can already have taken an empty snapshot at mutation time, before flush begins.
+
 ## Validation
 
 Five unit cases cover INSERT queue visibility at execution and propagation of failures during enqueue, acknowledgement and SQL execution without later work or retry. PostgreSQL WriteOrderTest additionally verifies that the first postPersist sees every generated ID, both registered objects, empty insertion scheduling and all inserted rows inside the still-active transaction. A second case fails the later INSERT with a CHECK constraint and verifies rollback, no postPersist events, a closed manager and cleared tracking. Existing generated-ID, dependency/cycle, lifecycle, flush-boundary and cache rollback regressions remain unchanged.
@@ -32,4 +38,6 @@ Two additional executor cases verify sequential update preparation/completion an
 
 Two DELETE executor cases verify preparation/cleanup/event order and failure short-circuiting. Three PostgreSQL cases verify complete deletion/state cleanup before postRemove, rollback of an earlier successful DELETE when a later FK-constrained DELETE fails without postRemove, and rollback plus skipped later events when the first postRemove throws. Existing FK/cascade/SET NULL ordering and hooked/readonly-ID regressions run unchanged.
 
-Validation: the full suite passes sequentially on PHP 8.4.27 and PHP 8.5.12 with PostgreSQL 18.7: **1240 tests / 8193 assertions / 21 Redis skips** per runtime. PHPStan and PSR-12 pass without new suppressions.
+Four collection executor cases cover lazy preparation, unchanged snapshots/dirty flags after executor completion and stopping after the second write fails, for both delete and update. Six PostgreSQL cases cover generated IDs and ordinary updates before collection writes, successful snapshot synchronization, rollback of the first collection update/deletion when the second fails, deferred FK failure at COMMIT without advancing either snapshot, and deferred-explicit owner eligibility with/without persist. Existing collection, orphan-removal, inverse-side and batch-loading regressions run unchanged.
+
+Validation: the full suite passes sequentially on PHP 8.4.27 and PHP 8.5.12 with PostgreSQL 18.7: **1250 tests / 8254 assertions / 21 Redis skips** per runtime. PHPStan and PSR-12 pass without new suppressions.

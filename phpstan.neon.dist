@@ -14,6 +14,7 @@ parameters:
         - tests/Unit/EmbeddedHydratorTest.php
         - tests/Unit/FlushExecutorTest.php
         - tests/Integration/EmbeddedBatchHydrationTest.php
+        - tests/Integration/CollectionFlushExecutionTest.php
         - tests/Unit/ChangeSetComputerTest.php
         - tests/Unit/CascadeScopeTest.php
         - tests/Integration/CompleteEntityProjectionTest.php

@@ -343,14 +343,7 @@ class UnitOfWork implements PropertyChangedListener
         try {
             $this->measurePhase(\ModernORM\Statistics\UnitOfWorkPhase::WRITES, function (): void {
                 // Collection deletions (deletions of complete collections)
-                foreach ($this->flushQueues->collectionDeletions() as $collectionToDelete) {
-                    // Deferred explicit tracked collections can be removed only when owning relation was persisted
-                    $owner = $collectionToDelete->getOwner();
-
-                    if ($this->em->getClassMetadata($owner::class)->isChangeTrackingDeferredImplicit() || $this->isScheduledForDirtyCheck($owner)) {
-                        $this->getCollectionPersister($collectionToDelete->getMapping())->delete($collectionToDelete);
-                    }
-                }
+                FlushExecutor::executeCollectionDeletions($this->collectionDeletionOperations());
 
                 if ($this->flushQueues->insertions()) {
                     // Perform entity insertions first, so that all new entities have their rows in the database
@@ -378,9 +371,7 @@ class UnitOfWork implements PropertyChangedListener
                 // Collection updates (deleteRows, updateRows, insertRows)
                 // No particular order is necessary, since all entities themselves are already
                 // in the database
-                foreach ($this->flushQueues->collectionUpdates() as $collectionToUpdate) {
-                    $this->getCollectionPersister($collectionToUpdate->getMapping())->update($collectionToUpdate);
-                }
+                FlushExecutor::executeCollectionUpdates($this->collectionUpdateOperations());
 
                 // Entity deletions come last. Their order only needs to take care of other deletions
                 // (first delete entities depending upon others, before deleting depended-upon entities).
@@ -533,9 +524,27 @@ class UnitOfWork implements PropertyChangedListener
         }
     }
 
-    /**
-     * Executes any extra updates that have been scheduled.
-     */
+    /** @return \Generator<int, array{PersistentCollection<array-key, object>, CollectionPersister}> */
+    private function collectionDeletionOperations(): \Generator
+    {
+        foreach ($this->flushQueues->collectionDeletions() as $collection) {
+            $owner = $collection->getOwner();
+            // Deferred-explicit owners must be scheduled for dirty checking to delete their collection.
+            if ($this->em->getClassMetadata($owner::class)->isChangeTrackingDeferredImplicit() || $this->isScheduledForDirtyCheck($owner)) {
+                yield [$collection, $this->getCollectionPersister($collection->getMapping())];
+            }
+        }
+    }
+
+    /** @return \Generator<int, array{PersistentCollection<array-key, object>, CollectionPersister}> */
+    private function collectionUpdateOperations(): \Generator
+    {
+        foreach ($this->flushQueues->collectionUpdates() as $collection) {
+            yield [$collection, $this->getCollectionPersister($collection->getMapping())];
+        }
+    }
+
+    /** Executes any extra updates that have been scheduled. */
     private function executeExtraUpdates(): void
     {
         FlushExecutor::executeUpdates($this->extraUpdateOperations());

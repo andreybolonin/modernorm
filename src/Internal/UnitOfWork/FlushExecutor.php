@@ -6,6 +6,8 @@ namespace ModernORM\Internal\UnitOfWork;
 
 use Closure;
 use ModernORM\Persisters\Entity\EntityPersister;
+use ModernORM\Persisters\Collection\CollectionPersister;
+use ModernORM\PersistentCollection;
 
 /** @internal Executes prepared writes without owning transaction or UnitOfWork state. */
 final class FlushExecutor
@@ -46,6 +48,30 @@ final class FlushExecutor
     {
         foreach ($operations as [$entity, $persister]) {
             $persister->delete($entity);
+        }
+    }
+
+    /**
+     * @template TKey of array-key
+     * @template TEntity of object
+     * @param iterable<array{PersistentCollection<TKey, TEntity>, CollectionPersister}> $operations
+     */
+    public static function executeCollectionDeletions(iterable $operations): void
+    {
+        foreach ($operations as [$collection, $persister]) {
+            $persister->delete($collection);
+        }
+    }
+
+    /**
+     * @template TKey of array-key
+     * @template TEntity of object
+     * @param iterable<array{PersistentCollection<TKey, TEntity>, CollectionPersister}> $operations
+     */
+    public static function executeCollectionUpdates(iterable $operations): void
+    {
+        foreach ($operations as [$collection, $persister]) {
+            $persister->update($collection);
         }
     }
 }
