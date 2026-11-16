@@ -2,6 +2,38 @@
 
 [Recorded results](results/README.md): batch query reduction, statistics overhead, bulk writes and entity L2 measurements.
 
+## Experimental deepclone scalar hydration
+
+`deepclone.php` compares an explicit accessor-only baseline with a benchmark-only adapter using [Symfony's deepclone extension](https://github.com/symfony/php-ext-deepclone), or with the actual `EntityHydrator::hydrateScalars()` (`orm` mode). It requires no database server. The explicit baseline remains independent of automatic extension detection in production hydration.
+
+Build the extension in a temporary directory with the `phpize` and `php-config` belonging to the PHP binary being measured. Do not reuse a shared library built for another PHP minor version. For example:
+
+```sh
+git clone https://github.com/symfony/php-ext-deepclone.git /tmp/modernorm-deepclone-src
+cd /tmp/modernorm-deepclone-src
+git checkout 12285e5f6f774b0bbb4f0ea26056f45e0ed0fc74
+phpize
+./configure --enable-deepclone --with-php-config="$(command -v php-config)"
+make -j4
+```
+
+From the ORM repository, run all three modes with identical PHP settings:
+
+```sh
+php -d opcache.enable_cli=1 benchmarks/deepclone.php accessors > without-extension.json
+php -d opcache.enable_cli=1 -d extension=/tmp/modernorm-deepclone-src/modules/deepclone.so benchmarks/deepclone.php accessors > accessors.json
+php -d opcache.enable_cli=1 -d extension=/tmp/modernorm-deepclone-src/modules/deepclone.so benchmarks/deepclone.php deepclone > native.json
+php -d opcache.enable_cli=1 -d extension=/tmp/modernorm-deepclone-src/modules/deepclone.so benchmarks/deepclone.php orm > production.json
+```
+
+The second mode controls for loading the extension itself. No `php.ini` changes are needed. `MODERNORM_BENCH_ROWS` defaults to 20,000 and `MODERNORM_BENCH_ROUNDS` to 9 (minimum 3), following two warmups. Each invocation runs in a separate process. Metadata and the experimental native field plan are prepared before timing; the production plan warms during warmups, with runtime eligibility checks included in measured rounds. Filtering unmapped input, mapping inherited private field names, constructing per-row native argument arrays and consuming readonly snapshot corrections remain inside timing. New-object cases use the same `ClassMetadata::newInstance()` on both paths, isolating assignment rather than combining it with the extension's class-instantiation API.
+
+Cases cover new flat entities, already populated entities, precreated native lazy ghosts, and new/existing entities with an embedded object and a readonly date. Flat entities include JSON arrays, dates, a backed enum, inherited private/protected fields and a property hook. Embedded and readonly assignments retain ORM accessors in the experimental adapter; native batches are flushed before these fields to preserve assignment order. Equivalent readonly dates retain their original object. Every round verifies all mapped values, ignored unmapped input, bypassed hooks and lazy state outside timing. Lazy objects retain one unassigned property so PHP does not automatically consider them fully initialized after assignment.
+
+Peak and retained memory are PHP heap deltas after metadata/input setup, measured with `memory_reset_peak_usage()`. Existing entities and lazy ghosts are allocated before the measurement; new entities are retained until validation, so their heap is included. These values are not RSS or the extension's startup memory. No SQL, DBAL conversions, identity map, association hydration, full UnitOfWork snapshots or lifecycle events are timed. This measures only the scalar stage. The experimental adapter is not the production implementation: production restricts the fast path to supported flat mappings, retaining accessor hydration for embedded/readonly/custom fields, enum arrays and uninitialized lazy entities. Use `orm` mode to measure those guards and fallbacks, rather than extrapolating the initial adapter's results.
+
+[Recorded PHP 8.4/8.5 comparison](results/deepclone.md).
+
 Run against a dedicated disposable PostgreSQL database, using PHP 8.4+ and installed Composer dependencies. Connection settings use `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD` and `PGDATABASE`; the default database is `modernorm_test`. Scripts create randomly named schemas and remove them in `finally`. An interrupted/killed process may require manual cleanup of its benchmark schema.
 
 ```sh

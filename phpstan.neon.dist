@@ -4,6 +4,7 @@ includes:
 parameters:
     level: 5
     scanFiles:
+        - tools/phpstan/deepclone.php
         - tests/Fixtures/RemovedCascadeModes.php
         - tests/Fixtures/RemovedFetchModes.php
     paths:

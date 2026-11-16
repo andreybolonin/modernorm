@@ -12,7 +12,62 @@ use ModernORM\EntityManager;
 use ModernORM\Internal\UnitOfWork\EntityHydrator;
 use ModernORM\Mapping as ORM;
 use ModernORM\Mapping\Driver\AttributeDriver;
+use ModernORM\Mapping\PropertyAccessors\PropertyAccessor;
 use PHPUnit\Framework\TestCase;
+use ReflectionClass;
+use ReflectionProperty;
+use TypeError;
+use ValueError;
+
+enum HydrationState: string
+{
+    case Active = 'active';
+}
+
+enum HydrationCode: int
+{
+    case Ready = 0;
+}
+
+#[ORM\MappedSuperclass]
+class NativeHydrationParent
+{
+    #[ORM\Column] private string $inherited;
+    public function __construct()
+    {
+        $this->inherited = 'constructor';
+    }
+    public function inherited(): string
+    {
+        return $this->inherited;
+    }
+}
+
+#[ORM\Entity]
+class NativeHydrationRecord extends NativeHydrationParent
+{
+    #[ORM\Id, ORM\Column] public int $id;
+    #[ORM\Column] public string $name = 'original';
+    #[ORM\Column] protected string $protected;
+    #[ORM\Column] public int $quantity = 7;
+    #[ORM\Column(enumType: HydrationState::class)] public HydrationState $state;
+    #[ORM\Column(enumType: HydrationCode::class, nullable: true)] public ?HydrationCode $code = null;
+    #[ORM\Column] public string $hooked = 'original' {
+        set {
+            $this->hooked = $value;
+            throw new LogicException('Hydration must bypass set hooks.');
+        }
+    }
+    public string $untouched;
+}
+
+#[ORM\Entity]
+class NativeHydrationEnumArray
+{
+    #[ORM\Id, ORM\Column] public int $id;
+    /** @var HydrationState[] */
+    #[ORM\Column(type: 'json', enumType: HydrationState::class)] public array $states;
+}
 
 #[ORM\Embeddable]
 class EntityScalarHydrationAddress
@@ -133,5 +188,137 @@ final class EntityHydratorTest extends TestCase
         $record = new EntityScalarHydrationRecord();
         self::assertSame([], iterator_to_array(EntityHydrator::hydrateScalars($metadata, $record, [])));
         self::assertSame('original', $record->name());
+    }
+
+    public function testNativeEligibleFieldsRespectVisibilityAndEnumAccessors(): void
+    {
+        $metadata = $this->em->getClassMetadata(NativeHydrationRecord::class);
+        $record = $metadata->newInstance();
+        $data = ['id' => 42, 'inherited' => 'parent', 'protected' => 'protected', 'name' => 'Alice',
+            'quantity' => 9, 'state' => 'active', 'code' => 0, 'hooked' => 'raw', 'unknown' => 'ignored'];
+        self::assertSame([], iterator_to_array(EntityHydrator::hydrateScalars($metadata, $record, $data)));
+        foreach (array_diff_key($data, ['unknown' => true]) as $field => $value) {
+            self::assertSame($value, $metadata->propertyAccessors[$field]->getValue($record));
+        }
+        self::assertSame(HydrationState::Active, $record->state);
+        self::assertSame(HydrationCode::Ready, $record->code);
+        self::assertSame('parent', $record->inherited());
+        self::assertArrayNotHasKey('unknown', (array) $record);
+    }
+
+    public function testEnumArraysRetainAccessorConversion(): void
+    {
+        $metadata = $this->em->getClassMetadata(NativeHydrationEnumArray::class);
+        $record = $metadata->newInstance();
+        iterator_to_array(EntityHydrator::hydrateScalars($metadata, $record, ['id' => 42, 'states' => ['active']]));
+        self::assertSame([HydrationState::Active], $record->states);
+        self::assertSame(['active'], $metadata->propertyAccessors['states']->getValue($record));
+    }
+
+    public function testLazyHydrationDoesNotRunInitializerIncludingNullToNonNullableField(): void
+    {
+        $metadata = $this->em->getClassMetadata(NativeHydrationRecord::class);
+        $reflection = new ReflectionClass(NativeHydrationRecord::class);
+        $record = $reflection->newLazyGhost(static function (): void {
+            self::fail('Scalar hydration must not initialize the lazy object.');
+        });
+        iterator_to_array(EntityHydrator::hydrateScalars($metadata, $record, ['quantity' => null, 'name' => 'Alice', 'inherited' => 'parent']));
+        self::assertTrue($reflection->isUninitializedLazyObject($record));
+        self::assertTrue($reflection->getProperty('quantity')->isLazy($record));
+        self::assertSame('Alice', ((array) $record)['name']);
+        self::assertSame('parent', ((array) $record)["\0" . NativeHydrationParent::class . "\0inherited"]);
+    }
+
+    public function testTypeFailureKeepsEarlierNativeAssignmentsAndSkipsLaterFields(): void
+    {
+        $metadata = $this->em->getClassMetadata(NativeHydrationRecord::class);
+        $record = $metadata->newInstance();
+        try {
+            iterator_to_array(EntityHydrator::hydrateScalars($metadata, $record, ['name' => 'before error', 'quantity' => [], 'id' => 42]));
+            self::fail('Invalid property type must fail.');
+        } catch (TypeError) {
+            self::assertSame('before error', $record->name);
+            self::assertSame(7, $record->quantity);
+            self::assertFalse(isset($record->id));
+        }
+    }
+
+    public function testNullUnsetsInitializedNonNullableField(): void
+    {
+        $metadata = $this->em->getClassMetadata(NativeHydrationRecord::class);
+        $record = $metadata->newInstance();
+        iterator_to_array(EntityHydrator::hydrateScalars($metadata, $record, ['name' => 'before null', 'quantity' => null, 'id' => 42]));
+        self::assertFalse(isset($record->quantity));
+        self::assertSame('before null', $record->name);
+        self::assertSame(42, $record->id);
+    }
+
+    public function testInvalidEnumFlushesEarlierNativeBatchBeforeFailure(): void
+    {
+        $metadata = $this->em->getClassMetadata(NativeHydrationRecord::class);
+        $record = $metadata->newInstance();
+        try {
+            iterator_to_array(EntityHydrator::hydrateScalars($metadata, $record, ['name' => 'before enum', 'state' => 'invalid', 'id' => 42]));
+            self::fail('Invalid enum must fail.');
+        } catch (ValueError) {
+            self::assertSame('before enum', $record->name);
+            self::assertFalse(isset($record->state));
+            self::assertFalse(isset($record->id));
+        }
+    }
+
+    public function testWrongEnumBackingTypeRetainsStrictConversionFailure(): void
+    {
+        $metadata = $this->em->getClassMetadata(NativeHydrationRecord::class);
+        $record = $metadata->newInstance();
+        try {
+            iterator_to_array(EntityHydrator::hydrateScalars($metadata, $record, ['name' => 'before enum', 'state' => 1, 'id' => 42]));
+            self::fail('Wrong enum backing type must fail without coercion.');
+        } catch (TypeError) {
+            self::assertSame('before enum', $record->name);
+            self::assertFalse(isset($record->state));
+            self::assertFalse(isset($record->id));
+        }
+    }
+
+    public function testReplacedAccessorInvalidatesNativePlan(): void
+    {
+        $metadata = $this->em->getClassMetadata(NativeHydrationRecord::class);
+        $record = $metadata->newInstance();
+        iterator_to_array(EntityHydrator::hydrateScalars($metadata, $record, ['name' => 'warm plan']));
+        $metadata->propertyAccessors['name'] = new class ($metadata->propertyAccessors['name']) implements PropertyAccessor {
+            public function __construct(private PropertyAccessor $parent)
+            {
+            }
+            public function setValue(object $object, mixed $value): void
+            {
+                $this->parent->setValue($object, 'custom:' . $value);
+            }
+            public function getValue(object $object): mixed
+            {
+                return $this->parent->getValue($object);
+            }
+            public function getUnderlyingReflector(): ReflectionProperty
+            {
+                throw new LogicException('Hydration must not inspect custom accessors.');
+            }
+        };
+        iterator_to_array(EntityHydrator::hydrateScalars($metadata, $record, ['name' => 'Alice']));
+        self::assertSame('custom:Alice', $record->name);
+    }
+
+    public function testNativeWritesPreserveExistingPropertyReferencesWithoutBindingInputReferences(): void
+    {
+        $metadata = $this->em->getClassMetadata(NativeHydrationRecord::class);
+        $record = $metadata->newInstance();
+        $quantity = 7;
+        $input = 42;
+        $record->quantity = & $quantity;
+        iterator_to_array(EntityHydrator::hydrateScalars($metadata, $record, ['quantity' => &$input]));
+        self::assertSame(42, $quantity);
+        $input = 99;
+        self::assertSame(42, $record->quantity);
+        $quantity = 8;
+        self::assertSame(8, $record->quantity);
     }
 }

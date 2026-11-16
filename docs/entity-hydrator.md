@@ -1,6 +1,6 @@
 # EntityHydrator boundary
 
-EntityHydrator owns scalar/embedded assignment and pure owning to-one loading decisions extracted from UnitOfWork::createEntity(). Its scalar assignment operation receives ClassMetadata, the already selected entity and prepared PHP values. It uses the existing property accessors, ignoring associations and unmapped SQL/meta values. It has no EntityManager/UnitOfWork dependency, performs no SQL, creates no managed registrations and owns no snapshots or queues.
+EntityHydrator owns scalar/embedded assignment and pure owning to-one loading decisions extracted from UnitOfWork::createEntity(). Its scalar assignment operation receives ClassMetadata, the already selected entity and prepared PHP values. It uses property accessors or the optional native fast path below, ignoring associations and unmapped SQL/meta values. It has no EntityManager/UnitOfWork dependency, performs no SQL, creates no managed registrations and owns no snapshots or queues.
 
 The coordinator still selects the canonical object, decides whether to initialize/refresh it, registers it, initializes its snapshot and controls read-only state. Association restoration execution, native references, eager/batch queues and postLoad remain in UnitOfWork. Projection completeness checks and DBAL conversion remain at their existing query/SQL/L2 hydration boundaries; this internal assignment operation does not reintroduce partial managed SQL projections.
 
@@ -9,6 +9,16 @@ The coordinator still selects the canonical object, decides whether to initializ
 An accessor can retain the existing readonly DateTime when a newly converted object represents the same instant. UnitOfWork must snapshot the retained object to avoid a phantom UPDATE. hydrateScalars() therefore returns a generator that must be consumed: each readonly correction is yielded immediately after its field assignment. UnitOfWork applies the correction before the next field is processed.
 
 This preserves input order and partial-assignment failure behavior: if a later assignment throws, earlier successful assignments and readonly snapshot corrections have already happened. The helper does not catch errors or add rollback behavior. It does not move snapshot ownership into the component or pass the coordinator back through a callback.
+
+## Optional deepclone acceleration
+
+Install and enable [ext-deepclone](https://github.com/symfony/php-ext-deepclone) >=0.8.10 to enable automatic native assignment for flat entities. It is a Composer suggestion, with no mandatory dependency or ORM configuration. The runtime also checks for `deepclone_hydrate()` and `DEEPCLONE_HYDRATE_NO_LAZY_INIT`; missing or older extensions use the accessor path.
+
+Eligible mappings use standard raw/typed accessors, including backed-enum properties whose declared type matches the ORM enum mapping. Field keys preserve inherited private and protected scope. One native call writes the filtered mapped fields in input order without invoking hooks. Entity construction remains under ClassMetadata/UnitOfWork.
+
+Entities with embedded, readonly, virtual or custom field accessors, enum-array mappings, and uninitialized lazy objects retain accessor hydration. Inputs containing NULL for non-nullable fields or enum scalars with the wrong backing type also fall back before any assignments happen. This preserves strict enum conversion, null-to-uninitialized behavior, readonly DateTime identity, snapshot corrections and partial-assignment failures. Native errors propagate without retrying assignments.
+
+The field plan is cached in a WeakMap keyed by metadata, so clearing an EntityManager does not create a global class-name retention cache. Replacing a runtime property accessor invalidates its plan; plans are not serialized into metadata caches. Full suites run with the extension on PHP 8.4/8.5 in the locked-dependency PostgreSQL 18 CI jobs, after their ordinary extension-free runs. The [benchmark](../benchmarks/README.md#experimental-deepclone-scalar-hydration) distinguishes the initial experiment from the guarded production path (`orm` mode).
 
 ## Owning to-one loading decisions
 
@@ -22,9 +32,9 @@ The deferred eager hint retains its existing distinction: an existing eager prox
 
 ## Validation
 
-EntityHydratorTest adds **6 scenarios / 23 assertions** covering private/nullable fields, raw property-hook bypass, ignored associations/unmapped values, constructor-free embedded materialization, equivalent and changed readonly dates, snapshot correction before a later failure, uninitialized readonly values and empty input. Metadata setup and assignment require no database connection or managed registration.
+EntityHydratorTest includes **15 scenarios / 58 assertions** covering private/protected/inherited fields, raw property-hook bypass, ignored associations/unmapped values, constructor-free embedded materialization, equivalent and changed readonly dates, snapshot correction before a later failure, uninitialized readonly values and empty input. Additional cases verify string/int enums (including zero), enum arrays and strict conversion errors, NULL-to-uninitialized handling, lazy ghosts, partial assignment after errors, property/input references and runtime custom-accessor replacement. These tests run both with and without the extension. Metadata setup and assignment require no database connection or managed registration.
 
-Existing SQL/object hydration, readonly refresh, native reference, embeddable, enum, cache, postLoad and worker regressions run unchanged. The full suite includes this extraction and the preceding ChangeSetComputer extraction: PHP 8.4.27 and PHP 8.5.12 on PostgreSQL 18.7 report **1202 tests / 7937 assertions / 21 Redis skips** per runtime, run sequentially. PHPStan and PSR-12 pass without new suppressions.
+Existing SQL/object hydration, readonly refresh, native reference, embeddable, enum, cache, postLoad and worker regressions run unchanged. With deepclone 0.8.10 enabled, PHP 8.4.27 and PHP 8.5.12 on PostgreSQL 18.7 report **1211 tests / 7972 assertions / 21 Redis skips** per runtime, run sequentially. The 15 scalar tests also pass on both runtimes without the extension. PHPStan and PSR-12 pass without new suppressions.
 
 ToOneHydrationTest adds 23 scenarios / 53 assertions for FK values/enums, loading decisions, input immutability, SoftDelete precedence, managed reuse and hint presence/truthiness. Four PostgreSQL cases in CriticalHydrationRegressionTest verify actual identity reuse, deferred/immediate EAGER execution and snapshots, including the disabled-hint case. Existing SoftDelete, dirty relation, refresh, lazy/batch/L2, inverse-link and postLoad regressions remain covered.
 

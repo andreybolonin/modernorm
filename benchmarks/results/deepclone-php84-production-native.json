@@ -1,0 +1,94 @@
+{
+    "php": "8.4.27",
+    "os": "Darwin",
+    "arch": "arm64",
+    "opcache_cli": "1",
+    "jit": "disable",
+    "deepclone": "0.8.10",
+    "mode": "orm",
+    "rows": 20000,
+    "rounds": 9,
+    "scope": "Scalar assignment only; no SQL, conversion, identity map, associations or flush",
+    "measurements": {
+        "flat-new": {
+            "median_ms": 28.842292,
+            "median_peak_delta_bytes": 5010128,
+            "median_retained_delta_bytes": 5008440,
+            "samples_ms": [
+                28.842292,
+                29.017584,
+                28.561875,
+                28.487708,
+                28.711083,
+                28.694291,
+                29.120042,
+                28.92625,
+                28.998667
+            ]
+        },
+        "flat-existing": {
+            "median_ms": 28.276208,
+            "median_peak_delta_bytes": 1688,
+            "median_retained_delta_bytes": 0,
+            "samples_ms": [
+                27.286042,
+                40.310333,
+                27.666084,
+                32.535875,
+                28.86525,
+                28.267417,
+                27.692709,
+                62.33275,
+                28.276208
+            ]
+        },
+        "flat-lazy": {
+            "median_ms": 40.871875,
+            "median_peak_delta_bytes": 712,
+            "median_retained_delta_bytes": 0,
+            "samples_ms": [
+                41.117875,
+                40.808375,
+                42.571416,
+                40.723708,
+                41.310667,
+                41.266959,
+                40.871875,
+                40.831042,
+                40.605416
+            ]
+        },
+        "embedded-readonly-new": {
+            "median_ms": 31.001417,
+            "median_peak_delta_bytes": 3889432,
+            "median_retained_delta_bytes": 3888440,
+            "samples_ms": [
+                30.950459,
+                30.79925,
+                31.001417,
+                30.848459,
+                31.118208,
+                31.299666,
+                31.343875,
+                31.128959,
+                30.829167
+            ]
+        },
+        "embedded-readonly-existing": {
+            "median_ms": 29.922875,
+            "median_peak_delta_bytes": 1424,
+            "median_retained_delta_bytes": 376,
+            "samples_ms": [
+                30.005917,
+                29.674042,
+                29.649041,
+                29.7415,
+                29.922875,
+                30.04525,
+                55.044708,
+                30.819041,
+                29.7655
+            ]
+        }
+    }
+}

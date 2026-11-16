@@ -120,6 +120,21 @@ jobs:
           MODERNORM_L2_SOAK_REPORT: ${{ runner.temp }}/l2-soak.json
           MODERNORM_WORKER_EVIDENCE: ${{ runner.temp }}/worker-context.json
         run: composer test -- --fail-on-skipped
+      - name: Build optional deepclone extension
+        if: matrix.dependencies == 'locked' && matrix.postgresql == '18'
+        run: |
+          git init "$RUNNER_TEMP/modernorm-deepclone"
+          git -C "$RUNNER_TEMP/modernorm-deepclone" fetch --depth=1 https://github.com/symfony/php-ext-deepclone.git 12285e5f6f774b0bbb4f0ea26056f45e0ed0fc74
+          git -C "$RUNNER_TEMP/modernorm-deepclone" checkout --detach FETCH_HEAD
+          cd "$RUNNER_TEMP/modernorm-deepclone"
+          phpize
+          ./configure --enable-deepclone --with-php-config="$(command -v php-config)"
+          make -j2
+      - name: Run test suites with deepclone
+        if: matrix.dependencies == 'locked' && matrix.postgresql == '18'
+        run: |
+          php -d extension="$RUNNER_TEMP/modernorm-deepclone/modules/deepclone.so" -r 'if (!extension_loaded("deepclone") || !function_exists("deepclone_hydrate") || !defined("DEEPCLONE_HYDRATE_NO_LAZY_INIT")) { exit(1); }'
+          php -d extension="$RUNNER_TEMP/modernorm-deepclone/modules/deepclone.so" vendor/bin/phpunit --fail-on-skipped
       - name: Clean consumer from release ZIP
         if: matrix.dependencies == 'locked'
         env:

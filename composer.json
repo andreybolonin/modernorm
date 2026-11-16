@@ -15,6 +15,7 @@
         "psr/cache": "^3"
     },
     "suggest": {
+        "ext-deepclone": ">=0.8.10: accelerates flat entity hydration with deepclone_hydrate()",
         "symfony/cache": "PSR-6 adapters for filesystem, Redis and other cache backends",
         "symfony/console": "^7.4 || ^8.0: enables optional CLI tools"
     },
