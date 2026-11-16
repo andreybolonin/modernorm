@@ -20,6 +20,7 @@ use Doctrine\DBAL\DriverManager;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use ModernORM\EntityManager;
 use ModernORM\Event\PreUpdateEventArgs;
+use ModernORM\Event\PostUpdateEventArgs;
 use ModernORM\Events;
 use ModernORM\Mapping as ORM;
 use ModernORM\ORMSetup;
@@ -176,6 +177,89 @@ final class FlushBoundaryAuditTest extends TestCase
         self::assertSame(1, $calls);
         $this->em->refresh($record);
         $this->assertManagedResult($record, 'sql-normalized', 'sql-normalized', 'callback');
+    }
+
+    public function testUpdatesPrepareLazilyAndPostUpdateCanAffectTheNextEntity(): void
+    {
+        $first = $this->seed('a', 'first');
+        $second = $this->seed('b', 'second');
+        $first->name = 'first-updated';
+        $second->name = 'second-updated';
+        $events = [];
+        $em = $this->em;
+        $this->listen(Events::preUpdate, static function (PreUpdateEventArgs $args) use (&$events, $em): void {
+            $events[] = 'pre ' . $args->getObject()->id;
+            if ($args->getObject()->id === 'b') {
+                self::assertSame('first-updated', $em->getConnection()->fetchOne('SELECT name FROM modernorm_test_flush_boundaries WHERE id = ?', ['a']));
+            }
+        });
+        $this->listen(Events::postUpdate, static function (PostUpdateEventArgs $args) use (&$events, $em, $first, $second): void {
+            $entity = $args->getObject();
+            $events[] = 'post ' . $entity->id;
+            self::assertFalse($em->getUnitOfWork()->isScheduledForUpdate($entity));
+            if ($entity === $first) {
+                $second->note = 'from-first-postUpdate';
+            }
+        });
+        $this->statistics->reset();
+        $this->em->flush();
+        self::assertSame(['pre a', 'post a', 'pre b', 'post b'], $events);
+        self::assertSame('from-first-postUpdate', $em->getConnection()->fetchOne('SELECT note FROM modernorm_test_flush_boundaries WHERE id = ?', ['b']));
+        self::assertSame(2, $this->statistics->snapshot()->dml->update->count);
+        $this->assertNextFlushDoesNoDml();
+    }
+
+    public function testEmptyChangesetStillCompletesQueueAndPostUpdateWithoutSql(): void
+    {
+        $record = $this->seed();
+        $record->name = 'requested';
+        $uow = $this->em->getUnitOfWork();
+        $this->listen(Events::preUpdate, static function () use ($record, $uow): void {
+            $changeset = & $uow->getEntityChangeSet($record);
+            $changeset = [];
+        });
+        $calls = 0;
+        $this->listen(Events::postUpdate, static function () use ($record, $uow, &$calls): void {
+            ++$calls;
+            self::assertFalse($uow->isScheduledForUpdate($record));
+        });
+        $this->statistics->reset();
+        $this->em->flush();
+        self::assertSame(1, $calls);
+        self::assertSame(0, $this->statistics->snapshot()->dml->update->count);
+        self::assertSame('original', $this->em->getConnection()->fetchOne('SELECT name FROM modernorm_test_flush_boundaries WHERE id = ?', ['a']));
+        $this->assertQueuesEmpty();
+    }
+
+    public function testFailedExtraUpdateRollsBackEarlierRegularAndExtraWrites(): void
+    {
+        $first = $this->seed('a', 'first');
+        $second = $this->seed('b', 'second');
+        $first->note = 'regular-write';
+        $uow = $this->em->getUnitOfWork();
+        $uow->scheduleExtraUpdate($first, ['name' => ['first', 'conflict']]);
+        $uow->scheduleExtraUpdate($second, ['name' => ['second', 'conflict']]);
+        $events = [];
+        $this->listen(Events::preUpdate, static function (PreUpdateEventArgs $args) use (&$events): void {
+            $events[] = 'pre ' . $args->getObject()->id;
+        });
+        $this->listen(Events::postUpdate, static function (PostUpdateEventArgs $args) use (&$events): void {
+            $events[] = 'post ' . $args->getObject()->id;
+        });
+        $this->statistics->reset();
+        try {
+            $this->em->flush();
+            self::fail('The second extra update must fail.');
+        } catch (UniqueConstraintViolationException) {
+            self::assertSame(['pre a', 'post a'], $events);
+            self::assertSame(3, $this->statistics->snapshot()->dml->update->count);
+            self::assertSame(['first', 'second'], $this->em->getConnection()->fetchFirstColumn('SELECT name FROM modernorm_test_flush_boundaries ORDER BY id'));
+            self::assertNull($this->em->getConnection()->fetchOne('SELECT note FROM modernorm_test_flush_boundaries WHERE id = ?', ['a']));
+            self::assertFalse($this->em->isOpen());
+            self::assertSame(0, $uow->size());
+            self::assertSame([], $uow->getEntityChangeSet($second));
+            $this->assertQueuesEmpty();
+        }
     }
 
     public function testOnFlushFailureKeepsExplicitWorkForRetryBeforeAnyTransaction(): void

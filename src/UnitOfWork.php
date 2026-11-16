@@ -45,6 +45,7 @@ use ModernORM\Internal\UnitOfWork\ChangeSetComputer;
 use ModernORM\Internal\UnitOfWork\EntityHydrator;
 use ModernORM\Internal\UnitOfWork\ToOneHydrationMode;
 use ModernORM\Internal\UnitOfWork\FlushOperationQueues;
+use ModernORM\Internal\UnitOfWork\FlushExecutor;
 use ModernORM\Internal\UnitOfWork\IdentityMap;
 use ModernORM\Internal\UnitOfWork\LazyReferenceTracker;
 use ModernORM\Internal\UnitOfWork\OrphanRemovalReason;
@@ -537,14 +538,19 @@ class UnitOfWork implements PropertyChangedListener
      */
     private function executeExtraUpdates(): void
     {
+        FlushExecutor::executeUpdates($this->extraUpdateOperations());
+        $this->flushQueues->clearExtraUpdates();
+    }
+
+    /** @return \Generator<int, array{object, EntityPersister}> */
+    private function extraUpdateOperations(): \Generator
+    {
         foreach ($this->flushQueues->extraUpdates() as $oid => $update) {
             [$entity, $changeset] = $update;
 
             $this->entityChangeSets[$oid] = $changeset;
-            $this->getEntityPersister($entity::class)->update($entity);
+            yield [$entity, $this->getEntityPersister($entity::class)];
         }
-
-        $this->flushQueues->clearExtraUpdates();
     }
 
     /**
@@ -1135,21 +1141,16 @@ class UnitOfWork implements PropertyChangedListener
     {
         $batchedByType    = InsertBatch::batchByEntityType($this->em, $this->computeInsertExecutionOrder());
         $eventsToDispatch = [];
+        $onQueued = function (object $entity): void {
+            $this->flushQueues->removeInsertion(spl_object_id($entity));
+        };
 
         foreach ($batchedByType as $batch) {
             $class     = $batch->class;
             $invoke    = $this->listenersInvoker->getSubscribedSystems($class, Events::postPersist);
             $persister = $this->getEntityPersister($class->name);
 
-            foreach ($batch->entities as $entity) {
-                $oid = spl_object_id($entity);
-
-                $persister->addInsert($entity);
-
-                $this->flushQueues->removeInsertion($oid);
-            }
-
-            $persister->executeInserts();
+            FlushExecutor::executeInsertBatch($batch, $persister, $onQueued);
 
             foreach ($batch->entities as $entity) {
                 if ($invoke !== ListenersInvoker::INVOKE_NONE) {
@@ -1176,6 +1177,15 @@ class UnitOfWork implements PropertyChangedListener
      */
     private function executeUpdates(): void
     {
+        FlushExecutor::executeUpdates($this->updateOperations());
+    }
+
+    /**
+     * Resume queue cleanup and postUpdate only after the yielded SQL write succeeds.
+     * @return \Generator<int, array{object, EntityPersister}>
+     */
+    private function updateOperations(): \Generator
+    {
         $entities = $this->computeUpdateExecutionOrder();
 
         foreach ($entities as $oid => $entity) {
@@ -1199,7 +1209,7 @@ class UnitOfWork implements PropertyChangedListener
             }
 
             if (! empty($this->entityChangeSets[$oid])) {
-                $persister->update($entity);
+                yield [$entity, $persister];
             }
 
             $this->flushQueues->removeUpdate($oid);
@@ -1215,6 +1225,16 @@ class UnitOfWork implements PropertyChangedListener
      */
     private function executeDeletions(): void
     {
+        FlushExecutor::executeDeletions($this->deletionOperations());
+    }
+
+    /**
+     * Remove identity before SQL; resume state cleanup only after a successful write.
+     * Dispatch postRemove only when the executor has consumed all deletions.
+     * @return \Generator<int, array{object, EntityPersister}>
+     */
+    private function deletionOperations(): \Generator
+    {
         $entities         = $this->computeDeleteExecutionOrder();
         $eventsToDispatch = [];
 
@@ -1226,7 +1246,7 @@ class UnitOfWork implements PropertyChangedListener
             $persister = $this->getEntityPersister($class->name);
             $invoke    = $this->listenersInvoker->getSubscribedSystems($class, Events::postRemove);
 
-            $persister->delete($entity);
+            yield [$entity, $persister];
 
             $this->flushQueues->removeDeletion($oid);
             unset(
