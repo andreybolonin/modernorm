@@ -8,7 +8,7 @@ use Closure;
 use ModernORM\UnitOfWork;
 
 /**
- * @internal Stores entity state and owns managed registration and per-entity cleanup transitions.
+ * @internal Stores entity state and owns managed registration, identified-state decisions and per-entity cleanup transitions.
  * Remaining lifecycle/dirty-check operations access these maps directly during this extraction.
  */
 final class EntityStateManager
@@ -54,6 +54,26 @@ final class EntityStateManager
         $this->snapshots[$oid][$field] = $value;
 
         ($this->publishIdentity)($entity);
+    }
+
+    /**
+     * Resolve an uncached entity with a non-empty identifier. Null means no version shortcut;
+     * false preserves the historical falsy-version NEW decision (including zero).
+     * The coordinator supplies Identity Map / database observation only if required.
+     * NEW/DETACHED results must not be cached: object IDs can be reused and existence can change.
+     *
+     * @param Closure(): bool $identityOrDatabaseExists
+     * @return UnitOfWork::STATE_NEW|UnitOfWork::STATE_DETACHED
+     */
+    public function resolveIdentifiedState(?bool $versionValueIsTruthy, bool $postInsert, Closure $identityOrDatabaseExists): int
+    {
+        if ($versionValueIsTruthy !== null) {
+            return $versionValueIsTruthy ? UnitOfWork::STATE_DETACHED : UnitOfWork::STATE_NEW;
+        }
+        if ($postInsert) {
+            return UnitOfWork::STATE_DETACHED;
+        }
+        return $identityOrDatabaseExists() ? UnitOfWork::STATE_DETACHED : UnitOfWork::STATE_NEW;
     }
 
     /** After successful DELETE: snapshot destructors still observe the old cached state. */

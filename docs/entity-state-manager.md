@@ -1,6 +1,6 @@
 # EntityStateManager boundary
 
-EntityStateManager centralizes managed registration, post-insert ID registration and per-entity state cleanup after DELETE or detach. EntityStateManager contains the single authoritative identifier/state/original-snapshot maps previously held directly by UnitOfWork. It introduces no duplicate state, reference aliases or per-entity record objects. Snapshot row arrays retain PHP copy-on-write behavior.
+EntityStateManager centralizes managed registration, post-insert ID registration, identified-entity state decisions and per-entity state cleanup after DELETE or detach. EntityStateManager contains the single authoritative identifier/state/original-snapshot maps previously held directly by UnitOfWork. It introduces no duplicate state, reference aliases or per-entity record objects. Snapshot row arrays retain PHP copy-on-write behavior.
 
 `registerManaged(entity, id, data)` replaces that object's identifier, records MANAGED state, replaces its entire original snapshot and then publishes identity. Re-registering the same canonical object can therefore replace a snapshot even when IdentityMap::add() returns false for an existing member.
 
@@ -11,6 +11,14 @@ EntityStateManager centralizes managed registration, post-insert ID registration
 UnitOfWork still owns IdentityMap and its public lookup/normalization methods. One first-class callable, bound once when UnitOfWork is constructed, publishes identity through the existing addToIdentityMap() method. This keeps metadata loading, ID validation, collision detection and overrides at their original observation point, after the state writes. The manager needs no EntityManager, SQL or metadata access.
 
 These transitions do not add rollback-on-error semantics. As before, invalid identity or collision errors can leave the attempted object's identifier/state/snapshot recorded, while the canonical Identity Map entry remains unchanged. Generated-ID assignment happens before publication, so an assigned ID remains on the attempted object if publication fails. The extraction preserves these behaviors rather than changing them implicitly.
+
+## Unknown entity state
+
+`resolveIdentifiedState(versionValueIsTruthy, postInsert, identityOrDatabaseExists)` chooses NEW or DETACHED for an uncached entity with an identifier. A natural versioned identifier uses the existing version truthiness rule, including NEW for zero/null versions. A post-insert-generated identifier implies DETACHED. Other identified entities use one deferred observation: Identity Map first, persister existence only after a miss. The manager receives facts and a narrow observation callback; it has no metadata, EntityManager or persister dependency.
+
+UnitOfWork retains the cached-state, assume and empty-ID short circuits; metadata/identifier access and enum-ID flattening; and conditional version/generator inspection. Natural identifiers never inspect the generator. No Identity Map or database observation is performed for a version or post-insert shortcut. NEW/DETACHED decisions are deliberately not cached: database existence may change and untracked object IDs can be reused. Lookup exceptions propagate without installing state.
+
+EntityStateDetectionTest covers decision precedence and callback counts, unmapped cached/assumed objects without metadata reads, empty IDs without version access, natural version values, pre/post-insert generator observation order, enum-ID map hits, changing existence results and failed-lookup retry, without connecting to a database.
 
 ## Remaining coordination
 
@@ -24,4 +32,4 @@ clear() retains its prior execution/assignment order. In particular, clear() emp
 
 Component cases cover publication-time consistency, snapshot replacement, copy-on-write, post-insert merge/zero IDs without entity-property assignment, collision/failure mutation order and isolation between managers. UnitOfWork cases verify actual DBAL conversion, readonly-property failure before registration, post-insert collision with canonical preservation, empty-ID failure ordering and clear behavior without connecting to a database. Cleanup cases also check idempotence, entity isolation, snapshot destructor observation order, and detach cancellation of pending updates while preserving entity IDs.
 
-The full SQL/hydration/proxy/generated-ID/lifecycle/rollback/worker suites pass sequentially on PHP 8.4.27 and PHP 8.5.12 with PostgreSQL 18.7: **1284 tests / 8506 assertions / 21 Redis skips** each. PHPStan and PSR-12 pass without suppressions. No benchmark files are part of this extraction.
+The full SQL/hydration/proxy/generated-ID/lifecycle/rollback/worker suites pass sequentially on PHP 8.4.27 and PHP 8.5.12 with PostgreSQL 18.7: **1314 tests / 8658 assertions / 21 Redis skips** each. PHPStan and PSR-12 pass without suppressions. No benchmark files are part of this extraction.

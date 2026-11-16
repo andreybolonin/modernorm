@@ -1657,49 +1657,21 @@ class UnitOfWork implements PropertyChangedListener
             $id = $this->identifierFlattener->flattenIdentifier($class, $id);
         }
 
-        switch (true) {
-            case $class->isIdentifierNatural():
-                // Check for a version field, if available, to avoid a db lookup.
-                if ($class->isVersioned) {
-                    assert($class->versionField !== null);
-
-                    return $class->getFieldValue($entity, $class->versionField)
-                        ? self::STATE_DETACHED
-                        : self::STATE_NEW;
-                }
-
-                // Last try before db lookup: check the identity map.
-                if ($this->tryGetById($id, $class->name)) {
-                    return self::STATE_DETACHED;
-                }
-
-                // db lookup
-                if ($this->getEntityPersister($class->name)->exists($entity)) {
-                    return self::STATE_DETACHED;
-                }
-
-                return self::STATE_NEW;
-
-            case ! $class->idGenerator->isPostInsertGenerator():
-                // if we have a pre insert generator we can't be sure that having an id
-                // really means that the entity exists. We have to verify this through
-                // the last resort: a db lookup
-
-                // Last try before db lookup: check the identity map.
-                if ($this->tryGetById($id, $class->name)) {
-                    return self::STATE_DETACHED;
-                }
-
-                // db lookup
-                if ($this->getEntityPersister($class->name)->exists($entity)) {
-                    return self::STATE_DETACHED;
-                }
-
-                return self::STATE_NEW;
-
-            default:
-                return self::STATE_DETACHED;
+        $natural = $class->isIdentifierNatural();
+        $versionValueIsTruthy = null;
+        if ($natural && $class->isVersioned) {
+            assert($class->versionField !== null);
+            $versionValueIsTruthy = (bool) $class->getFieldValue($entity, $class->versionField);
         }
+        // Natural identifiers never consult the generator, including versioned entities.
+        $postInsert = ! $natural && $class->idGenerator->isPostInsertGenerator();
+
+        return $this->entityStateManager->resolveIdentifiedState(
+            $versionValueIsTruthy,
+            $postInsert,
+            fn (): bool => (bool) $this->tryGetById($id, $class->name)
+                || $this->getEntityPersister($class->name)->exists($entity),
+        );
     }
 
     /**

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Move uncached identified-entity NEW/DETACHED decisions into EntityStateManager. Preserve cached/assumed/empty-ID shortcuts, enum normalization, version truthiness, conditional generator inspection, Identity Map before existence checks and uncached failure/retry behavior.
+
 - Extract to-many collection preparation and property assignment into EntityHydrator. Preserve supplied collection state and assignment-failure order; keep EAGER/LAZY loading, queues, snapshots and postLoad coordination in UnitOfWork.
 
 - Add a cached scalar change-tracking plan for fully managed DEFERRED_IMPLICIT entities. Combine property reads and comparison in one pass after preFlush, preserving snapshot shape, missing baselines, insert-only fields, UPDATE queues and lifecycle behavior; retain the compatibility path for complex entities.
