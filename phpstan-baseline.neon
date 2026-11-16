@@ -421,24 +421,6 @@ parameters:
 			path: src/UnitOfWork.php
 
 		-
-			message: '#^Result of method Doctrine\\DBAL\\Connection\:\:commit\(\) \(void\) is used\.$#'
-			identifier: method.void
-			count: 1
-			path: src/UnitOfWork.php
-
-		-
-			message: '#^Strict comparison using \=\=\= between void and false will always evaluate to false\.$#'
-			identifier: identical.alwaysFalse
-			count: 1
-			path: src/UnitOfWork.php
-
-		-
-			message: '#^Variable \$e on left side of \?\? always exists and is not nullable\.$#'
-			identifier: nullCoalesce.variable
-			count: 1
-			path: src/UnitOfWork.php
-
-		-
 			message: '#^Match expression does not handle remaining values\: Doctrine\\DBAL\\ParameterType\:\:BOOLEAN\|Doctrine\\DBAL\\ParameterType\:\:LARGE_OBJECT\|Doctrine\\DBAL\\ParameterType\:\:NULL$#'
 			identifier: match.unhandled
 			count: 1

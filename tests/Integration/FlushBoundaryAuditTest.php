@@ -91,6 +91,93 @@ final class FlushBoundaryAuditTest extends TestCase
         $connection->close();
     }
 
+    public function testInitiallyEmptyOnFlushDoesNotAutomaticallyRecomputeChanges(): void
+    {
+        $record = $this->seed();
+        $events = [];
+        $calls = 0;
+        foreach ([Events::preFlush, Events::onFlush, Events::preUpdate, Events::postUpdate, Events::postFlush] as $event) {
+            $this->listen($event, static function () use (&$events, $event): void {
+                $events[] = $event;
+            });
+        }
+        $this->listen(Events::onFlush, static function () use ($record, &$calls): void {
+            if (++$calls === 1) {
+                $record->name = 'deferred';
+            }
+        });
+        $this->em->flush();
+        self::assertSame([Events::preFlush, Events::onFlush, Events::postFlush], $events);
+        self::assertSame('original', $this->em->getConnection()->fetchOne('SELECT name FROM modernorm_test_flush_boundaries'));
+        self::assertSame('original', $this->em->getUnitOfWork()->getOriginalEntityData($record)['name']);
+        $this->assertQueuesEmpty();
+        $events = [];
+        $this->em->flush();
+        self::assertSame([Events::preFlush, Events::onFlush, Events::preUpdate, Events::postUpdate, Events::postFlush], $events);
+        self::assertSame('deferred', $this->em->getConnection()->fetchOne('SELECT name FROM modernorm_test_flush_boundaries'));
+        self::assertSame(2, $calls);
+        $this->assertNextFlushDoesNoDml();
+    }
+
+    public static function initiallyEmptyWork(): array
+    {
+        return ['insert' => [true], 'update' => [false]];
+    }
+
+    #[DataProvider('initiallyEmptyWork')]
+    public function testInitiallyEmptyOnFlushExplicitWorkRunsOnceInTheSameFlush(bool $insert): void
+    {
+        $record = $insert ? new FlushBoundaryRecord('added', 'created') : $this->seed();
+        $events = [];
+        $calls = 0;
+        foreach ([Events::preFlush, Events::onFlush, Events::postFlush] as $event) {
+            $this->listen($event, static function () use (&$events, $event): void {
+                $events[] = $event;
+            });
+        }
+        $this->listen(Events::onFlush, function () use ($record, $insert, &$calls): void {
+            if (++$calls !== 1) {
+                return;
+            }
+            $uow = $this->em->getUnitOfWork();
+            $metadata = $this->em->getClassMetadata($record::class);
+            if ($insert) {
+                $this->em->persist($record);
+                $uow->computeChangeSet($metadata, $record);
+            } else {
+                $record->name = 'updated';
+                $uow->recomputeSingleEntityChangeSet($metadata, $record);
+            }
+        });
+        $this->em->flush();
+        self::assertSame([Events::preFlush, Events::onFlush, Events::postFlush], $events);
+        self::assertSame($insert ? 'created' : 'updated', $this->em->getConnection()->fetchOne('SELECT name FROM modernorm_test_flush_boundaries'));
+        self::assertSame([], $this->em->getUnitOfWork()->getEntityChangeSet($record));
+        self::assertSame($record->name, $this->em->getUnitOfWork()->getOriginalEntityData($record)['name']);
+        $this->assertQueuesEmpty();
+        $this->assertNextFlushDoesNoDml();
+        self::assertSame(2, $calls);
+    }
+
+    public function testCommitConstraintFailurePreservesOriginalDbalCause(): void
+    {
+        $first = $this->seed('a', 'first');
+        $second = $this->seed('b', 'second');
+        $this->em->getConnection()->executeStatement('ALTER TABLE modernorm_test_flush_boundaries ADD CONSTRAINT modernorm_flush_note_deferred UNIQUE (note) DEFERRABLE INITIALLY DEFERRED');
+        $first->note = 'duplicate';
+        $second->note = 'duplicate';
+        try {
+            $this->em->flush();
+            self::fail('Expected deferred COMMIT failure');
+        } catch (\ModernORM\Exception\OptimisticLockException $error) {
+            self::assertInstanceOf(UniqueConstraintViolationException::class, $error->getPrevious());
+        }
+        self::assertFalse($this->em->isOpen());
+        self::assertSame([], $this->em->getUnitOfWork()->getIdentityMap());
+        $this->assertQueuesEmpty();
+        self::assertSame(0, (int) $this->em->getConnection()->fetchOne('SELECT COUNT(*) FROM modernorm_test_flush_boundaries WHERE note IS NOT NULL'));
+    }
+
     private function seed(string $id = 'a', string $name = 'original'): FlushBoundaryRecord
     {
         $record = new FlushBoundaryRecord($id, $name);

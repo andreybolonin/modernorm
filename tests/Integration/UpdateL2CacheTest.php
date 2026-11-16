@@ -677,6 +677,14 @@ final class UpdateL2CacheTest extends TestCase
     }
     public function testPostCommitFailureDoesNotSkipOtherKeysOrOtherCachedClasses(): void
     {
+        $postFlush = new class () {
+            public int $calls = 0;
+            public function postFlush(): void
+            {
+                ++$this->calls;
+            }
+        };
+        $this->em->getEventManager()->addEventListener([\ModernORM\Events::postFlush], $postFlush);
         $first = $this->em->find(UpdateCacheRecord::class, '01');
         $second = $this->em->find(UpdateCacheRecord::class, '1');
         $plain = $this->em->find(UpdateCachePlain::class, 1);
@@ -695,6 +703,25 @@ final class UpdateL2CacheTest extends TestCase
             self::fail('Expected post-commit invalidation failure');
         } catch (CacheSynchronizationException $error) {
             self::assertTrue($error->databaseCommitted);
+        }
+        self::assertSame(0, $postFlush->calls);
+        $uow = $this->em->getUnitOfWork();
+        self::assertFalse($this->em->getConnection()->isTransactionActive());
+        self::assertSame([], $uow->getIdentityMap());
+        self::assertSame([], $uow->getScheduledEntityInsertions());
+        self::assertSame([], $uow->getScheduledEntityUpdates());
+        self::assertSame([], $uow->getScheduledEntityDeletions());
+        self::assertSame([], $uow->getScheduledCollectionUpdates());
+        self::assertSame([], $uow->getScheduledCollectionDeletions());
+        self::assertSame([], $uow->getEntityChangeSet($first));
+        $sql = $this->recorder->sql;
+        $events = UpdateCacheRecord::$events;
+        try {
+            $this->em->flush();
+            self::fail('Expected closed EntityManager after committed cache failure');
+        } catch (\ModernORM\Exception\EntityManagerClosed $error) {
+            self::assertSame($sql, $this->recorder->sql);
+            self::assertSame($events, UpdateCacheRecord::$events);
         }
         $cached = [$this->em->getCache()->contains(UpdateCacheRecord::class, '01'),
             $this->em->getCache()->contains(UpdateCacheRecord::class, '1'), $this->em->getCache()->contains(UpdateCachePlain::class, 1)];

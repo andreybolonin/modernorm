@@ -43,3 +43,11 @@ Four collection executor cases cover lazy preparation, unchanged snapshots/dirty
 Validation: the full suite passes sequentially on PHP 8.4.27 and PHP 8.5.12 with PostgreSQL 18.7: **1250 tests / 8254 assertions / 21 Redis skips** per runtime. PHPStan and PSR-12 pass without new suppressions.
 
 UPDATE ordering is owned by `WriteOrderPlanner::orderUpdates()`. UnitOfWork supplies its update queue and bound `getIdHashByEntity()` callable. The comparator retains exact runtime-class ordering, lazy same-class hash reads, lexical numeric/composite/UUID hash comparison, stable scheduling order for ties and list reindexing. Hash failures propagate at the original comparison point; hashes are not precomputed. Three planner regression cases cover lexical ordering/stable ties/input preservation, class-only/empty/singleton paths without hash reads, and left-to-right hash failure observation.
+
+## Flush and COMMIT contracts
+
+An initially empty flush dispatches onFlush once. Work explicitly scheduled there with computeChangeSet()/recomputeSingleEntityChangeSet() runs in that same flush. Merely changing a managed property in onFlush does not trigger a second automatic dirty-check pass; absent explicit recomputation, that change is detected on the next flush. Empty flushes still dispatch preFlush → onFlush → postFlush.
+
+DBAL 4.6 Connection::commit() returns void. There is no false-return outcome to classify. DBAL exceptions retain their original cause when wrapped in OptimisticLockException; other driver throwables propagate unchanged. The original COMMIT exception is also retained separately for uncertain-outcome L2 recovery. Existing driver-fault tests cover failures before physical commit and loss of acknowledgement after physical commit.
+
+If built-in L2 invalidation fails after a confirmed COMMIT, the cached persister closes the EntityManager and raises CacheSynchronizationException with databaseCommitted=true. Closing clears the identity map and queues. This path does not dispatch postFlush or attempt rollback of the completed transaction, and a later flush is rejected without replaying SQL/events. The SQL regression verifies the committed values through a fresh context after cache eviction. No unconditional finally cleanup was added to successful completion: postFlush-scheduled work must survive for the next flush.

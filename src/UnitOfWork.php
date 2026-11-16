@@ -371,22 +371,14 @@ class UnitOfWork implements PropertyChangedListener
     private function commitFlushTransaction(DBAL\Connection $connection, ?\Throwable &$commitFailure): void
     {
         $this->measurePhase(\ModernORM\Statistics\UnitOfWorkPhase::COMMIT, function () use ($connection, &$commitFailure): void {
-            $commitFailed = false;
             try {
-                if ($connection->commit() === false) {
-                    $commitFailed = true;
-                    $commitFailure = new \RuntimeException('Database commit returned false.');
-                }
+                $connection->commit();
             } catch (DBAL\Exception $e) {
-                $commitFailed = true;
                 $commitFailure = $e;
+                throw new OptimisticLockException('Commit failed', null, $e);
             } catch (\Throwable $e) {
                 $commitFailure = $e;
                 throw $e;
-            }
-
-            if ($commitFailed) {
-                throw new OptimisticLockException('Commit failed', null, $e ?? null);
             }
         });
     }
