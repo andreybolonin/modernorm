@@ -42,6 +42,7 @@ use ModernORM\Internal\UnitOfWork\WriteOrderPlanner;
 use ModernORM\Internal\UnitOfWork\AssociationChangePlanner;
 use ModernORM\Internal\UnitOfWork\AssociationMembership;
 use ModernORM\Internal\UnitOfWork\ChangeSetComputer;
+use ModernORM\Internal\UnitOfWork\ScalarChangeTrackingPlan;
 use ModernORM\Internal\UnitOfWork\EntityHydrator;
 use ModernORM\Internal\UnitOfWork\FlatSqlHydrationPlan;
 use ModernORM\Internal\UnitOfWork\ToOneHydrationMode;
@@ -609,6 +610,24 @@ class UnitOfWork implements PropertyChangedListener
 
         if ($invoke !== ListenersInvoker::INVOKE_NONE) {
             $this->listenersInvoker->invoke($class, Events::preFlush, $entity, new PreFlushEventArgs($this->em), $invoke);
+        }
+
+        if (($this->entityStateManager->states[$oid] ?? null) === self::STATE_MANAGED
+            && isset($this->entityStateManager->snapshots[$oid])
+            && ! $this->flushQueues->hasInsertion($oid)
+            && ! $this->lazyReferenceTracker->contains($entity)
+        ) {
+            $plan = ScalarChangeTrackingPlan::forMetadata($class);
+            $result = $plan?->compare($class, $entity, $this->entityStateManager->snapshots[$oid]);
+            if ($result !== null) {
+                if ($result !== []) {
+                    [$changeSet, $actualData] = $result;
+                    $this->entityChangeSets[$oid] = $changeSet;
+                    $this->entityStateManager->snapshots[$oid] = $actualData;
+                    $this->flushQueues->addUpdate($entity);
+                }
+                return;
+            }
         }
 
         $actualData = [];

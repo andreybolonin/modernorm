@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add a cached scalar change-tracking plan for fully managed DEFERRED_IMPLICIT entities. Combine property reads and comparison in one pass after preFlush, preserving snapshot shape, missing baselines, insert-only fields, UPDATE queues and lifecycle behavior; retain the compatibility path for complex entities.
+
 - Move per-entity identifier/state/snapshot cleanup after successful DELETE and detach into EntityStateManager. Preserve each transition's unset order, queue/event timing and generated-ID reset policy; keep clear() coordination in UnitOfWork.
 
 - Centralize managed-registration and post-insert-ID transitions in EntityStateManager over one identifier/state/snapshot store. Preserve Identity Map publication/error order, snapshot replacement versus ID merging, property assignment in UnitOfWork, and existing lifecycle/clear behavior without reference aliases or per-entity state objects.

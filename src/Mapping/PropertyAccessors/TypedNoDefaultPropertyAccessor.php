@@ -74,6 +74,13 @@ class TypedNoDefaultPropertyAccessor implements PropertyAccessor
         return $this->reflectionProperty->isInitialized($object) ? $this->parent->getValue($object) : null;
     }
 
+    /** @internal Whether scalar plans can use this standard wrapper without custom read behavior. */
+    public function usesRawPropertyAccess(): bool
+    {
+        return $this->parent::class === RawValuePropertyAccessor::class
+            && $this->parent->getUnderlyingReflector() === $this->reflectionProperty;
+    }
+
     public function getUnderlyingReflector(): ReflectionProperty
     {
         return $this->reflectionProperty;
