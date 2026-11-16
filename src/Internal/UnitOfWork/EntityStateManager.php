@@ -8,7 +8,7 @@ use Closure;
 use ModernORM\UnitOfWork;
 
 /**
- * @internal Stores the coordinator's entity state and owns managed-registration transitions.
+ * @internal Stores entity state and owns managed registration and per-entity cleanup transitions.
  * Remaining lifecycle/dirty-check operations access these maps directly during this extraction.
  */
 final class EntityStateManager
@@ -54,5 +54,17 @@ final class EntityStateManager
         $this->snapshots[$oid][$field] = $value;
 
         ($this->publishIdentity)($entity);
+    }
+
+    /** After successful DELETE: snapshot destructors still observe the old cached state. */
+    public function forgetAfterDeletion(int $oid): void
+    {
+        unset($this->identifiers[$oid], $this->snapshots[$oid], $this->states[$oid]);
+    }
+
+    /** After detach queue/lazy cleanup: snapshot destructors observe no cached state. */
+    public function forgetAfterDetach(int $oid): void
+    {
+        unset($this->identifiers[$oid], $this->states[$oid], $this->snapshots[$oid]);
     }
 }

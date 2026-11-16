@@ -1,6 +1,6 @@
 # EntityStateManager boundary
 
-The first extraction centralizes two coordinated transitions: register an entity as managed, and register its post-insert ID. EntityStateManager contains the single authoritative identifier/state/original-snapshot maps previously held directly by UnitOfWork. It introduces no duplicate state, reference aliases or per-entity record objects. Snapshot row arrays retain PHP copy-on-write behavior.
+EntityStateManager centralizes managed registration, post-insert ID registration and per-entity state cleanup after DELETE or detach. EntityStateManager contains the single authoritative identifier/state/original-snapshot maps previously held directly by UnitOfWork. It introduces no duplicate state, reference aliases or per-entity record objects. Snapshot row arrays retain PHP copy-on-write behavior.
 
 `registerManaged(entity, id, data)` replaces that object's identifier, records MANAGED state, replaces its entire original snapshot and then publishes identity. Re-registering the same canonical object can therefore replace a snapshot even when IdentityMap::add() returns false for an existing member.
 
@@ -14,12 +14,14 @@ These transitions do not add rollback-on-error semantics. As before, invalid ide
 
 ## Remaining coordination
 
-UnitOfWork retains change sets, queues, readonly policy, lazy tracking, lifecycle events, transactions and property access. Its remaining persist/remove/detach/hydration/dirty-check code accesses the internal manager's maps directly. This staged access is deliberately not a claim of complete encapsulation; it keeps hot accesses and absent-versus-empty entries intact while establishing one storage owner and centralizing the two registration transitions.
+UnitOfWork retains change sets, queues, readonly policy, lazy tracking, lifecycle events, transactions and property access. Its remaining persist/remove/detach/hydration/dirty-check code accesses the internal manager's maps directly. This staged access is deliberately not a claim of complete encapsulation; it keeps hot accesses and absent-versus-empty entries intact while establishing one storage owner and centralizing registration and per-entity cleanup transitions.
 
-Delete/detach unsets and clear() retain their prior execution/assignment order. In particular, clear() empties the maps in the original chain interleaved with other UnitOfWork cleanup, then dispatches onClear. No callback-driven reset, implicit map alias or new snapshot normalization is introduced. No mapping cache/public API migration is required. Other coordinated transitions can be assessed separately after this boundary is reviewed.
+`forgetAfterDeletion(oid)` removes identifiers, snapshots and cached state after successful SQL. `forgetAfterDetach(oid)` removes identifiers, cached state and snapshots after queue/lazy cleanup. Separate operations preserve the observation order of snapshot destructors. Both are idempotent, leave other entities untouched, and do not remove Identity Map entries or write entity properties. UnitOfWork retains those actions, generated-ID reset policy and deferred postRemove dispatch.
+
+clear() retains its prior execution/assignment order. In particular, clear() empties the maps in the original chain interleaved with other UnitOfWork cleanup, then dispatches onClear. No callback-driven reset, implicit map alias or new snapshot normalization is introduced. No mapping cache/public API migration is required. Other coordinated transitions can be assessed separately after this boundary is reviewed.
 
 ## Validation
 
-Six component cases cover publication-time consistency, snapshot replacement, copy-on-write, post-insert merge/zero IDs without entity-property assignment, collision/failure mutation order and isolation between managers. Four UnitOfWork cases verify actual DBAL conversion, readonly-property failure before registration, post-insert collision with canonical preservation, empty-ID failure ordering and clear behavior without connecting to a database.
+Component cases cover publication-time consistency, snapshot replacement, copy-on-write, post-insert merge/zero IDs without entity-property assignment, collision/failure mutation order and isolation between managers. UnitOfWork cases verify actual DBAL conversion, readonly-property failure before registration, post-insert collision with canonical preservation, empty-ID failure ordering and clear behavior without connecting to a database. Cleanup cases also check idempotence, entity isolation, snapshot destructor observation order, and detach cancellation of pending updates while preserving entity IDs.
 
-The full SQL/hydration/proxy/generated-ID/lifecycle/rollback/worker suites pass sequentially on PHP 8.4.27 and PHP 8.5.12 with PostgreSQL 18.7: **1279 tests / 8460 assertions / 21 Redis skips** each. PHPStan and PSR-12 pass without suppressions. No benchmark files are part of this extraction.
+The full SQL/hydration/proxy/generated-ID/lifecycle/rollback/worker suites pass sequentially on PHP 8.4.27 and PHP 8.5.12 with PostgreSQL 18.7: **1284 tests / 8506 assertions / 21 Redis skips** each. PHPStan and PSR-12 pass without suppressions. No benchmark files are part of this extraction.

@@ -105,4 +105,26 @@ final class ManagedRegistrationTest extends TestCase
         self::assertSame([], $uow->getOriginalEntityData($entity));
         self::assertSame([], $uow->getIdentityMap());
     }
+
+    public function testDetachCancelsPrimaryWritesAndForgetsStateWithoutResettingId(): void
+    {
+        $entity = new RegistrationGeneratedRecord();
+        $other = new RegistrationGeneratedRecord();
+        $uow = $this->em->getUnitOfWork();
+        $uow->assignPostInsertId($entity, 7);
+        $uow->assignPostInsertId($other, 8);
+        $uow->setOriginalEntityData($entity, ['id' => 7, 'name' => 'before']);
+        $uow->scheduleForUpdate($entity);
+        $uow->detach($entity);
+        self::assertSame(7, $entity->id);
+        self::assertSame([], $uow->getOriginalEntityData($entity));
+        self::assertSame([], $uow->getScheduledEntityUpdates());
+        self::assertSame(UnitOfWork::STATE_DETACHED, $uow->getEntityState($entity));
+        self::assertFalse($uow->isInIdentityMap($entity));
+        self::assertSame($other, $uow->tryGetById(['id' => 8], RegistrationGeneratedRecord::class));
+        $uow->detach($entity);
+        self::assertSame(1, $uow->size());
+        self::assertFalse($this->em->getConnection()->isConnected());
+    }
+
 }

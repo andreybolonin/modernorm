@@ -1234,15 +1234,7 @@ class UnitOfWork implements PropertyChangedListener
             yield [$entity, $persister];
 
             $this->flushQueues->removeDeletion($oid);
-            unset(
-                $this->entityStateManager->identifiers[$oid],
-                $this->entityStateManager->snapshots[$oid],
-                $this->entityStateManager->states[$oid],
-            );
-
-            // Entity with this $oid after deletion treated as NEW, even if the $oid
-            // is obtained by a new entity because the old one went out of scope.
-            //$this->entityStateManager->states[$oid] = self::STATE_NEW;
+            $this->entityStateManager->forgetAfterDeletion($oid);
             $identifierProperty = $class->propertyAccessors[$class->identifier[0]]->getUnderlyingReflector();
             $identifierType = $identifierProperty->getType();
             // PHP forbids unsetting backed hooked properties. Keep non-nullable
@@ -1961,11 +1953,7 @@ class UnitOfWork implements PropertyChangedListener
 
                 $this->flushQueues->removeEntity($oid);
                 $this->lazyReferenceTracker->forget($entity);
-                unset(
-                    $this->entityStateManager->identifiers[$oid],
-                    $this->entityStateManager->states[$oid],
-                    $this->entityStateManager->snapshots[$oid],
-                );
+                $this->entityStateManager->forgetAfterDetach($oid);
                 break;
             case self::STATE_NEW:
             case self::STATE_DETACHED:

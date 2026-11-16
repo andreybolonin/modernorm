@@ -105,4 +105,63 @@ final class EntityStateManagerTest extends TestCase
         self::assertSame([], $other->states);
         self::assertSame([], $other->snapshots);
     }
+
+    public static function cleanupKinds(): array
+    {
+        return ['successful DELETE' => [false], 'detach' => [true]];
+    }
+
+    #[DataProvider('cleanupKinds')]
+    public function testCleanupIsIdempotentAndIsolatedFromIdentityAndOtherEntities(bool $detach): void
+    {
+        $entity = (object) ['id' => 7];
+        $other = new stdClass();
+        $this->states->registerManaged($entity, ['id' => 7], ['name' => 'removed']);
+        $this->states->registerManaged($other, ['id' => 8], ['name' => 'retained']);
+        $oid = spl_object_id($entity);
+        $snapshot = $this->states->snapshots[$oid];
+        for ($i = 0; $i < 2; ++$i) {
+            if ($detach) {
+                $this->states->forgetAfterDetach($oid);
+            } else {
+                $this->states->forgetAfterDeletion($oid);
+            }
+            self::assertArrayNotHasKey($oid, $this->states->identifiers);
+            self::assertArrayNotHasKey($oid, $this->states->states);
+            self::assertArrayNotHasKey($oid, $this->states->snapshots);
+        }
+        self::assertSame(['name' => 'removed'], $snapshot);
+        self::assertSame(['id' => 8], $this->states->identifiers[spl_object_id($other)]);
+        self::assertSame(['name' => 'retained'], $this->states->snapshots[spl_object_id($other)]);
+        self::assertSame(UnitOfWork::STATE_MANAGED, $this->states->states[spl_object_id($other)]);
+        self::assertSame($entity, $this->map->get(stdClass::class, '7'));
+        self::assertSame(7, $entity->id);
+    }
+
+    #[DataProvider('cleanupKinds')]
+    public function testSnapshotReleasePreservesEachTransitionsObservationOrder(bool $detach): void
+    {
+        $entity = new stdClass();
+        $this->states->registerManaged($entity, ['id' => 7], []);
+        $oid = spl_object_id($entity);
+        $observed = [];
+        $this->states->snapshots[$oid] = ['probe' => new class ($this->states, $oid, static function (bool $hasIdentifier, bool $hasState) use (&$observed): void {
+            $observed[] = [$hasIdentifier, $hasState];
+        }) {
+            public function __construct(private EntityStateManager $states, private int $oid, private \Closure $observe)
+            {
+            }
+            public function __destruct()
+            {
+                ($this->observe)(isset($this->states->identifiers[$this->oid]), isset($this->states->states[$this->oid]));
+            }
+        }];
+        if ($detach) {
+            $this->states->forgetAfterDetach($oid);
+        } else {
+            $this->states->forgetAfterDeletion($oid);
+        }
+        self::assertSame([[false, ! $detach]], $observed);
+    }
+
 }
