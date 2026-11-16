@@ -42,7 +42,7 @@ The field plan is cached in a WeakMap keyed by metadata, so clearing an EntityMa
 
 `planToOneLoad()` accepts the target metadata, identifier and observed Identity Map/lazy/fetch facts. It returns a ToOneHydrationMode enum: NULL, SoftDelete visibility lookup, managed reuse (with/without deferred eager scheduling), new reference (with/without deferred eager scheduling), or immediate eager lookup. It does not inspect entity properties, read Identity Map or execute a lookup itself.
 
-UnitOfWork observes identity/lazy facts only where the old path observed them. NULL and SoftDelete cases bypass raw Identity Map resolution. Queue writes, reference creation/registration, find(), assignment, snapshot changes, ManyToOne batching and inverse-link repair retain their previous order in the coordinator. Inverse-side loads and associations already supplied as registered objects also remain there; to-many handling is unchanged.
+UnitOfWork observes identity/lazy facts only where the old path observed them. NULL and SoftDelete cases bypass raw Identity Map resolution. Queue writes, reference creation/registration, find(), assignment, snapshot changes, ManyToOne batching and inverse-link repair retain their previous order in the coordinator. Inverse-side loads and associations already supplied as registered objects also remain there.
 
 The deferred eager hint retains its existing distinction: an existing eager proxy is queued when the hint is present, even when false; a new eager reference is deferred only when the hint is enabled. This extraction characterizes that behavior instead of changing it. Existing dirty-state and entity-scoped refresh checks remain unchanged.
 
@@ -56,4 +56,12 @@ Existing SQL/object hydration, readonly refresh, native reference, embeddable, e
 
 ToOneHydrationTest adds 23 scenarios / 53 assertions for FK values/enums, loading decisions, input immutability, SoftDelete precedence, managed reuse and hint presence/truthiness. Four PostgreSQL cases in CriticalHydrationRegressionTest verify actual identity reuse, deferred/immediate EAGER execution and snapshots, including the disabled-hint case. Existing SoftDelete, dirty relation, refresh, lazy/batch/L2, inverse-link and postLoad regressions remain covered.
 
-No public API, schema or cache-format migration is introduced. To-many extraction is a separate future step.
+## To-many preparation and assignment
+
+`hydrateToMany()` accepts the EntityManager needed by the PersistentCollection constructor, target metadata, owner, mapping, accessor and optional supplied collection. It creates an empty collection when needed, sets its owner, marks only new collections uninitialized, then assigns the property. Supplied collection identity, initialization, contents, dirty flag and snapshot are preserved. It performs no metadata lookup, SQL, registration or queue/snapshot operations.
+
+UnitOfWork retains the supplied-collection branch and reads its snapshot value after assignment. For new collections it still chooses batch versus immediate EAGER loading, takes the immediate-load snapshot, queues LAZY collections, writes the original entity snapshot and defers postLoad in the previous order. Assignment errors occur after owner/initialization preparation and before those loading/queue/snapshot operations. No generic loading planner or new result object is introduced.
+
+ToManyHydrationTest covers private-property assignment, supplied initialized/uninitialized collections with existing contents/dirty snapshots, assignment failure ordering and actual coordinator registration of supplied collections, without opening a database connection. Existing PostgreSQL collection loading, refresh, lazy/batch/EAGER, iteration, indexed/composite associations and postLoad regressions remain unchanged. The full suite passes on PHP 8.4/8.5 with PostgreSQL 18.7: 1299 tests / 8598 assertions / 21 Redis skips per version; PHPStan and code style checks pass.
+
+No public API, schema or cache-format migration is introduced.

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Extract to-many collection preparation and property assignment into EntityHydrator. Preserve supplied collection state and assignment-failure order; keep EAGER/LAZY loading, queues, snapshots and postLoad coordination in UnitOfWork.
+
 - Add a cached scalar change-tracking plan for fully managed DEFERRED_IMPLICIT entities. Combine property reads and comparison in one pass after preFlush, preserving snapshot shape, missing baselines, insert-only fields, UPDATE queues and lifecycle behavior; retain the compatibility path for complex entities.
 
 - Move per-entity identifier/state/snapshot cleanup after successful DELETE and detach into EntityStateManager. Preserve each transition's unset order, queue/event timing and generated-ID reset policy; keep clear() coordination in UnitOfWork.

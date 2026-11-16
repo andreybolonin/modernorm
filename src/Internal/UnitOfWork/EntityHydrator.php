@@ -5,6 +5,11 @@ declare(strict_types=1);
 namespace ModernORM\Internal\UnitOfWork;
 
 use BackedEnum;
+use Doctrine\Common\Collections\ArrayCollection;
+use ModernORM\EntityManagerInterface;
+use ModernORM\PersistentCollection;
+use ModernORM\Mapping\AssociationMapping;
+use ModernORM\Mapping\ToManyAssociationMapping;
 use Generator;
 use ModernORM\Mapping\ClassMetadata;
 use ModernORM\Mapping\ToOneOwningSideMapping;
@@ -17,7 +22,7 @@ use ReflectionNamedType;
 use ReflectionEnum;
 use WeakMap;
 
-/** @internal Assigns scalar fields and plans owning to-one loading without managing ORM state. */
+/** @internal Assigns scalar fields/to-many collections and plans owning to-one loading without managing ORM state. */
 final class EntityHydrator
 {
     /**
@@ -129,6 +134,27 @@ final class EntityHydrator
             \deepclone_hydrate($entity, $vars, DEEPCLONE_HYDRATE_NO_LAZY_INIT);
         }
         return true;
+    }
+
+    /**
+     * Only prepares and assigns the collection; no SQL, queue or snapshot operations.
+     * Supplied collections retain initialization, contents, dirty state and snapshots.
+     */
+    public static function hydrateToMany(
+        EntityManagerInterface $em,
+        ClassMetadata $target,
+        object $owner,
+        AssociationMapping&ToManyAssociationMapping $association,
+        PropertyAccessor $accessor,
+        ?PersistentCollection $supplied = null,
+    ): PersistentCollection {
+        $collection = $supplied ?? new PersistentCollection($em, $target, new ArrayCollection());
+        $collection->setOwner($owner, $association);
+        if ($supplied === null) {
+            $collection->setInitialized(false);
+        }
+        $accessor->setValue($owner, $collection);
+        return $collection;
     }
 
     /**

@@ -2476,21 +2476,13 @@ class UnitOfWork implements PropertyChangedListener
                     assert($assoc->isToMany());
                     // use the given collection
                     if (isset($data[$field]) && $data[$field] instanceof PersistentCollection) {
-                        $data[$field]->setOwner($entity, $assoc);
-
-                        $class->propertyAccessors[$field]->setValue($entity, $data[$field]);
+                        EntityHydrator::hydrateToMany($this->em, $targetClass, $entity, $assoc, $class->propertyAccessors[$field], $data[$field]);
                         $this->entityStateManager->snapshots[$oid][$field] = $data[$field];
 
                         break;
                     }
 
-                    // Inject collection
-                    $pColl = new PersistentCollection($this->em, $targetClass, new ArrayCollection());
-                    $pColl->setOwner($entity, $assoc);
-                    $pColl->setInitialized(false);
-
-                    $reflField = $class->propertyAccessors[$field];
-                    $reflField->setValue($entity, $pColl);
+                    $pColl = EntityHydrator::hydrateToMany($this->em, $targetClass, $entity, $assoc, $class->propertyAccessors[$field]);
 
                     if ($hints['fetchMode'][$class->name][$field] === ClassMetadata::FETCH_EAGER) {
                         if (
