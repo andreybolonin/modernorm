@@ -89,9 +89,7 @@ use function is_object;
 use function reset;
 use function spl_object_id;
 use function sprintf;
-use function strcmp;
 use function strtolower;
-use function usort;
 
 /**
  * The UnitOfWork is responsible for tracking changes to objects during an
@@ -1324,26 +1322,7 @@ class UnitOfWork implements PropertyChangedListener
     /** @return list<object> */
     private function computeUpdateExecutionOrder(): array
     {
-        $entities = $this->flushQueues->updates();
-
-        usort($entities, function (object $a, object $b): int {
-            // First, order alphabetically by the class name. If the class names are different, then return immediately.
-            $result = strcmp($a::class, $b::class);
-            if ($result !== 0) {
-                return $result;
-            }
-
-            // Second, when the objects are of the same class, then order them alphabetically by the "id hash". This
-            // covers multiple different cases of entity's id (think multicolumn ids or uuids). Note that ordering
-            // numerical strings alphabetically may result in the following order: "1", "100", "2" but that's fine.
-            // The point here is to have a consistent ordering, not that the (potential) numbers are in numeric order.
-            return strcmp(
-                $this->getIdHashByEntity($a),
-                $this->getIdHashByEntity($b),
-            );
-        });
-
-        return $entities;
+        return $this->writeOrderPlanner->orderUpdates($this->flushQueues->updates(), $this->getIdHashByEntity(...));
     }
 
     /** @return list<object> */

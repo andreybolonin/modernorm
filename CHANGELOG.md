@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Move UPDATE class/ID-hash sorting into WriteOrderPlanner. Preserve stable lexical order, lazy same-class identifier reads, input queue isolation and comparison-time failures; UnitOfWork supplies the existing hash callback.
+
 - Move uncached identified-entity NEW/DETACHED decisions into EntityStateManager. Preserve cached/assumed/empty-ID shortcuts, enum normalization, version truthiness, conditional generator inspection, Identity Map before existence checks and uncached failure/retry behavior.
 
 - Extract to-many collection preparation and property assignment into EntityHydrator. Preserve supplied collection state and assignment-failure order; keep EAGER/LAZY loading, queues, snapshots and postLoad coordination in UnitOfWork.

@@ -14,6 +14,54 @@ use stdClass;
 
 final class WriteOrderPlannerTest extends TestCase
 {
+    public function testUpdatesUseLexicalHashesAndStableTiesWithoutMutatingInput(): void
+    {
+        $two = (object) ['hash' => '2'];
+        $hundred = (object) ['hash' => '100'];
+        $first = (object) ['hash' => '1'];
+        $tie = (object) ['hash' => '1'];
+        $input = [9 => $two, 4 => $hundred, 2 => $first, 7 => $tie];
+        $planner = new WriteOrderPlanner();
+        $hash = static fn (object $entity): string => $entity->hash;
+        self::assertSame([$first, $tie, $hundred, $two], $planner->orderUpdates($input, $hash));
+        self::assertSame([9 => $two, 4 => $hundred, 2 => $first, 7 => $tie], $input);
+        self::assertSame([$tie, $first], $planner->orderUpdates([$tie, $first], $hash));
+    }
+
+    public function testDifferentClassesAndSingletonsDoNotReadHashes(): void
+    {
+        $a = new UpdateOrderA();
+        $b = new UpdateOrderB();
+        $hash = static function (object $entity): string {
+            throw new \RuntimeException('Unexpected hash read');
+        };
+        $planner = new WriteOrderPlanner();
+        self::assertSame([$a, $b], $planner->orderUpdates([$b, $a], $hash));
+        self::assertSame([$b], $planner->orderUpdates([5 => $b], $hash));
+        self::assertSame([], $planner->orderUpdates([], $hash));
+    }
+
+    public function testHashObservationAndFailureOrderMatchExistingComparator(): void
+    {
+        $first = new stdClass();
+        $second = new stdClass();
+        $reads = [];
+        $error = new \RuntimeException('hash failed');
+        try {
+            (new WriteOrderPlanner())->orderUpdates([$first, $second], static function (object $entity) use (&$reads, $second, $error): string {
+                $reads[] = $entity;
+                if ($entity === $second) {
+                    throw $error;
+                }
+                return '1';
+            });
+            self::fail('Expected hash failure');
+        } catch (\RuntimeException $caught) {
+            self::assertSame($error, $caught);
+        }
+        self::assertSame([$first, $second], $reads);
+    }
+
     /**
      * @param list<object> $entities
      * @param list<DeleteDependency> $cascade
@@ -152,4 +200,11 @@ final class WriteOrderPlannerTest extends TestCase
         $this->expectException(CycleDetectedException::class);
         $this->orderDeletes([$a, $b], $dependencies, $dependencies);
     }
+}
+
+class UpdateOrderA
+{
+}
+class UpdateOrderB
+{
 }

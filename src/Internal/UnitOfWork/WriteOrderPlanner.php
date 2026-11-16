@@ -14,15 +14,39 @@ declare(strict_types=1);
 
 namespace ModernORM\Internal\UnitOfWork;
 
+use Closure;
 use InvalidArgumentException;
 use ModernORM\Internal\StronglyConnectedComponents;
 use ModernORM\Internal\TopologicalSort;
 
 use function strtolower;
+use function strcmp;
+use function usort;
 
-/** @internal Computes entity INSERT/DELETE order without reading ORM state or executing writes. */
+/** @internal Computes entity INSERT/UPDATE/DELETE order without reading ORM state or executing writes. */
 final class WriteOrderPlanner
 {
+    /**
+     * Order by exact runtime class, then lexicographically by identifier hash.
+     * Resolve hashes only when comparing same-class entities; ties retain scheduling order.
+     *
+     * @param array<int, object> $entities
+     * @param Closure(object): string $identifierHash
+     * @return list<object>
+     */
+    public function orderUpdates(array $entities, Closure $identifierHash): array
+    {
+        usort($entities, static function (object $a, object $b) use ($identifierHash): int {
+            $result = strcmp($a::class, $b::class);
+            if ($result !== 0) {
+                return $result;
+            }
+            // Deliberately lexical: numeric strings may be ordered as 1, 100, 2.
+            return strcmp($identifierHash($a), $identifierHash($b));
+        });
+        return $entities;
+    }
+
     /**
      * @param array<int, object> $entities
      * @param iterable<InsertDependency> $dependencies
