@@ -43,6 +43,7 @@ use ModernORM\Internal\UnitOfWork\AssociationChangePlanner;
 use ModernORM\Internal\UnitOfWork\AssociationMembership;
 use ModernORM\Internal\UnitOfWork\ChangeSetComputer;
 use ModernORM\Internal\UnitOfWork\EntityHydrator;
+use ModernORM\Internal\UnitOfWork\FlatSqlHydrationPlan;
 use ModernORM\Internal\UnitOfWork\ToOneHydrationMode;
 use ModernORM\Internal\UnitOfWork\FlushOperationQueues;
 use ModernORM\Internal\UnitOfWork\FlushExecutor;
@@ -2356,9 +2357,14 @@ class UnitOfWork implements PropertyChangedListener
             }
         }
 
-        foreach (EntityHydrator::hydrateScalars($class, $entity, $data) as $field => $value) {
-            // Equivalent readonly values can retain the original object; snapshot that actual value.
-            $this->originalEntityData[$oid][$field] = $value;
+        if (! isset($hints[FlatSqlHydrationPlan::HINT]) || $managedEntity !== null
+            || ! $hints[FlatSqlHydrationPlan::HINT] instanceof FlatSqlHydrationPlan
+            || ! $hints[FlatSqlHydrationPlan::HINT]->tryHydrate($class, $entity, $data)
+        ) {
+            foreach (EntityHydrator::hydrateScalars($class, $entity, $data) as $field => $value) {
+                // Equivalent readonly values can retain the original object; snapshot that actual value.
+                $this->originalEntityData[$oid][$field] = $value;
+            }
         }
 
         // Loading the entity right here, if its in the eager loading map get rid of it there.

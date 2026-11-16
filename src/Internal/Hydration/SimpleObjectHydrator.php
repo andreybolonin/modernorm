@@ -131,6 +131,9 @@ class SimpleObjectHydrator extends AbstractHydrator
         }
 
         $uow    = $this->em->getUnitOfWork();
+        if ($this->flatSqlPlanPending) {
+            $this->compileFlatSqlPlan($this->class, $data);
+        }
         $entity = $uow->createEntity($entityName, $data, $this->hints);
 
         $result[] = $entity;

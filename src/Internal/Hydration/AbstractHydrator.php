@@ -13,6 +13,8 @@ use ModernORM\Events;
 use ModernORM\Mapping\ClassMetadata;
 use ModernORM\Query\ResultSetMapping;
 use ModernORM\UnitOfWork;
+use ModernORM\Internal\UnitOfWork\FlatSqlHydrationPlan;
+use ModernORM\Query;
 use Generator;
 use LogicException;
 use ReflectionClass;
@@ -241,9 +243,28 @@ abstract class AbstractHydrator
     /** @var list<string>|null */
     private ?array $entityColumns = null;
 
+    protected bool $flatSqlPlanPending = false;
+
     final protected function prepareEntityMapping(): void
     {
         $this->entityColumns = $this->resultSetMapping()->getEntityColumnNames($this->em);
+        unset($this->hints[FlatSqlHydrationPlan::HINT]);
+        $rsm = $this->resultSetMapping();
+        $this->flatSqlPlanPending = ($this::class === ObjectHydrator::class || $this::class === SimpleObjectHydrator::class)
+            && $this->uow::class === UnitOfWork::class && FlatSqlHydrationPlan::available()
+            && count($rsm->aliasMap) === 1 && $rsm->relationMap === [] && $rsm->metaMappings === []
+            && $rsm->scalarMappings === [] && $rsm->newObjectMappings === [] && $rsm->newObject === []
+            && ! isset($this->hints[Query::HINT_REFRESH]) && ! isset($this->hints[Query::HINT_REFRESH_ENTITY]);
+    }
+
+    /** @param array<string, mixed> $data */
+    final protected function compileFlatSqlPlan(ClassMetadata $metadata, array $data): void
+    {
+        $this->flatSqlPlanPending = false;
+        $plan = FlatSqlHydrationPlan::compile($metadata, array_keys($data));
+        if ($plan !== null) {
+            $this->hints[FlatSqlHydrationPlan::HINT] = $plan;
+        }
     }
 
     /** Check actual SQL columns before registering any entity; result columns are stable across rows. */
@@ -281,6 +302,8 @@ abstract class AbstractHydrator
         $this->cache         = [];
         $this->metadataCache = [];
         $this->rowMapping    = null;
+        $this->flatSqlPlanPending = false;
+        unset($this->hints[FlatSqlHydrationPlan::HINT]);
 
         $this
             ->em

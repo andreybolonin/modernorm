@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add one query-local FlatSqlHydrationPlan for complete scalar rows in built-in object/simple-object SQL hydration. Compile standard primitive-field eligibility once, pass normalized rows directly to deepclone without rekeying, and keep existing/refresh/custom/complex cases on EntityHydrator. Preserve registration, snapshots, callbacks and public method signatures.
+
 - Route collection deletions and updates through FlushExecutor's lazy operation streams. Keep deferred-explicit owner checks, queues, phase ordering and post-commit collection snapshots in UnitOfWork; preserve collection state across SQL/COMMIT failures.
 
 - Route DELETE writes through FlushExecutor's lazy operation stream. Keep dependency ordering, pre-SQL Identity Map removal, post-SQL state/ID cleanup and deferred postRemove in UnitOfWork; preserve rollback and event-failure behavior.

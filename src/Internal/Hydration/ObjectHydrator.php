@@ -244,6 +244,10 @@ class ObjectHydrator extends AbstractHydrator
 
         $this->hints['fetchAlias'] = $resultAlias;
 
+        if ($this->flatSqlPlanPending) {
+            $this->compileFlatSqlPlan($this->metadataCache[$className], $data);
+        }
+
         return $this->uow->createEntity($className, $data, $this->hints);
     }
 

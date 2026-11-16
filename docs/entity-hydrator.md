@@ -28,6 +28,12 @@ Before child writes, a missing embedded is created without its constructor and a
 
 Embedded plans use a separate WeakMap with accessor-identity invalidation. No persistence-context state, entity instance, snapshot or SQL moves into the batch helper, and no metadata cache format changes. [Production before/after measurements](../benchmarks/results/deepclone-embedded.md) include these checks and fallbacks rather than only the prototype.
 
+### Specialized flat SQL plan
+
+Built-in ObjectHydrator and SimpleObjectHydrator can compile one [FlatSqlHydrationPlan](flat-sql-hydration-plan.md) for an active SQL result. The first version supports a single complete entity root with direct `int`, `float`, `string` or `bool` properties, including nullable/private/protected/backed-hooked fields. It passes the already normalized entity-data array directly to deepclone, eliminating generic per-row field-map lookups and argument-array rekeying for this case. The existing generic native/accessor and embedded paths remain available for other mappings.
+
+Only fresh objects use this plan, after normal UnitOfWork registration. Refresh/existing objects, custom hydrators/UnitOfWork implementations, inheritance, associations, embedded/readonly/enum/array/object properties retain their previous paths. Runtime metadata/accessor changes invalidate applicability; object-valued coercions and NULL-to-non-nullable input fall back before writes. The private context hint is cleared on prepare/cleanup and never installed on Query itself or serialized into mapping/result caches. No createEntity signature changes or global mutable UnitOfWork context are introduced.
+
 The field plan is cached in a WeakMap keyed by metadata, so clearing an EntityManager does not create a global class-name retention cache. Replacing a runtime property accessor invalidates its plan; plans are not serialized into metadata caches. Full suites run with the extension on PHP 8.4/8.5 in the locked-dependency PostgreSQL 18 CI jobs, after their ordinary extension-free runs. The [benchmark](../benchmarks/README.md#experimental-deepclone-scalar-hydration) distinguishes the initial experiment from the guarded production path (`orm` mode).
 
 ## Owning to-one loading decisions
