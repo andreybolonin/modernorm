@@ -11,6 +11,8 @@ parameters:
         - src
         - tests/Unit/ToOneHydrationTest.php
         - tests/Unit/EntityHydratorTest.php
+        - tests/Unit/EntityStateManagerTest.php
+        - tests/Unit/ManagedRegistrationTest.php
         - tests/Unit/FlatSqlHydrationPlanTest.php
         - tests/Integration/FlatSqlHydrationPlanTest.php
         - tests/Unit/EmbeddedHydratorTest.php

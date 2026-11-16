@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Centralize managed-registration and post-insert-ID transitions in EntityStateManager over one identifier/state/snapshot store. Preserve Identity Map publication/error order, snapshot replacement versus ID merging, property assignment in UnitOfWork, and existing lifecycle/clear behavior without reference aliases or per-entity state objects.
+
 - Add one query-local FlatSqlHydrationPlan for complete scalar rows in built-in object/simple-object SQL hydration. Compile standard primitive-field eligibility once, pass normalized rows directly to deepclone without rekeying, and keep existing/refresh/custom/complex cases on EntityHydrator. Preserve registration, snapshots, callbacks and public method signatures.
 
 - Route collection deletions and updates through FlushExecutor's lazy operation streams. Keep deferred-explicit owner checks, queues, phase ordering and post-commit collection snapshots in UnitOfWork; preserve collection state across SQL/COMMIT failures.
