@@ -52,7 +52,7 @@ $config = new Configuration();
 $config->setMetadataDriverImpl(new AttributeDriver([]));
 $iterations = max(3, (int) (getenv('MODERNORM_BENCH_ITERATIONS') ?: 15));
 $measurements = [];
-foreach (['root' => 0, '1:1' => 1, '1:10' => 10, '1:100' => 100, '1:1000' => 1000, 'empty-left' => -1, 'array-1:100' => 100] as $scenario => $fanout) {
+foreach (['root' => 0, '1:1' => 1, '1:10' => 10, '1:100' => 100, '1:1000' => 1000, 'empty-left' => -1, 'array-root' => 0] as $scenario => $fanout) {
     $joined = $fanout !== 0;
     $parents = $fanout > 0 ? intdiv(10000, $fanout) : 10000;
     $sql = "SELECT p AS p_id, '{\"name\":\"cart\",\"tags\":[1,2,3],\"nested\":{\"enabled\":true}}' AS p_payload, "
@@ -95,11 +95,23 @@ foreach (['root' => 0, '1:1' => 1, '1:10' => 10, '1:100' => 100, '1:1000' => 100
             throw new \RuntimeException('Incorrect root count.');
         }
         if ($joined) {
-            $items = $array ? $result[0]['items'] : $result[0]->items;
+            $items = $result[0]->items;
             if (count($items) !== max(0, $fanout)) {
                 throw new \RuntimeException('Incorrect collection count.');
             }
             unset($items);
+        }
+        if ($array) {
+            foreach ($result as $index => $row) {
+                if ($row['id'] !== $index + 1
+                    || $row['payload'] !== ['name' => 'cart', 'tags' => [1, 2, 3], 'nested' => ['enabled' => true]]
+                    || ! $row['createdAt'] instanceof DateTimeImmutable
+                    || ! $row['updatedAt'] instanceof DateTimeImmutable
+                    || array_key_exists('items', $row)
+                ) {
+                    throw new \RuntimeException('Incorrect flat array projection.');
+                }
+            }
         }
         if ($iteration >= 0) {
             $times[] = $elapsed;
