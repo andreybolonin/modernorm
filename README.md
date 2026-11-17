@@ -26,7 +26,7 @@ PHP attributes, native lazy objects, Identity Map and UnitOfWork keep ordinary e
 
 Declare stored PostgreSQL search vectors and GIN indexes with [`#[FullTextIndex]`](docs/full-text-index.md); search and rank through the existing SQL API.
 
-Behaviors are explicitly enabled per entity: [Timestampable](docs/timestampable.md), [Blameable](docs/blameable.md) and [SoftDelete](docs/soft-delete.md). SoftDelete is unreleased; beta.4 includes Timestampable and the Blameable provider/listener API.
+Behaviors are explicitly enabled per entity: [Timestampable](docs/timestampable.md), [Blameable](docs/blameable.md) and [SoftDelete](docs/soft-delete.md). Beta.5 includes Timestampable, the Blameable provider/listener API and SoftDelete.
 
 ## Fewer queries. The same entity workflow.
 
@@ -138,7 +138,7 @@ DQL, entity inheritance, composite entity IDs, XML/YAML mapping, ORM Filters and
 
 ## Confirmed inherited bugs
 
-These behaviors were reproduced on ModernORM before the persistence, PostgreSQL write-path and Identity Map audits; the corresponding mechanisms were checked against the Doctrine ORM 3.7.6 sources from which ModernORM was derived. **Fixed** means fixed in the current development code, **not in the published beta.4 release**. Upstream links identify provenance, not the current status of a Doctrine fix.
+These behaviors were reproduced on ModernORM before the persistence, PostgreSQL write-path and Identity Map audits; the corresponding mechanisms were checked against the Doctrine ORM 3.7.6 sources from which ModernORM was derived. **Fixed** means covered by ModernORM regressions and included in beta.5. Upstream links identify provenance, not the current status of a Doctrine fix.
 
 | Confirmed bug | Upstream reference | ModernORM status |
 | --- | --- | --- |
@@ -169,7 +169,7 @@ composer require 'andreybolonin/modernorm:^0.1@beta'
 
 Start with the [executable persistence example](examples/migration/README.md), or use [ModernORMBundle](https://github.com/andreybolonin/modernormbundle) for Symfony, migrations, fixtures and Profiler integration. Code excerpts above assume configured services and mapped entities.
 
-**Current release: 0.1.0-beta.4.** The package remains beta; read the [supported contract and limits](docs/beta-release.md) before adopting it.
+**Current release: 0.1.0-beta.5.** The package remains beta; read the [supported contract and limits](docs/beta-release.md) before adopting it.
 
 [Documentation](docs/README.md) · [Benchmarks](benchmarks/README.md) · [Roadmap](roadmap.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [Security](SECURITY.md).
 

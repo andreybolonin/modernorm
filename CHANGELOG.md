@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.1.0-beta.5 — 2026-11-17
+
 - Align flush COMMIT handling with DBAL 4.6's void contract, removing the unreachable false-return branch and three obsolete PHPStan baseline entries. Preserve original DBAL/driver failures and add SQL regressions for empty-queue onFlush work, deferred COMMIT causes and cleanup/no replay after committed L2 invalidation failure.
 
 - Move UPDATE class/ID-hash sorting into WriteOrderPlanner. Preserve stable lexical order, lazy same-class identifier reads, input queue isolation and comparison-time failures; UnitOfWork supplies the existing hash callback.
