@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Enforce PostgreSQL 17+ before generating FullTextIndex create/update/migration DDL, including initial schemas. Reject unsupported servers before FTS catalog inspection or comparison-schema mutation; leave ignored and non-FTS mappings unaffected.
+
 ## 0.1.0-beta.5 — 2026-11-17
 
 - Align flush COMMIT handling with DBAL 4.6's void contract, removing the unreachable false-return branch and three obsolete PHPStan baseline entries. Preserve original DBAL/driver failures and add SQL regressions for empty-queue onFlush work, deferred COMMIT causes and cleanup/no replay after committed L2 invalidation failure.

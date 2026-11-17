@@ -1,6 +1,6 @@
 # Full-text indexes
 
-`#[FullTextIndex]` declares a PostgreSQL STORED generated `tsvector` column and a GIN index. It requires PostgreSQL 17+ and DBAL 4.6+. The technical column is absent from entity fields, hydration and UnitOfWork writes.
+`#[FullTextIndex]` declares a PostgreSQL STORED generated `tsvector` column and a GIN index. It requires PostgreSQL 17+ and DBAL 4.6+. SchemaTool checks the server version before generating FTS create, update or reversible migration SQL and rejects older servers explicitly. Ignored mappings and schemas without FullTextIndex do not trigger this version check. The technical column is absent from entity fields, hydration and UnitOfWork writes.
 
 ```php
 use ModernORM\Mapping as ORM;

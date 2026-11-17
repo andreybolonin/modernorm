@@ -127,9 +127,6 @@ final class SchemaExtension
                         }
                     }
                     if ($actual !== $expected) {
-                        if (version_compare($this->connection->getServerVersion(), '17', '<')) {
-                            throw new RuntimeException('Changing FullTextIndex expressions requires PostgreSQL 17 or later.');
-                        }
                         if ($reverse) {
                             $down[] = 'ALTER TABLE ' . $tableSql . ' ALTER COLUMN ' . $this->quote($index->column)
                                 . ' SET EXPRESSION AS (' . $this->reader->render($actual) . ')';
@@ -198,6 +195,7 @@ final class SchemaExtension
     {
         $result = [];
         $indexes = [];
+        $versionChecked = false;
         foreach ($classes as $class) {
             $class->assertSupportedMapping();
             if ($class->isMappedSuperclass || $class->isEmbeddedClass
@@ -206,6 +204,10 @@ final class SchemaExtension
             }
             if (isset($result[$class->name])) {
                 continue;
+            }
+            if ($class->fullTextIndexes !== [] && ! $versionChecked) {
+                $this->assertSupportedServer();
+                $versionChecked = true;
             }
             foreach ($class->fullTextIndexes as $index) {
                 $key = $this->schemaName($schema, $class) . '.' . $index->name;
@@ -217,6 +219,14 @@ final class SchemaExtension
             $result[$class->name] = $class;
         }
         return array_values($result);
+    }
+
+    private function assertSupportedServer(): void
+    {
+        $version = $this->connection->getServerVersion();
+        if (version_compare($version, '17', '<')) {
+            throw new RuntimeException('FullTextIndex requires PostgreSQL 17 or later; server version: ' . $version);
+        }
     }
 
     private function assertTarget(ClassMetadata $class, FullTextIndex $index, Schema $schema): void
