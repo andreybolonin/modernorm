@@ -1080,15 +1080,22 @@ class UnitOfWork implements PropertyChangedListener
             return;
         }
 
-        $actualData = [];
+        $actualData = null;
+        if (! $this->flushQueues->hasInsertion($oid) && ! $this->lazyReferenceTracker->contains($entity)) {
+            $plan = ScalarChangeTrackingPlan::forMetadata($class);
+            $actualData = $plan?->readForRecompute($class, $entity);
+        }
+        if ($actualData === null) {
+            $actualData = [];
 
-        foreach ($class->propertyAccessors as $name => $refProp) {
-            if (
-                (! $class->isIdentifier($name) || ! $class->isIdGeneratorIdentity())
-                && ($name !== $class->versionField)
-                && ! $class->isCollectionValuedAssociation($name)
-            ) {
-                $actualData[$name] = $refProp->getValue($entity);
+            foreach ($class->propertyAccessors as $name => $refProp) {
+                if (
+                    (! $class->isIdentifier($name) || ! $class->isIdGeneratorIdentity())
+                    && ($name !== $class->versionField)
+                    && ! $class->isCollectionValuedAssociation($name)
+                ) {
+                    $actualData[$name] = $refProp->getValue($entity);
+                }
             }
         }
 

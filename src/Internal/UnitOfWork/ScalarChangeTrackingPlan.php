@@ -70,6 +70,24 @@ final readonly class ScalarChangeTrackingPlan
     }
 
     /**
+     * Read only: recompute retains its own missing-baseline, INSERT and merge rules in UnitOfWork.
+     * Keep ordinary compare fused instead of imposing a second pass on that hot path.
+     * @return array<string, mixed>|null Null requests accessor fallback.
+     */
+    public function readForRecompute(ClassMetadata $metadata, object $entity): ?array
+    {
+        if ($entity::class !== $metadata->name || $metadata->reflClass->isUninitializedLazyObject($entity)) {
+            return null;
+        }
+        $values = (array) $entity;
+        $actual = [];
+        foreach ($this->fields as $field => $key) {
+            $actual[$field] = $values[$key] ?? null;
+        }
+        return $actual;
+    }
+
+    /**
      * null requests fallback; an empty result preserves any pending changeset.
      * Build actual data in metadata order, including missing-baseline/insert-only fields.
      * Hydrated snapshots can contain IDs/version/extra keys or use another field order;

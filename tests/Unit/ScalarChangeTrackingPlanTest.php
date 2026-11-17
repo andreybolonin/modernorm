@@ -120,6 +120,71 @@ final class ScalarChangeTrackingPlanTest extends TestCase
         self::assertFalse($metadata->propertyAccessors['uninitialized']->getUnderlyingReflector()->isInitialized($entity));
     }
 
+    public function testRecomputeTreatsMissingBaselinesAsNullAndKeepsPendingChanges(): void
+    {
+        $entity = new ScalarTrackedRecord();
+        $metadata = $this->em->getClassMetadata($entity::class);
+        $uow = $this->em->getUnitOfWork();
+        $uow->registerManaged($entity, ['id' => 1], ['id' => 1, 'enabled' => false]);
+        $uow->recomputeSingleEntityChangeSet($metadata, $entity);
+        $expected = ['name' => [null, 'before'], 'amount' => [null, 1.25]];
+        self::assertSame($expected, $uow->getEntityChangeSet($entity));
+        self::assertSame($this->actual($metadata, $entity), $uow->getOriginalEntityData($entity));
+        self::assertTrue($uow->isScheduledForUpdate($entity));
+        $uow->recomputeSingleEntityChangeSet($metadata, $entity);
+        self::assertSame($expected, $uow->getEntityChangeSet($entity));
+        self::assertFalse($this->em->getConnection()->isConnected());
+    }
+
+    public function testRecomputeMergesNewChangesAndOverridesOnlyRecomputedFields(): void
+    {
+        $entity = new ScalarTrackedRecord();
+        $metadata = $this->em->getClassMetadata($entity::class);
+        $uow = $this->em->getUnitOfWork();
+        $uow->registerManaged($entity, ['id' => 1], $this->actual($metadata, $entity));
+        $entity->rename('first');
+        $entity->enabled = true;
+        $uow->computeChangeSet($metadata, $entity);
+        $entity->rename('second');
+        $entity->amount = 2.5;
+        $entity->insertOnly = 'ignored';
+        $uow->recomputeSingleEntityChangeSet($metadata, $entity);
+        self::assertSame(['name' => ['first', 'second'], 'enabled' => [false, true], 'amount' => [1.25, 2.5]], $uow->getEntityChangeSet($entity));
+        self::assertSame($this->actual($metadata, $entity), $uow->getOriginalEntityData($entity));
+        self::assertSame([$entity], array_values($uow->getScheduledEntityUpdates()));
+    }
+
+    public function testRecomputePendingInsertRetainsInsertOnlyFieldComparison(): void
+    {
+        $entity = new ScalarTrackedRecord();
+        $entity->id = null;
+        $metadata = $this->em->getClassMetadata($entity::class);
+        $uow = $this->em->getUnitOfWork();
+        $this->em->persist($entity);
+        $uow->computeChangeSet($metadata, $entity);
+        $entity->insertOnly = 'insert changed';
+        $uow->recomputeSingleEntityChangeSet($metadata, $entity);
+        self::assertSame(['fixed', 'insert changed'], $uow->getEntityChangeSet($entity)['insertOnly']);
+        self::assertTrue($uow->isScheduledForInsert($entity));
+        self::assertFalse($uow->isScheduledForUpdate($entity));
+        self::assertFalse($this->em->getConnection()->isConnected());
+    }
+
+    public function testRecomputeReadCopiesScalarReferencesAndPreservesUninitializedFields(): void
+    {
+        $entity = new ScalarTrackedRecord();
+        $metadata = $this->em->getClassMetadata($entity::class);
+        $plan = ScalarChangeTrackingPlan::forMetadata($metadata);
+        self::assertNotNull($plan);
+        $enabled = &$entity->enabled;
+        $actual = $plan->readForRecompute($metadata, $entity);
+        self::assertSame($this->actual($metadata, $entity), $actual);
+        $enabled = true;
+        self::assertFalse($actual['enabled']);
+        self::assertNull($actual['uninitialized']);
+        self::assertFalse($metadata->propertyAccessors['uninitialized']->getUnderlyingReflector()->isInitialized($entity));
+    }
+
     public function testMissingBaselinesAndInsertOnlyChangesDoNotScheduleUpdates(): void
     {
         $entity = new ScalarTrackedRecord();
@@ -176,8 +241,10 @@ final class ScalarChangeTrackingPlanTest extends TestCase
             ++$initializations;
         });
         self::assertNull($plan->compare($metadata, $ghost, []));
+        self::assertNull($plan->readForRecompute($metadata, $ghost));
         self::assertSame(0, $initializations);
         self::assertNull($plan->compare($metadata, new HookedTrackedRecord(), []));
+        self::assertNull($plan->readForRecompute($metadata, new HookedTrackedRecord()));
     }
 
     public function testStandardWrapperAroundCustomAccessorUsesCompatibilityPath(): void

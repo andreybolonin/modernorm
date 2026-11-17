@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Reuse the eligible scalar plan for one-cast reads during UPDATE recomputation. Preserve missing-baseline-as-null comparison, changeset merging, preUpdate additions, snapshots and scheduling; keep pending INSERTs, tracked lazy references and unsupported metadata on accessors.
+
 - Read eligible scalar dirty-check state with one object-to-array cast per entity and precompiled private/protected keys. Preserve accessor eligibility/fallback, uninitialized/null values, reference-independent snapshots, metadata order and UPDATE scheduling.
 
 - Raise optional native hydration minimum to ext-deepclone 0.8.11 and pin CI to its release commit, including NO_LAZY_INIT shutdown and property-write fixes. Older extensions use accessor hydration; the extension remains optional.

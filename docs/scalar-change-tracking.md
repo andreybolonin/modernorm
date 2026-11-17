@@ -14,6 +14,14 @@ A WeakMap caches accepted and rejected plans by metadata instance. Structural me
 
 Regression coverage compares complete changesets/snapshot shape against the existing comparator, including repeated dirty checking, missing baselines, insert-only fields, lifecycle mutations, readonly marking, cache invalidation/collection and fallback. A PostgreSQL test exercises hydrated generated-ID/version snapshots, preUpdate mutation/recomputation, insert-only preservation and repeated no-op flushes.
 
-The full suite passes on PHP 8.4 and PHP 8.5: 1330 tests, 8781 assertions and 21 Redis skips per version. PHPStan and code style checks pass.
+The full suite passes on PHP 8.4 and PHP 8.5: 1334 tests, 8802 assertions and 21 Redis skips per version. PHPStan and code style checks pass.
 
 Diagnostic benchmark scripts and raw measurements remain local and are not part of this feature.
+
+## Recompute after preUpdate
+
+For the same eligible scalar metadata, `recomputeSingleEntityChangeSet()` reads actual data with `readForRecompute()` using one object cast. Pending INSERTs and tracked lazy references retain accessor reads; uninitialized lazy objects and runtime class mismatches also request fallback. No eligibility rules are broadened.
+
+Only reading is specialized. UnitOfWork retains managed/readonly checks, missing-snapshot errors, missing-baseline-as-null comparison, UPDATE versus INSERT permissions, changeset merging (recomputed fields prevail), snapshot installation and queue scheduling. Ordinary dirty checking still uses its fused read/compare pass. Automatic UPDATE recomputation happens only when preUpdate subscribers exist; a workload without such subscribers is an important performance control.
+
+The SQL regression includes preUpdate changing an additional protected field that was not initially dirty, verifies version and insert-only behavior, and checks a subsequent no-op flush. Unit cases cover missing baselines, merging with prior changes, pending INSERTs, detached scalar references, uninitialized values and lazy/class fallback.

@@ -30,6 +30,7 @@ class ScalarTrackingEntity
     public function beforeUpdate(): void
     {
         $this->name .= '-callback';
+        $this->note = 'callback-' . ($this->updates + 1);
         ++$this->updates;
     }
 }
@@ -60,8 +61,9 @@ final class ScalarChangeTrackingPlanTest extends TestCase
                 $entity->rename($value);
                 $entity->insertOnly = 'ignored';
                 $em->flush();
-                $row = $em->getConnection()->fetchAssociative('SELECT name, insertOnly AS fixed, version FROM modernorm_scalar_tracking WHERE id = ?', [$id]);
+                $row = $em->getConnection()->fetchAssociative('SELECT name, note, insertOnly AS fixed, version FROM modernorm_scalar_tracking WHERE id = ?', [$id]);
                 self::assertSame($value . '-callback', $row['name']);
+                self::assertSame('callback-' . ($index + 1), $row['note']);
                 self::assertSame('database', $row['fixed']);
                 self::assertSame($index + 2, $entity->version);
                 $em->flush();
