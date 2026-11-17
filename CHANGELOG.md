@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Raise optional native hydration minimum to ext-deepclone 0.8.11 and pin CI to its release commit, including NO_LAZY_INIT shutdown and property-write fixes. Older extensions use accessor hydration; the extension remains optional.
+
 - Enforce PostgreSQL 17+ before generating FullTextIndex create/update/migration DDL, including initial schemas. Reject unsupported servers before FTS catalog inspection or comparison-schema mutation; leave ignored and non-FTS mappings unaffected.
 
 ## 0.1.0-beta.5 — 2026-11-17

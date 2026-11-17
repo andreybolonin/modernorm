@@ -36,7 +36,7 @@ final class EntityHydrator
     public static function hydrateScalars(ClassMetadata $metadata, object $entity, array $data): Generator
     {
         static $native = extension_loaded('deepclone')
-            && version_compare(phpversion('deepclone'), '0.8.10', '>=')
+            && version_compare(phpversion('deepclone'), '0.8.11', '>=')
             && function_exists('deepclone_hydrate')
             && defined('DEEPCLONE_HYDRATE_NO_LAZY_INIT');
 
