@@ -23,6 +23,7 @@ class ScalarTrackedRecord
     #[ORM\Column(nullable: true)] protected ?string $note = null;
     #[ORM\Column] public bool $enabled = false;
     #[ORM\Column] public float $amount = 1.25;
+    #[ORM\Column] public int $uninitialized;
     #[ORM\Column(updatable: false)] public string $insertOnly = 'fixed';
     #[ORM\Column, ORM\Version] public int $version = 1;
     public function rename(string $name): void
@@ -92,6 +93,31 @@ final class ScalarChangeTrackingPlanTest extends TestCase
             $original = $actual;
         }
         self::assertFalse($this->em->getConnection()->isConnected());
+    }
+
+    public function testCastPreservesNullUninitializedAndDetachedReferenceValues(): void
+    {
+        $entity = new ScalarTrackedRecord();
+        $metadata = $this->em->getClassMetadata($entity::class);
+        $original = $this->actual($metadata, $entity);
+        self::assertNull($original['note']);
+        self::assertNull($original['uninitialized']);
+        $enabled = &$entity->enabled;
+        $uow = $this->em->getUnitOfWork();
+        $uow->registerManaged($entity, ['id' => 1], $original);
+        $enabled = true;
+        $entity->rename('changed');
+        $uow->computeChangeSets();
+        self::assertSame(ChangeSetComputer::compare($metadata, $original, $this->actual($metadata, $entity)), $uow->getEntityChangeSet($entity));
+        $snapshot = $uow->getOriginalEntityData($entity);
+        self::assertNull($snapshot['uninitialized']);
+        $enabled = false;
+        self::assertTrue($snapshot['enabled']);
+        self::assertTrue($uow->getOriginalEntityData($entity)['enabled']);
+        $uow->computeChangeSets();
+        self::assertSame(['enabled' => [true, false]], $uow->getEntityChangeSet($entity));
+        self::assertFalse($uow->getOriginalEntityData($entity)['enabled']);
+        self::assertFalse($metadata->propertyAccessors['uninitialized']->getUnderlyingReflector()->isInitialized($entity));
     }
 
     public function testMissingBaselinesAndInsertOnlyChangesDoNotScheduleUpdates(): void

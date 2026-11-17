@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Read eligible scalar dirty-check state with one object-to-array cast per entity and precompiled private/protected keys. Preserve accessor eligibility/fallback, uninitialized/null values, reference-independent snapshots, metadata order and UPDATE scheduling.
+
 - Raise optional native hydration minimum to ext-deepclone 0.8.11 and pin CI to its release commit, including NO_LAZY_INIT shutdown and property-write fixes. Older extensions use accessor hydration; the extension remains optional.
 
 - Enforce PostgreSQL 17+ before generating FullTextIndex create/update/migration DDL, including initial schemas. Reject unsupported servers before FTS catalog inspection or comparison-schema mutation; leave ignored and non-FTS mappings unaffected.
