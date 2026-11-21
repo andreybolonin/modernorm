@@ -2,6 +2,17 @@
 
 [Recorded results](results/README.md): batch query reduction, statistics overhead, bulk writes and entity L2 measurements.
 
+## Flat SQL hydration plan
+
+`flat-sql-hydration.php` measures the full managed hydration stage for ObjectHydrator and SimpleObjectHydrator: two primitive fields, twelve primitive fields (including private/protected/hooked properties), and an unsupported JSON control. It uses PostgreSQL `generate_series` without creating tables. SQL execution, metadata warming and validation are excluded; driver fetching, DBAL conversion, plan preparation, assignment, Identity Map and snapshots are included. Every entity's converted values/order and managed count are checked, as is constructor/hook bypass. New contexts are used each round, so query-plan preparation is measured rather than hidden in setup.
+
+```sh
+PGUSER=your_role PGDATABASE=modernorm_test \
+php -d opcache.enable_cli=1 benchmarks/flat-sql-hydration.php > flat-sql-results.json
+```
+
+Use `-d extension=/path/to/deepclone.so` only if the matching extension is not already enabled. `MODERNORM_BENCH_ROWS` defaults to 20,000 and `MODERNORM_BENCH_ROUNDS` to 9 (minimum 3), after two warmups per case. Output contains timing and incremental PHP peak-heap samples; these are not process RSS. There are no CI timing thresholds. The [recorded before/after comparison](results/flat-sql-plan.md) includes PHP 8.4/8.5 and an extension-free control.
+
 ## Experimental deepclone scalar hydration
 
 `deepclone.php` compares an explicit accessor-only baseline with a benchmark-only adapter using [Symfony's deepclone extension](https://github.com/symfony/php-ext-deepclone), or with the actual `EntityHydrator::hydrateScalars()` (`orm` mode). It requires no database server. The explicit baseline remains independent of automatic extension detection in production hydration.
