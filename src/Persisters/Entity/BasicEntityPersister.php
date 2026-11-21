@@ -260,9 +260,8 @@ class BasicEntityPersister implements EntityPersister
             // knows right away (for the next entity already) that the current entity has been written to the database
             // and no extra updates need to be scheduled to refer to it.
             //
-            // In \ModernORM\UnitOfWork::executeInserts(), the UoW already removed entities
-            // from its own list (\ModernORM\UnitOfWork::$entityInsertions) right after they
-            // were given to our addInsert() method.
+            // The flush executor already removed these entities from the UnitOfWork insertion
+            // queue immediately after passing them to our addInsert() method.
             unset($this->queuedInserts[$key]);
         }
     }

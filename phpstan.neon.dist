@@ -9,6 +9,7 @@ parameters:
         - tests/Fixtures/RemovedFetchModes.php
     paths:
         - src
+        - tests/Unit/UnitOfWorkComponentsTest.php
         - tests/Unit/ToOneHydrationTest.php
         - tests/Unit/EntityHydratorTest.php
         - tests/Unit/EntityStateManagerTest.php
@@ -20,7 +21,10 @@ parameters:
         - tests/Integration/EmbeddedBatchHydrationTest.php
         - tests/Integration/CollectionFlushExecutionTest.php
         - tests/Unit/ChangeSetComputerTest.php
+        - tests/Unit/ChangeTrackingCoordinatorTest.php
+        - tests/Unit/PersisterRegistryTest.php
         - tests/Unit/CascadeScopeTest.php
+        - tests/Unit/CascadeProcessorTest.php
         - tests/Integration/CompleteEntityProjectionTest.php
         - tests/Unit/FetchModeScopeTest.php
         - tests/Integration/LazyCollectionOperationsTest.php

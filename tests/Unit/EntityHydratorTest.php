@@ -9,6 +9,7 @@ use Doctrine\DBAL\DriverManager;
 use LogicException;
 use ModernORM\Configuration;
 use ModernORM\EntityManager;
+use ModernORM\Query;
 use ModernORM\Internal\UnitOfWork\EntityHydrator;
 use ModernORM\Mapping as ORM;
 use ModernORM\Mapping\Driver\AttributeDriver;
@@ -120,6 +121,34 @@ final class EntityHydratorTest extends TestCase
         EntityScalarHydrationRecord::$hookCalls = 0;
         EntityScalarHydrationAddress::$constructors = 0;
     }
+    public function testUnmanagedRefreshTargetKeepsSnapshotOwnershipOnTheCanonicalEntity(): void
+    {
+        $uow = $this->em->getUnitOfWork();
+        $canonical = $uow->createEntity(EntityScalarHydrationRecord::class, [
+            'id' => 1, 'name' => 'canonical',
+            'first' => new DateTimeImmutable('2026-01-01'),
+            'second' => new DateTimeImmutable('2026-01-02'),
+        ]);
+        $target = new EntityScalarHydrationRecord('target');
+        $hints = [Query::HINT_REFRESH => true, Query::HINT_REFRESH_ENTITY => $target];
+
+        $result = $uow->createEntity(EntityScalarHydrationRecord::class, [
+            'id' => 1, 'name' => 'refreshed',
+            'first' => new DateTimeImmutable('2026-01-01'),
+            'second' => new DateTimeImmutable('2026-01-02'),
+        ], $hints);
+
+        self::assertSame($target, $result);
+        self::assertSame('refreshed', $target->name());
+        self::assertSame('canonical', $canonical->name());
+        self::assertSame($canonical, $uow->tryGetById(['id' => 1], EntityScalarHydrationRecord::class));
+        self::assertSame($target->first, $uow->getOriginalEntityData($canonical)['first']);
+        self::assertSame('refreshed', $uow->getOriginalEntityData($canonical)['name']);
+        self::assertSame([], $uow->getOriginalEntityData($target));
+        self::assertSame(1, $uow->size());
+        self::assertFalse($this->em->getConnection()->isConnected());
+    }
+
     public function testMappedScalarsUseAccessorsWhileAssociationsAndUnmappedValuesStayUntouched(): void
     {
         $metadata = $this->em->getClassMetadata(EntityScalarHydrationRecord::class);
