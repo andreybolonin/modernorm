@@ -1,0 +1,907 @@
+{
+    "php": "8.5.12",
+    "width": 50,
+    "entities": 100000,
+    "rounds": 3,
+    "plan_ms": 0.0105,
+    "baseline_bytes": 414289960,
+    "cases": [
+        {
+            "percent": 0,
+            "mutation": "one",
+            "samples": {
+                "fused": [
+                    {
+                        "ms": 1554.040084,
+                        "peak_bytes": 2616,
+                        "retained_bytes": 376
+                    },
+                    {
+                        "ms": 1563.231583,
+                        "peak_bytes": 2616,
+                        "retained_bytes": 376
+                    },
+                    {
+                        "ms": 1556.26475,
+                        "peak_bytes": 2616,
+                        "retained_bytes": 376
+                    }
+                ],
+                "guarded": [
+                    {
+                        "ms": 1602.182167,
+                        "peak_bytes": 2616,
+                        "retained_bytes": 376
+                    },
+                    {
+                        "ms": 1737.572333,
+                        "peak_bytes": 2616,
+                        "retained_bytes": 376
+                    },
+                    {
+                        "ms": 1682.666292,
+                        "peak_bytes": 2616,
+                        "retained_bytes": 376
+                    }
+                ],
+                "floor": [
+                    {
+                        "ms": 70.139542,
+                        "peak_bytes": 376,
+                        "retained_bytes": 376
+                    },
+                    {
+                        "ms": 70.199959,
+                        "peak_bytes": 376,
+                        "retained_bytes": 376
+                    },
+                    {
+                        "ms": 69.803083,
+                        "peak_bytes": 376,
+                        "retained_bytes": 376
+                    }
+                ],
+                "fallback": [
+                    {
+                        "ms": 2621.444833,
+                        "peak_bytes": 5232,
+                        "retained_bytes": 376
+                    },
+                    {
+                        "ms": 2582.17175,
+                        "peak_bytes": 5232,
+                        "retained_bytes": 376
+                    },
+                    {
+                        "ms": 2559.295417,
+                        "peak_bytes": 5232,
+                        "retained_bytes": 376
+                    }
+                ],
+                "current": [
+                    {
+                        "ms": 2492.255625,
+                        "peak_bytes": 5232,
+                        "retained_bytes": 376
+                    },
+                    {
+                        "ms": 2507.34075,
+                        "peak_bytes": 5232,
+                        "retained_bytes": 376
+                    },
+                    {
+                        "ms": 2554.239333,
+                        "peak_bytes": 5232,
+                        "retained_bytes": 376
+                    }
+                ]
+            },
+            "stages": {
+                "extract": [
+                    {
+                        "ms": 1962.990666,
+                        "peak_bytes": 263716232,
+                        "retained_bytes": 263713992
+                    },
+                    {
+                        "ms": 1893.696375,
+                        "peak_bytes": 263716232,
+                        "retained_bytes": 263713992
+                    },
+                    {
+                        "ms": 1923.43425,
+                        "peak_bytes": 263716232,
+                        "retained_bytes": 263713992
+                    }
+                ],
+                "compare": [
+                    {
+                        "ms": 353.44875,
+                        "peak_bytes": 376,
+                        "retained_bytes": 376
+                    },
+                    {
+                        "ms": 358.532167,
+                        "peak_bytes": 376,
+                        "retained_bytes": 376
+                    },
+                    {
+                        "ms": 352.896667,
+                        "peak_bytes": 376,
+                        "retained_bytes": 376
+                    }
+                ]
+            },
+            "verified": true
+        },
+        {
+            "percent": 1,
+            "mutation": "one",
+            "samples": {
+                "fused": [
+                    {
+                        "ms": 1565.291834,
+                        "peak_bytes": 679264,
+                        "retained_bytes": 674408
+                    },
+                    {
+                        "ms": 1652.455625,
+                        "peak_bytes": 679264,
+                        "retained_bytes": 674408
+                    },
+                    {
+                        "ms": 1570.654625,
+                        "peak_bytes": 679264,
+                        "retained_bytes": 674408
+                    }
+                ],
+                "guarded": [
+                    {
+                        "ms": 1627.254209,
+                        "peak_bytes": 679264,
+                        "retained_bytes": 674408
+                    },
+                    {
+                        "ms": 1619.678042,
+                        "peak_bytes": 679264,
+                        "retained_bytes": 674408
+                    },
+                    {
+                        "ms": 1621.330459,
+                        "peak_bytes": 679264,
+                        "retained_bytes": 674408
+                    }
+                ],
+                "floor": [
+                    {
+                        "ms": 70.204583,
+                        "peak_bytes": 376,
+                        "retained_bytes": -2533592
+                    },
+                    {
+                        "ms": 69.920834,
+                        "peak_bytes": 376,
+                        "retained_bytes": -2533592
+                    },
+                    {
+                        "ms": 72.215042,
+                        "peak_bytes": 376,
+                        "retained_bytes": -2533592
+                    }
+                ],
+                "fallback": [
+                    {
+                        "ms": 2595.734792,
+                        "peak_bytes": 679264,
+                        "retained_bytes": 674408
+                    },
+                    {
+                        "ms": 2569.974959,
+                        "peak_bytes": 679264,
+                        "retained_bytes": 674408
+                    },
+                    {
+                        "ms": 2598.5065,
+                        "peak_bytes": 679264,
+                        "retained_bytes": 674408
+                    }
+                ],
+                "current": [
+                    {
+                        "ms": 2506.564541,
+                        "peak_bytes": 679264,
+                        "retained_bytes": 674408
+                    },
+                    {
+                        "ms": 2507.075167,
+                        "peak_bytes": 679264,
+                        "retained_bytes": 674408
+                    },
+                    {
+                        "ms": 2557.003083,
+                        "peak_bytes": 679264,
+                        "retained_bytes": 674408
+                    }
+                ]
+            },
+            "stages": {
+                "extract": [
+                    {
+                        "ms": 1911.39275,
+                        "peak_bytes": 263716232,
+                        "retained_bytes": 263713992
+                    },
+                    {
+                        "ms": 1914.817292,
+                        "peak_bytes": 263716232,
+                        "retained_bytes": 263713992
+                    },
+                    {
+                        "ms": 1897.441791,
+                        "peak_bytes": 263716232,
+                        "retained_bytes": 263713992
+                    }
+                ],
+                "compare": [
+                    {
+                        "ms": 359.397833,
+                        "peak_bytes": 592,
+                        "retained_bytes": 376
+                    },
+                    {
+                        "ms": 369.451875,
+                        "peak_bytes": 592,
+                        "retained_bytes": 376
+                    },
+                    {
+                        "ms": 358.744292,
+                        "peak_bytes": 592,
+                        "retained_bytes": 376
+                    }
+                ]
+            },
+            "verified": true
+        },
+        {
+            "percent": 1,
+            "mutation": "all",
+            "samples": {
+                "fused": [
+                    {
+                        "ms": 1572.615541,
+                        "peak_bytes": 13503048,
+                        "retained_bytes": 13498408
+                    },
+                    {
+                        "ms": 1570.173542,
+                        "peak_bytes": 13503048,
+                        "retained_bytes": 13498408
+                    },
+                    {
+                        "ms": 1568.371375,
+                        "peak_bytes": 13503048,
+                        "retained_bytes": 13498408
+                    }
+                ],
+                "guarded": [
+                    {
+                        "ms": 1629.57225,
+                        "peak_bytes": 13503048,
+                        "retained_bytes": 13498408
+                    },
+                    {
+                        "ms": 1622.779125,
+                        "peak_bytes": 13503048,
+                        "retained_bytes": 13498408
+                    },
+                    {
+                        "ms": 1625.630042,
+                        "peak_bytes": 13503048,
+                        "retained_bytes": 13498408
+                    }
+                ],
+                "floor": [
+                    {
+                        "ms": 70.273292,
+                        "peak_bytes": 376,
+                        "retained_bytes": -2533592
+                    },
+                    {
+                        "ms": 69.546792,
+                        "peak_bytes": 376,
+                        "retained_bytes": -2533592
+                    },
+                    {
+                        "ms": 70.0365,
+                        "peak_bytes": 376,
+                        "retained_bytes": -2533592
+                    }
+                ],
+                "fallback": [
+                    {
+                        "ms": 2566.780041,
+                        "peak_bytes": 13504544,
+                        "retained_bytes": 13498408
+                    },
+                    {
+                        "ms": 2598.737792,
+                        "peak_bytes": 13504544,
+                        "retained_bytes": 13498408
+                    },
+                    {
+                        "ms": 2590.809166,
+                        "peak_bytes": 13504544,
+                        "retained_bytes": 13498408
+                    }
+                ],
+                "current": [
+                    {
+                        "ms": 2533.425292,
+                        "peak_bytes": 13504544,
+                        "retained_bytes": 13498408
+                    },
+                    {
+                        "ms": 2517.476958,
+                        "peak_bytes": 13504544,
+                        "retained_bytes": 13498408
+                    },
+                    {
+                        "ms": 2522.909375,
+                        "peak_bytes": 13504544,
+                        "retained_bytes": 13498408
+                    }
+                ]
+            },
+            "stages": {
+                "extract": [
+                    {
+                        "ms": 1897.460542,
+                        "peak_bytes": 263716232,
+                        "retained_bytes": 263713992
+                    },
+                    {
+                        "ms": 1895.56,
+                        "peak_bytes": 263716232,
+                        "retained_bytes": 263713992
+                    },
+                    {
+                        "ms": 1897.910667,
+                        "peak_bytes": 263716232,
+                        "retained_bytes": 263713992
+                    }
+                ],
+                "compare": [
+                    {
+                        "ms": 366.010417,
+                        "peak_bytes": 13416,
+                        "retained_bytes": 376
+                    },
+                    {
+                        "ms": 360.516292,
+                        "peak_bytes": 13416,
+                        "retained_bytes": 376
+                    },
+                    {
+                        "ms": 365.699458,
+                        "peak_bytes": 13416,
+                        "retained_bytes": 376
+                    }
+                ]
+            },
+            "verified": true
+        },
+        {
+            "percent": 10,
+            "mutation": "one",
+            "samples": {
+                "fused": [
+                    {
+                        "ms": 1588.6605,
+                        "peak_bytes": 7236064,
+                        "retained_bytes": 7231208
+                    },
+                    {
+                        "ms": 1686.101541,
+                        "peak_bytes": 7236064,
+                        "retained_bytes": 7231208
+                    },
+                    {
+                        "ms": 1566.762625,
+                        "peak_bytes": 7236064,
+                        "retained_bytes": 7231208
+                    }
+                ],
+                "guarded": [
+                    {
+                        "ms": 1615.350666,
+                        "peak_bytes": 7236064,
+                        "retained_bytes": 7231208
+                    },
+                    {
+                        "ms": 1831.365333,
+                        "peak_bytes": 7236064,
+                        "retained_bytes": 7231208
+                    },
+                    {
+                        "ms": 1622.39925,
+                        "peak_bytes": 7236064,
+                        "retained_bytes": 7231208
+                    }
+                ],
+                "floor": [
+                    {
+                        "ms": 73.281125,
+                        "peak_bytes": 376,
+                        "retained_bytes": -24848792
+                    },
+                    {
+                        "ms": 73.810916,
+                        "peak_bytes": 376,
+                        "retained_bytes": -24848792
+                    },
+                    {
+                        "ms": 89.718583,
+                        "peak_bytes": 376,
+                        "retained_bytes": -24848792
+                    }
+                ],
+                "fallback": [
+                    {
+                        "ms": 2570.325792,
+                        "peak_bytes": 7236064,
+                        "retained_bytes": 7231208
+                    },
+                    {
+                        "ms": 2630.529334,
+                        "peak_bytes": 7236064,
+                        "retained_bytes": 7231208
+                    },
+                    {
+                        "ms": 2561.384083,
+                        "peak_bytes": 7236064,
+                        "retained_bytes": 7231208
+                    }
+                ],
+                "current": [
+                    {
+                        "ms": 2523.753041,
+                        "peak_bytes": 7236064,
+                        "retained_bytes": 7231208
+                    },
+                    {
+                        "ms": 2576.506792,
+                        "peak_bytes": 7236064,
+                        "retained_bytes": 7231208
+                    },
+                    {
+                        "ms": 2499.035542,
+                        "peak_bytes": 7236064,
+                        "retained_bytes": 7231208
+                    }
+                ]
+            },
+            "stages": {
+                "extract": [
+                    {
+                        "ms": 1893.8905,
+                        "peak_bytes": 263716232,
+                        "retained_bytes": 263713992
+                    },
+                    {
+                        "ms": 1893.698375,
+                        "peak_bytes": 263716232,
+                        "retained_bytes": 263713992
+                    },
+                    {
+                        "ms": 1908.54325,
+                        "peak_bytes": 263716232,
+                        "retained_bytes": 263713992
+                    }
+                ],
+                "compare": [
+                    {
+                        "ms": 364.074,
+                        "peak_bytes": 592,
+                        "retained_bytes": 376
+                    },
+                    {
+                        "ms": 356.88625,
+                        "peak_bytes": 592,
+                        "retained_bytes": 376
+                    },
+                    {
+                        "ms": 428.856833,
+                        "peak_bytes": 592,
+                        "retained_bytes": 376
+                    }
+                ]
+            },
+            "verified": true
+        },
+        {
+            "percent": 10,
+            "mutation": "all",
+            "samples": {
+                "fused": [
+                    {
+                        "ms": 1673.265833,
+                        "peak_bytes": 135475848,
+                        "retained_bytes": 135471208
+                    },
+                    {
+                        "ms": 1632.131958,
+                        "peak_bytes": 135475848,
+                        "retained_bytes": 135471208
+                    },
+                    {
+                        "ms": 1601.05275,
+                        "peak_bytes": 135475848,
+                        "retained_bytes": 135471208
+                    }
+                ],
+                "guarded": [
+                    {
+                        "ms": 1679.55625,
+                        "peak_bytes": 135475848,
+                        "retained_bytes": 135471208
+                    },
+                    {
+                        "ms": 1745.98375,
+                        "peak_bytes": 135475848,
+                        "retained_bytes": 135471208
+                    },
+                    {
+                        "ms": 1655.01425,
+                        "peak_bytes": 135475848,
+                        "retained_bytes": 135471208
+                    }
+                ],
+                "floor": [
+                    {
+                        "ms": 73.30075,
+                        "peak_bytes": 376,
+                        "retained_bytes": -24848792
+                    },
+                    {
+                        "ms": 73.175417,
+                        "peak_bytes": 376,
+                        "retained_bytes": -24848792
+                    },
+                    {
+                        "ms": 73.823792,
+                        "peak_bytes": 376,
+                        "retained_bytes": -24848792
+                    }
+                ],
+                "fallback": [
+                    {
+                        "ms": 2742.150042,
+                        "peak_bytes": 135477344,
+                        "retained_bytes": 135471208
+                    },
+                    {
+                        "ms": 2771.426458,
+                        "peak_bytes": 135477344,
+                        "retained_bytes": 135471208
+                    },
+                    {
+                        "ms": 2805.486959,
+                        "peak_bytes": 135477344,
+                        "retained_bytes": 135471208
+                    }
+                ],
+                "current": [
+                    {
+                        "ms": 2757.621833,
+                        "peak_bytes": 135477344,
+                        "retained_bytes": 135471208
+                    },
+                    {
+                        "ms": 2621.858667,
+                        "peak_bytes": 135477344,
+                        "retained_bytes": 135471208
+                    },
+                    {
+                        "ms": 2619.6455,
+                        "peak_bytes": 135477344,
+                        "retained_bytes": 135471208
+                    }
+                ]
+            },
+            "stages": {
+                "extract": [
+                    {
+                        "ms": 1911.1115,
+                        "peak_bytes": 263716232,
+                        "retained_bytes": 263713992
+                    },
+                    {
+                        "ms": 1916.310791,
+                        "peak_bytes": 263716232,
+                        "retained_bytes": 263713992
+                    },
+                    {
+                        "ms": 1918.704833,
+                        "peak_bytes": 263716232,
+                        "retained_bytes": 263713992
+                    }
+                ],
+                "compare": [
+                    {
+                        "ms": 387.1955,
+                        "peak_bytes": 13416,
+                        "retained_bytes": 376
+                    },
+                    {
+                        "ms": 390.544041,
+                        "peak_bytes": 13416,
+                        "retained_bytes": 376
+                    },
+                    {
+                        "ms": 386.974,
+                        "peak_bytes": 13416,
+                        "retained_bytes": 376
+                    }
+                ]
+            },
+            "verified": true
+        },
+        {
+            "percent": 100,
+            "mutation": "one",
+            "samples": {
+                "fused": [
+                    {
+                        "ms": 1604.633625,
+                        "peak_bytes": 69691152,
+                        "retained_bytes": 69688912
+                    },
+                    {
+                        "ms": 1609.636625,
+                        "peak_bytes": 69691152,
+                        "retained_bytes": 69688912
+                    },
+                    {
+                        "ms": 1609.530875,
+                        "peak_bytes": 69691152,
+                        "retained_bytes": 69688912
+                    }
+                ],
+                "guarded": [
+                    {
+                        "ms": 1661.833584,
+                        "peak_bytes": 69691152,
+                        "retained_bytes": 69688912
+                    },
+                    {
+                        "ms": 1711.07775,
+                        "peak_bytes": 69691152,
+                        "retained_bytes": 69688912
+                    },
+                    {
+                        "ms": 1675.459541,
+                        "peak_bytes": 69691152,
+                        "retained_bytes": 69688912
+                    }
+                ],
+                "floor": [
+                    {
+                        "ms": 108.205166,
+                        "peak_bytes": 376,
+                        "retained_bytes": -251111088
+                    },
+                    {
+                        "ms": 99.830709,
+                        "peak_bytes": 376,
+                        "retained_bytes": -251111088
+                    },
+                    {
+                        "ms": 108.718875,
+                        "peak_bytes": 376,
+                        "retained_bytes": -251111088
+                    }
+                ],
+                "fallback": [
+                    {
+                        "ms": 2587.839541,
+                        "peak_bytes": 69690560,
+                        "retained_bytes": 69688912
+                    },
+                    {
+                        "ms": 2644.813792,
+                        "peak_bytes": 69690560,
+                        "retained_bytes": 69688912
+                    },
+                    {
+                        "ms": 2589.545709,
+                        "peak_bytes": 69690560,
+                        "retained_bytes": 69688912
+                    }
+                ],
+                "current": [
+                    {
+                        "ms": 2554.971958,
+                        "peak_bytes": 69690560,
+                        "retained_bytes": 69688912
+                    },
+                    {
+                        "ms": 2578.8135,
+                        "peak_bytes": 69690560,
+                        "retained_bytes": 69688912
+                    },
+                    {
+                        "ms": 2537.373417,
+                        "peak_bytes": 69690560,
+                        "retained_bytes": 69688912
+                    }
+                ]
+            },
+            "stages": {
+                "extract": [
+                    {
+                        "ms": 1897.721041,
+                        "peak_bytes": 263716232,
+                        "retained_bytes": 263713992
+                    },
+                    {
+                        "ms": 1897.608292,
+                        "peak_bytes": 263716232,
+                        "retained_bytes": 263713992
+                    },
+                    {
+                        "ms": 1916.124834,
+                        "peak_bytes": 263716232,
+                        "retained_bytes": 263713992
+                    }
+                ],
+                "compare": [
+                    {
+                        "ms": 370.7375,
+                        "peak_bytes": 592,
+                        "retained_bytes": 376
+                    },
+                    {
+                        "ms": 374.474125,
+                        "peak_bytes": 592,
+                        "retained_bytes": 376
+                    },
+                    {
+                        "ms": 371.556083,
+                        "peak_bytes": 592,
+                        "retained_bytes": 376
+                    }
+                ]
+            },
+            "verified": true
+        },
+        {
+            "percent": 100,
+            "mutation": "all",
+            "samples": {
+                "fused": [
+                    {
+                        "ms": 1988.466917,
+                        "peak_bytes": 1352090936,
+                        "retained_bytes": 1352088912
+                    },
+                    {
+                        "ms": 2011.7135,
+                        "peak_bytes": 1352090936,
+                        "retained_bytes": 1352088912
+                    },
+                    {
+                        "ms": 1963.471792,
+                        "peak_bytes": 1352090936,
+                        "retained_bytes": 1352088912
+                    }
+                ],
+                "guarded": [
+                    {
+                        "ms": 2014.770625,
+                        "peak_bytes": 1352090936,
+                        "retained_bytes": 1352088912
+                    },
+                    {
+                        "ms": 2043.860125,
+                        "peak_bytes": 1352090936,
+                        "retained_bytes": 1352088912
+                    },
+                    {
+                        "ms": 2009.109833,
+                        "peak_bytes": 1352090936,
+                        "retained_bytes": 1352088912
+                    }
+                ],
+                "floor": [
+                    {
+                        "ms": 125.452291,
+                        "peak_bytes": 376,
+                        "retained_bytes": -251111088
+                    },
+                    {
+                        "ms": 118.357417,
+                        "peak_bytes": 376,
+                        "retained_bytes": -251111088
+                    },
+                    {
+                        "ms": 127.030791,
+                        "peak_bytes": 376,
+                        "retained_bytes": -251111088
+                    }
+                ],
+                "fallback": [
+                    {
+                        "ms": 3504.826708,
+                        "peak_bytes": 1352092432,
+                        "retained_bytes": 1352088912
+                    },
+                    {
+                        "ms": 3509.616458,
+                        "peak_bytes": 1352092432,
+                        "retained_bytes": 1352088912
+                    },
+                    {
+                        "ms": 3459.271667,
+                        "peak_bytes": 1352092432,
+                        "retained_bytes": 1352088912
+                    }
+                ],
+                "current": [
+                    {
+                        "ms": 3416.6765,
+                        "peak_bytes": 1352092432,
+                        "retained_bytes": 1352088912
+                    },
+                    {
+                        "ms": 3438.5525,
+                        "peak_bytes": 1352092432,
+                        "retained_bytes": 1352088912
+                    },
+                    {
+                        "ms": 3426.576458,
+                        "peak_bytes": 1352092432,
+                        "retained_bytes": 1352088912
+                    }
+                ]
+            },
+            "stages": {
+                "extract": [
+                    {
+                        "ms": 2026.658834,
+                        "peak_bytes": 263716232,
+                        "retained_bytes": 263713992
+                    },
+                    {
+                        "ms": 2029.182208,
+                        "peak_bytes": 263716232,
+                        "retained_bytes": 263713992
+                    },
+                    {
+                        "ms": 2031.390583,
+                        "peak_bytes": 263716232,
+                        "retained_bytes": 263713992
+                    }
+                ],
+                "compare": [
+                    {
+                        "ms": 644.404209,
+                        "peak_bytes": 13416,
+                        "retained_bytes": 376
+                    },
+                    {
+                        "ms": 649.6445,
+                        "peak_bytes": 13416,
+                        "retained_bytes": 376
+                    },
+                    {
+                        "ms": 656.74975,
+                        "peak_bytes": 13416,
+                        "retained_bytes": 376
+                    }
+                ]
+            },
+            "verified": true
+        }
+    ],
+    "fallbacks": 4200000
+}

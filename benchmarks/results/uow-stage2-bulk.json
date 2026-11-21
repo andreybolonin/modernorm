@@ -1,0 +1,2324 @@
+{
+  "methodology": {
+    "recorded_at": "2026-11-21T15:01:58.004932+00:00",
+    "php": "8.6.0",
+    "opcache_cli": false,
+    "jit": false,
+    "additional_extensions": false,
+    "batches": 3,
+    "measured_rounds_per_batch": 3,
+    "order": [
+      [
+        "before",
+        "after"
+      ],
+      [
+        "after",
+        "before"
+      ],
+      [
+        "before",
+        "after"
+      ]
+    ],
+    "baseline": "Same workspace snapshot as uow-stage2-hydration.json",
+    "summary": "Median of 9 samples per operation/mode/variant; positive time_change_percent means slower after refactoring",
+    "scope": "Existing bulk.php including input construction, target hydration for UoW UPDATE/DELETE, writes and transaction commit; each sample validates affected rows, SQL counts, managed state and database contents."
+  },
+  "runs": [
+    {
+      "batch": 1,
+      "variant": "before",
+      "result": {
+        "php": "8.6.0",
+        "os": "Darwin",
+        "postgresql": "19.0 (Homebrew)",
+        "memory_limit": "1G",
+        "rounds": 3,
+        "insert_chunk_size": 1000,
+        "context_rows": 1000,
+        "l2_enabled": false,
+        "statistics_enabled": true,
+        "warmup_rows": 1000,
+        "measurements": [
+          {
+            "operation": "insert",
+            "mode": "uow",
+            "rows": 1000,
+            "median_ms": 48.976583,
+            "min_ms": 44.138833,
+            "max_ms": 50.212959,
+            "median_rows_per_second": 20417.920948057974,
+            "median_peak_heap_delta_bytes": 2284264,
+            "samples": [
+              {
+                "wall_ms": 48.976583,
+                "rows_per_second": 20417.920948057974,
+                "sql_statements": 1002,
+                "peak_heap_delta_bytes": 2284264,
+                "retained_heap_delta_bytes": 1055416,
+                "managed_before": 1000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 50.212959,
+                "rows_per_second": 19915.177673556344,
+                "sql_statements": 1002,
+                "peak_heap_delta_bytes": 2284264,
+                "retained_heap_delta_bytes": 1055416,
+                "managed_before": 1000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 44.138833,
+                "rows_per_second": 22655.78702545217,
+                "sql_statements": 1002,
+                "peak_heap_delta_bytes": 2284264,
+                "retained_heap_delta_bytes": 1055416,
+                "managed_before": 1000,
+                "managed_after": 2000
+              }
+            ]
+          },
+          {
+            "operation": "insert",
+            "mode": "bypass",
+            "rows": 1000,
+            "median_ms": 6.328,
+            "min_ms": 6.305375,
+            "max_ms": 6.589625,
+            "median_rows_per_second": 158027.81289506954,
+            "median_peak_heap_delta_bytes": 1402936,
+            "samples": [
+              {
+                "wall_ms": 6.328,
+                "rows_per_second": 158027.81289506954,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1402936,
+                "retained_heap_delta_bytes": 395248,
+                "managed_before": 1000,
+                "managed_after": 1000
+              },
+              {
+                "wall_ms": 6.589625,
+                "rows_per_second": 151753.7037388319,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1402936,
+                "retained_heap_delta_bytes": 395248,
+                "managed_before": 1000,
+                "managed_after": 1000
+              },
+              {
+                "wall_ms": 6.305375,
+                "rows_per_second": 158594.8496322582,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1402936,
+                "retained_heap_delta_bytes": 395248,
+                "managed_before": 1000,
+                "managed_after": 1000
+              }
+            ]
+          },
+          {
+            "operation": "insert",
+            "mode": "clear",
+            "rows": 1000,
+            "median_ms": 6.45975,
+            "min_ms": 6.220583,
+            "max_ms": 6.639208,
+            "median_rows_per_second": 154804.75250590194,
+            "median_peak_heap_delta_bytes": 1404224,
+            "samples": [
+              {
+                "wall_ms": 6.220583,
+                "rows_per_second": 160756.63647603447,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1404224,
+                "retained_heap_delta_bytes": -519960,
+                "managed_before": 1000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 6.639208,
+                "rows_per_second": 150620.37520137944,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1404224,
+                "retained_heap_delta_bytes": -519960,
+                "managed_before": 1000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 6.45975,
+                "rows_per_second": 154804.75250590194,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1404224,
+                "retained_heap_delta_bytes": -519960,
+                "managed_before": 1000,
+                "managed_after": 0
+              }
+            ]
+          },
+          {
+            "operation": "update",
+            "mode": "uow",
+            "rows": 1000,
+            "median_ms": 75.705084,
+            "min_ms": 68.50825,
+            "max_ms": 78.845958,
+            "median_rows_per_second": 13209.15250553054,
+            "median_peak_heap_delta_bytes": 976904,
+            "samples": [
+              {
+                "wall_ms": 78.845958,
+                "rows_per_second": 12682.95833249943,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 976904,
+                "retained_heap_delta_bytes": -16776,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 75.705084,
+                "rows_per_second": 13209.15250553054,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 976904,
+                "retained_heap_delta_bytes": -16776,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 68.50825,
+                "rows_per_second": 14596.782139377372,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 976904,
+                "retained_heap_delta_bytes": -16776,
+                "managed_before": 2000,
+                "managed_after": 2000
+              }
+            ]
+          },
+          {
+            "operation": "update",
+            "mode": "bypass",
+            "rows": 1000,
+            "median_ms": 2.147042,
+            "min_ms": 2.028458,
+            "max_ms": 2.740209,
+            "median_rows_per_second": 465757.07415132073,
+            "median_peak_heap_delta_bytes": 3704,
+            "samples": [
+              {
+                "wall_ms": 2.740209,
+                "rows_per_second": 364935.6673158872,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 3704,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 2.147042,
+                "rows_per_second": 465757.07415132073,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 4992,
+                "retained_heap_delta_bytes": -128,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 2.028458,
+                "rows_per_second": 492985.31199561444,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 3704,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              }
+            ]
+          },
+          {
+            "operation": "update",
+            "mode": "clear",
+            "rows": 1000,
+            "median_ms": 2.203625,
+            "min_ms": 2.001625,
+            "max_ms": 2.335125,
+            "median_rows_per_second": 453797.7196664586,
+            "median_peak_heap_delta_bytes": 4992,
+            "samples": [
+              {
+                "wall_ms": 2.203625,
+                "rows_per_second": 453797.7196664586,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 4992,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 2.001625,
+                "rows_per_second": 499594.07981015416,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 4992,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 2.335125,
+                "rows_per_second": 428242.59943257854,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 4992,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              }
+            ]
+          },
+          {
+            "operation": "delete",
+            "mode": "uow",
+            "rows": 1000,
+            "median_ms": 67.1285,
+            "min_ms": 59.618334,
+            "max_ms": 67.293375,
+            "median_rows_per_second": 14896.802401364546,
+            "median_peak_heap_delta_bytes": 476952,
+            "samples": [
+              {
+                "wall_ms": 67.1285,
+                "rows_per_second": 14896.802401364546,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 476952,
+                "retained_heap_delta_bytes": -729168,
+                "managed_before": 2000,
+                "managed_after": 1000
+              },
+              {
+                "wall_ms": 67.293375,
+                "rows_per_second": 14860.303856063096,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 476952,
+                "retained_heap_delta_bytes": -729168,
+                "managed_before": 2000,
+                "managed_after": 1000
+              },
+              {
+                "wall_ms": 59.618334,
+                "rows_per_second": 16773.36371056595,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 476952,
+                "retained_heap_delta_bytes": -729168,
+                "managed_before": 2000,
+                "managed_after": 1000
+              }
+            ]
+          },
+          {
+            "operation": "delete",
+            "mode": "bypass",
+            "rows": 1000,
+            "median_ms": 0.458416,
+            "min_ms": 0.404167,
+            "max_ms": 0.512417,
+            "median_rows_per_second": 2181424.732121043,
+            "median_peak_heap_delta_bytes": 256,
+            "samples": [
+              {
+                "wall_ms": 0.512417,
+                "rows_per_second": 1951535.565759918,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 256,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 0.458416,
+                "rows_per_second": 2181424.732121043,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 256,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 0.404167,
+                "rows_per_second": 2474224.7635259684,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 256,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              }
+            ]
+          },
+          {
+            "operation": "delete",
+            "mode": "clear",
+            "rows": 1000,
+            "median_ms": 0.524583,
+            "min_ms": 0.440958,
+            "max_ms": 3.391166,
+            "median_rows_per_second": 1906276.03258207,
+            "median_peak_heap_delta_bytes": 1544,
+            "samples": [
+              {
+                "wall_ms": 0.524583,
+                "rows_per_second": 1906276.03258207,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1544,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 3.391166,
+                "rows_per_second": 294883.8246196146,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1544,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 0.440958,
+                "rows_per_second": 2267789.6761142784,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 256,
+                "retained_heap_delta_bytes": -1833752,
+                "managed_before": 2000,
+                "managed_after": 0
+              }
+            ]
+          }
+        ],
+        "method": "One outer transaction including commit per sample. Timed: input/entity construction, target hydration for UoW UPDATE/DELETE, DML and policy handling. Setup, context preloading and verification excluded. SQL counts include the two flush SAVEPOINT statements, but exclude driver begin/commit calls. One warm-up per case; case order rotates. Assigned IDs, no associations/callbacks/RETURNING/L2. PHP heap deltas, not RSS; retained references to preloaded entities stay alive for all modes. CLEAR empties the context on the first INSERT chunk. No Doctrine comparison or timing thresholds."
+      }
+    },
+    {
+      "batch": 1,
+      "variant": "after",
+      "result": {
+        "php": "8.6.0",
+        "os": "Darwin",
+        "postgresql": "19.0 (Homebrew)",
+        "memory_limit": "1G",
+        "rounds": 3,
+        "insert_chunk_size": 1000,
+        "context_rows": 1000,
+        "l2_enabled": false,
+        "statistics_enabled": true,
+        "warmup_rows": 1000,
+        "measurements": [
+          {
+            "operation": "insert",
+            "mode": "uow",
+            "rows": 1000,
+            "median_ms": 44.000958,
+            "min_ms": 42.551875,
+            "max_ms": 49.389041,
+            "median_rows_per_second": 22726.77790333565,
+            "median_peak_heap_delta_bytes": 2284264,
+            "samples": [
+              {
+                "wall_ms": 49.389041,
+                "rows_per_second": 20247.406707087102,
+                "sql_statements": 1002,
+                "peak_heap_delta_bytes": 2284264,
+                "retained_heap_delta_bytes": 1055416,
+                "managed_before": 1000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 42.551875,
+                "rows_per_second": 23500.727053743223,
+                "sql_statements": 1002,
+                "peak_heap_delta_bytes": 2284264,
+                "retained_heap_delta_bytes": 1055416,
+                "managed_before": 1000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 44.000958,
+                "rows_per_second": 22726.77790333565,
+                "sql_statements": 1002,
+                "peak_heap_delta_bytes": 2284264,
+                "retained_heap_delta_bytes": 1055416,
+                "managed_before": 1000,
+                "managed_after": 2000
+              }
+            ]
+          },
+          {
+            "operation": "insert",
+            "mode": "bypass",
+            "rows": 1000,
+            "median_ms": 7.112166,
+            "min_ms": 6.653959,
+            "max_ms": 7.165916,
+            "median_rows_per_second": 140604.14225427245,
+            "median_peak_heap_delta_bytes": 1402936,
+            "samples": [
+              {
+                "wall_ms": 7.165916,
+                "rows_per_second": 139549.5007197963,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1402936,
+                "retained_heap_delta_bytes": 395248,
+                "managed_before": 1000,
+                "managed_after": 1000
+              },
+              {
+                "wall_ms": 6.653959,
+                "rows_per_second": 150286.46855203045,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1402936,
+                "retained_heap_delta_bytes": 395248,
+                "managed_before": 1000,
+                "managed_after": 1000
+              },
+              {
+                "wall_ms": 7.112166,
+                "rows_per_second": 140604.14225427245,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1402936,
+                "retained_heap_delta_bytes": 395248,
+                "managed_before": 1000,
+                "managed_after": 1000
+              }
+            ]
+          },
+          {
+            "operation": "insert",
+            "mode": "clear",
+            "rows": 1000,
+            "median_ms": 6.784541,
+            "min_ms": 6.561,
+            "max_ms": 7.213625,
+            "median_rows_per_second": 147393.90623477698,
+            "median_peak_heap_delta_bytes": 1404224,
+            "samples": [
+              {
+                "wall_ms": 6.784541,
+                "rows_per_second": 147393.90623477698,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1404224,
+                "retained_heap_delta_bytes": -519960,
+                "managed_before": 1000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 6.561,
+                "rows_per_second": 152415.79027587257,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1404224,
+                "retained_heap_delta_bytes": -519960,
+                "managed_before": 1000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 7.213625,
+                "rows_per_second": 138626.5573827306,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1404224,
+                "retained_heap_delta_bytes": -519960,
+                "managed_before": 1000,
+                "managed_after": 0
+              }
+            ]
+          },
+          {
+            "operation": "update",
+            "mode": "uow",
+            "rows": 1000,
+            "median_ms": 70.203375,
+            "min_ms": 69.146125,
+            "max_ms": 75.925917,
+            "median_rows_per_second": 14244.329421484366,
+            "median_peak_heap_delta_bytes": 976904,
+            "samples": [
+              {
+                "wall_ms": 70.203375,
+                "rows_per_second": 14244.329421484366,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 976904,
+                "retained_heap_delta_bytes": -16776,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 69.146125,
+                "rows_per_second": 14462.12640260029,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 976904,
+                "retained_heap_delta_bytes": -16776,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 75.925917,
+                "rows_per_second": 13170.733255681325,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 976904,
+                "retained_heap_delta_bytes": -16776,
+                "managed_before": 2000,
+                "managed_after": 2000
+              }
+            ]
+          },
+          {
+            "operation": "update",
+            "mode": "bypass",
+            "rows": 1000,
+            "median_ms": 2.224542,
+            "min_ms": 2.132209,
+            "max_ms": 2.647125,
+            "median_rows_per_second": 449530.7348658735,
+            "median_peak_heap_delta_bytes": 3704,
+            "samples": [
+              {
+                "wall_ms": 2.132209,
+                "rows_per_second": 468997.1761680023,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 3704,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 2.647125,
+                "rows_per_second": 377768.3335694386,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 4992,
+                "retained_heap_delta_bytes": -128,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 2.224542,
+                "rows_per_second": 449530.7348658735,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 3704,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              }
+            ]
+          },
+          {
+            "operation": "update",
+            "mode": "clear",
+            "rows": 1000,
+            "median_ms": 2.459833,
+            "min_ms": 2.455292,
+            "max_ms": 2.4755,
+            "median_rows_per_second": 406531.66292183247,
+            "median_peak_heap_delta_bytes": 4992,
+            "samples": [
+              {
+                "wall_ms": 2.459833,
+                "rows_per_second": 406531.66292183247,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 4992,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 2.455292,
+                "rows_per_second": 407283.5328751122,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 4992,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 2.4755,
+                "rows_per_second": 403958.7962027873,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 4992,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              }
+            ]
+          },
+          {
+            "operation": "delete",
+            "mode": "uow",
+            "rows": 1000,
+            "median_ms": 61.018459,
+            "min_ms": 59.812791,
+            "max_ms": 62.026084,
+            "median_rows_per_second": 16388.483360420494,
+            "median_peak_heap_delta_bytes": 476952,
+            "samples": [
+              {
+                "wall_ms": 59.812791,
+                "rows_per_second": 16718.83193011341,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 476952,
+                "retained_heap_delta_bytes": -729168,
+                "managed_before": 2000,
+                "managed_after": 1000
+              },
+              {
+                "wall_ms": 61.018459,
+                "rows_per_second": 16388.483360420494,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 476952,
+                "retained_heap_delta_bytes": -729168,
+                "managed_before": 2000,
+                "managed_after": 1000
+              },
+              {
+                "wall_ms": 62.026084,
+                "rows_per_second": 16122.24947169001,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 476952,
+                "retained_heap_delta_bytes": -729168,
+                "managed_before": 2000,
+                "managed_after": 1000
+              }
+            ]
+          },
+          {
+            "operation": "delete",
+            "mode": "bypass",
+            "rows": 1000,
+            "median_ms": 0.479708,
+            "min_ms": 0.47225,
+            "max_ms": 0.617333,
+            "median_rows_per_second": 2084601.4658917508,
+            "median_peak_heap_delta_bytes": 256,
+            "samples": [
+              {
+                "wall_ms": 0.47225,
+                "rows_per_second": 2117522.4986765482,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 256,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 0.479708,
+                "rows_per_second": 2084601.4658917508,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 256,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 0.617333,
+                "rows_per_second": 1619871.2850276914,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 256,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              }
+            ]
+          },
+          {
+            "operation": "delete",
+            "mode": "clear",
+            "rows": 1000,
+            "median_ms": 0.556958,
+            "min_ms": 0.475917,
+            "max_ms": 0.867125,
+            "median_rows_per_second": 1795467.5217879985,
+            "median_peak_heap_delta_bytes": 1544,
+            "samples": [
+              {
+                "wall_ms": 0.475917,
+                "rows_per_second": 2101206.7230210314,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1544,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 0.556958,
+                "rows_per_second": 1795467.5217879985,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1544,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 0.867125,
+                "rows_per_second": 1153236.2692806688,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 256,
+                "retained_heap_delta_bytes": -1833752,
+                "managed_before": 2000,
+                "managed_after": 0
+              }
+            ]
+          }
+        ],
+        "method": "One outer transaction including commit per sample. Timed: input/entity construction, target hydration for UoW UPDATE/DELETE, DML and policy handling. Setup, context preloading and verification excluded. SQL counts include the two flush SAVEPOINT statements, but exclude driver begin/commit calls. One warm-up per case; case order rotates. Assigned IDs, no associations/callbacks/RETURNING/L2. PHP heap deltas, not RSS; retained references to preloaded entities stay alive for all modes. CLEAR empties the context on the first INSERT chunk. No Doctrine comparison or timing thresholds."
+      }
+    },
+    {
+      "batch": 2,
+      "variant": "after",
+      "result": {
+        "php": "8.6.0",
+        "os": "Darwin",
+        "postgresql": "19.0 (Homebrew)",
+        "memory_limit": "1G",
+        "rounds": 3,
+        "insert_chunk_size": 1000,
+        "context_rows": 1000,
+        "l2_enabled": false,
+        "statistics_enabled": true,
+        "warmup_rows": 1000,
+        "measurements": [
+          {
+            "operation": "insert",
+            "mode": "uow",
+            "rows": 1000,
+            "median_ms": 43.644042,
+            "min_ms": 43.434792,
+            "max_ms": 43.915417,
+            "median_rows_per_second": 22912.634902147696,
+            "median_peak_heap_delta_bytes": 2284264,
+            "samples": [
+              {
+                "wall_ms": 43.644042,
+                "rows_per_second": 22912.634902147696,
+                "sql_statements": 1002,
+                "peak_heap_delta_bytes": 2284264,
+                "retained_heap_delta_bytes": 1055416,
+                "managed_before": 1000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 43.915417,
+                "rows_per_second": 22771.046441389823,
+                "sql_statements": 1002,
+                "peak_heap_delta_bytes": 2284264,
+                "retained_heap_delta_bytes": 1055416,
+                "managed_before": 1000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 43.434792,
+                "rows_per_second": 23023.018045073175,
+                "sql_statements": 1002,
+                "peak_heap_delta_bytes": 2284264,
+                "retained_heap_delta_bytes": 1055416,
+                "managed_before": 1000,
+                "managed_after": 2000
+              }
+            ]
+          },
+          {
+            "operation": "insert",
+            "mode": "bypass",
+            "rows": 1000,
+            "median_ms": 6.668459,
+            "min_ms": 6.561375,
+            "max_ms": 6.976542,
+            "median_rows_per_second": 149959.68333913427,
+            "median_peak_heap_delta_bytes": 1402936,
+            "samples": [
+              {
+                "wall_ms": 6.976542,
+                "rows_per_second": 143337.48725371395,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1402936,
+                "retained_heap_delta_bytes": 395248,
+                "managed_before": 1000,
+                "managed_after": 1000
+              },
+              {
+                "wall_ms": 6.668459,
+                "rows_per_second": 149959.68333913427,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1402936,
+                "retained_heap_delta_bytes": 395248,
+                "managed_before": 1000,
+                "managed_after": 1000
+              },
+              {
+                "wall_ms": 6.561375,
+                "rows_per_second": 152407.0793088339,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1402936,
+                "retained_heap_delta_bytes": 395248,
+                "managed_before": 1000,
+                "managed_after": 1000
+              }
+            ]
+          },
+          {
+            "operation": "insert",
+            "mode": "clear",
+            "rows": 1000,
+            "median_ms": 7.095375,
+            "min_ms": 6.556792,
+            "max_ms": 7.384459,
+            "median_rows_per_second": 140936.87789581242,
+            "median_peak_heap_delta_bytes": 1404224,
+            "samples": [
+              {
+                "wall_ms": 7.095375,
+                "rows_per_second": 140936.87789581242,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1404224,
+                "retained_heap_delta_bytes": -519960,
+                "managed_before": 1000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 6.556792,
+                "rows_per_second": 152513.6072640401,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1404224,
+                "retained_heap_delta_bytes": -519960,
+                "managed_before": 1000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 7.384459,
+                "rows_per_second": 135419.53445743283,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1404224,
+                "retained_heap_delta_bytes": -519960,
+                "managed_before": 1000,
+                "managed_after": 0
+              }
+            ]
+          },
+          {
+            "operation": "update",
+            "mode": "uow",
+            "rows": 1000,
+            "median_ms": 71.851083,
+            "min_ms": 70.196083,
+            "max_ms": 72.104833,
+            "median_rows_per_second": 13917.67469948922,
+            "median_peak_heap_delta_bytes": 976904,
+            "samples": [
+              {
+                "wall_ms": 71.851083,
+                "rows_per_second": 13917.67469948922,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 976904,
+                "retained_heap_delta_bytes": -16776,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 70.196083,
+                "rows_per_second": 14245.809128694544,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 976904,
+                "retained_heap_delta_bytes": -16776,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 72.104833,
+                "rows_per_second": 13868.695875074007,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 976904,
+                "retained_heap_delta_bytes": -16776,
+                "managed_before": 2000,
+                "managed_after": 2000
+              }
+            ]
+          },
+          {
+            "operation": "update",
+            "mode": "bypass",
+            "rows": 1000,
+            "median_ms": 2.162292,
+            "min_ms": 2.134916,
+            "max_ms": 3.331084,
+            "median_rows_per_second": 462472.2285426761,
+            "median_peak_heap_delta_bytes": 3704,
+            "samples": [
+              {
+                "wall_ms": 3.331084,
+                "rows_per_second": 300202.5766987563,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 3704,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 2.134916,
+                "rows_per_second": 468402.50389242475,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 4992,
+                "retained_heap_delta_bytes": -128,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 2.162292,
+                "rows_per_second": 462472.2285426761,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 3704,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              }
+            ]
+          },
+          {
+            "operation": "update",
+            "mode": "clear",
+            "rows": 1000,
+            "median_ms": 2.388083,
+            "min_ms": 2.365917,
+            "max_ms": 2.955917,
+            "median_rows_per_second": 418745.9146101706,
+            "median_peak_heap_delta_bytes": 4992,
+            "samples": [
+              {
+                "wall_ms": 2.365917,
+                "rows_per_second": 422669.09616863145,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 4992,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 2.955917,
+                "rows_per_second": 338304.492311523,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 4992,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 2.388083,
+                "rows_per_second": 418745.9146101706,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 4992,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              }
+            ]
+          },
+          {
+            "operation": "delete",
+            "mode": "uow",
+            "rows": 1000,
+            "median_ms": 59.883792,
+            "min_ms": 58.712375,
+            "max_ms": 62.393083,
+            "median_rows_per_second": 16699.009307894197,
+            "median_peak_heap_delta_bytes": 476952,
+            "samples": [
+              {
+                "wall_ms": 59.883792,
+                "rows_per_second": 16699.009307894197,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 476952,
+                "retained_heap_delta_bytes": -729168,
+                "managed_before": 2000,
+                "managed_after": 1000
+              },
+              {
+                "wall_ms": 58.712375,
+                "rows_per_second": 17032.184441525314,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 476952,
+                "retained_heap_delta_bytes": -729168,
+                "managed_before": 2000,
+                "managed_after": 1000
+              },
+              {
+                "wall_ms": 62.393083,
+                "rows_per_second": 16027.417654614055,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 476952,
+                "retained_heap_delta_bytes": -729168,
+                "managed_before": 2000,
+                "managed_after": 1000
+              }
+            ]
+          },
+          {
+            "operation": "delete",
+            "mode": "bypass",
+            "rows": 1000,
+            "median_ms": 0.647125,
+            "min_ms": 0.515334,
+            "max_ms": 0.829875,
+            "median_rows_per_second": 1545296.5037666603,
+            "median_peak_heap_delta_bytes": 256,
+            "samples": [
+              {
+                "wall_ms": 0.829875,
+                "rows_per_second": 1205000.7531254708,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 256,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 0.647125,
+                "rows_per_second": 1545296.5037666603,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 256,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 0.515334,
+                "rows_per_second": 1940489.080867942,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 256,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              }
+            ]
+          },
+          {
+            "operation": "delete",
+            "mode": "clear",
+            "rows": 1000,
+            "median_ms": 0.691166,
+            "min_ms": 0.609292,
+            "max_ms": 1.346459,
+            "median_rows_per_second": 1446830.4285801097,
+            "median_peak_heap_delta_bytes": 1544,
+            "samples": [
+              {
+                "wall_ms": 0.691166,
+                "rows_per_second": 1446830.4285801097,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1544,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 1.346459,
+                "rows_per_second": 742688.7859192147,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1544,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 0.609292,
+                "rows_per_second": 1641249.187581652,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 256,
+                "retained_heap_delta_bytes": -1833752,
+                "managed_before": 2000,
+                "managed_after": 0
+              }
+            ]
+          }
+        ],
+        "method": "One outer transaction including commit per sample. Timed: input/entity construction, target hydration for UoW UPDATE/DELETE, DML and policy handling. Setup, context preloading and verification excluded. SQL counts include the two flush SAVEPOINT statements, but exclude driver begin/commit calls. One warm-up per case; case order rotates. Assigned IDs, no associations/callbacks/RETURNING/L2. PHP heap deltas, not RSS; retained references to preloaded entities stay alive for all modes. CLEAR empties the context on the first INSERT chunk. No Doctrine comparison or timing thresholds."
+      }
+    },
+    {
+      "batch": 2,
+      "variant": "before",
+      "result": {
+        "php": "8.6.0",
+        "os": "Darwin",
+        "postgresql": "19.0 (Homebrew)",
+        "memory_limit": "1G",
+        "rounds": 3,
+        "insert_chunk_size": 1000,
+        "context_rows": 1000,
+        "l2_enabled": false,
+        "statistics_enabled": true,
+        "warmup_rows": 1000,
+        "measurements": [
+          {
+            "operation": "insert",
+            "mode": "uow",
+            "rows": 1000,
+            "median_ms": 45.206833,
+            "min_ms": 43.885208,
+            "max_ms": 52.202042,
+            "median_rows_per_second": 22120.54978502918,
+            "median_peak_heap_delta_bytes": 2284264,
+            "samples": [
+              {
+                "wall_ms": 43.885208,
+                "rows_per_second": 22786.721211393142,
+                "sql_statements": 1002,
+                "peak_heap_delta_bytes": 2284264,
+                "retained_heap_delta_bytes": 1055416,
+                "managed_before": 1000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 45.206833,
+                "rows_per_second": 22120.54978502918,
+                "sql_statements": 1002,
+                "peak_heap_delta_bytes": 2284264,
+                "retained_heap_delta_bytes": 1055416,
+                "managed_before": 1000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 52.202042,
+                "rows_per_second": 19156.338750120158,
+                "sql_statements": 1002,
+                "peak_heap_delta_bytes": 2284264,
+                "retained_heap_delta_bytes": 1055416,
+                "managed_before": 1000,
+                "managed_after": 2000
+              }
+            ]
+          },
+          {
+            "operation": "insert",
+            "mode": "bypass",
+            "rows": 1000,
+            "median_ms": 7.411959,
+            "min_ms": 6.528166,
+            "max_ms": 8.157542,
+            "median_rows_per_second": 134917.09816527588,
+            "median_peak_heap_delta_bytes": 1402936,
+            "samples": [
+              {
+                "wall_ms": 7.411959,
+                "rows_per_second": 134917.09816527588,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1402936,
+                "retained_heap_delta_bytes": 395248,
+                "managed_before": 1000,
+                "managed_after": 1000
+              },
+              {
+                "wall_ms": 6.528166,
+                "rows_per_second": 153182.37924709637,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1402936,
+                "retained_heap_delta_bytes": 395248,
+                "managed_before": 1000,
+                "managed_after": 1000
+              },
+              {
+                "wall_ms": 8.157542,
+                "rows_per_second": 122585.94561940349,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1402936,
+                "retained_heap_delta_bytes": 395248,
+                "managed_before": 1000,
+                "managed_after": 1000
+              }
+            ]
+          },
+          {
+            "operation": "insert",
+            "mode": "clear",
+            "rows": 1000,
+            "median_ms": 7.68925,
+            "min_ms": 6.854916,
+            "max_ms": 7.84775,
+            "median_rows_per_second": 130051.6955489807,
+            "median_peak_heap_delta_bytes": 1404224,
+            "samples": [
+              {
+                "wall_ms": 7.68925,
+                "rows_per_second": 130051.6955489807,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1404224,
+                "retained_heap_delta_bytes": -519960,
+                "managed_before": 1000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 6.854916,
+                "rows_per_second": 145880.70809328664,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1404224,
+                "retained_heap_delta_bytes": -519960,
+                "managed_before": 1000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 7.84775,
+                "rows_per_second": 127425.05813768279,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1404224,
+                "retained_heap_delta_bytes": -519960,
+                "managed_before": 1000,
+                "managed_after": 0
+              }
+            ]
+          },
+          {
+            "operation": "update",
+            "mode": "uow",
+            "rows": 1000,
+            "median_ms": 132.082666,
+            "min_ms": 84.83375,
+            "max_ms": 177.349167,
+            "median_rows_per_second": 7571.016169525228,
+            "median_peak_heap_delta_bytes": 976904,
+            "samples": [
+              {
+                "wall_ms": 132.082666,
+                "rows_per_second": 7571.016169525228,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 976904,
+                "retained_heap_delta_bytes": -16776,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 177.349167,
+                "rows_per_second": 5638.5942878434835,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 976904,
+                "retained_heap_delta_bytes": -16776,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 84.83375,
+                "rows_per_second": 11787.761356771332,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 976904,
+                "retained_heap_delta_bytes": -16776,
+                "managed_before": 2000,
+                "managed_after": 2000
+              }
+            ]
+          },
+          {
+            "operation": "update",
+            "mode": "bypass",
+            "rows": 1000,
+            "median_ms": 2.842541,
+            "min_ms": 2.274041,
+            "max_ms": 3.937834,
+            "median_rows_per_second": 351797.91601950506,
+            "median_peak_heap_delta_bytes": 3704,
+            "samples": [
+              {
+                "wall_ms": 2.842541,
+                "rows_per_second": 351797.91601950506,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 3704,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 2.274041,
+                "rows_per_second": 439745.8093323735,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 4992,
+                "retained_heap_delta_bytes": -128,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 3.937834,
+                "rows_per_second": 253946.712837565,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 3704,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              }
+            ]
+          },
+          {
+            "operation": "update",
+            "mode": "clear",
+            "rows": 1000,
+            "median_ms": 3.314958,
+            "min_ms": 2.435291,
+            "max_ms": 4.906875,
+            "median_rows_per_second": 301662.9471625282,
+            "median_peak_heap_delta_bytes": 4992,
+            "samples": [
+              {
+                "wall_ms": 3.314958,
+                "rows_per_second": 301662.9471625282,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 4992,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 2.435291,
+                "rows_per_second": 410628.5450075576,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 4992,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 4.906875,
+                "rows_per_second": 203795.69481594698,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 4992,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              }
+            ]
+          },
+          {
+            "operation": "delete",
+            "mode": "uow",
+            "rows": 1000,
+            "median_ms": 63.595792,
+            "min_ms": 59.548791,
+            "max_ms": 69.060458,
+            "median_rows_per_second": 15724.310816036383,
+            "median_peak_heap_delta_bytes": 476952,
+            "samples": [
+              {
+                "wall_ms": 63.595792,
+                "rows_per_second": 15724.310816036383,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 476952,
+                "retained_heap_delta_bytes": -729168,
+                "managed_before": 2000,
+                "managed_after": 1000
+              },
+              {
+                "wall_ms": 59.548791,
+                "rows_per_second": 16792.95218604858,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 476952,
+                "retained_heap_delta_bytes": -729168,
+                "managed_before": 2000,
+                "managed_after": 1000
+              },
+              {
+                "wall_ms": 69.060458,
+                "rows_per_second": 14480.066147258973,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 476952,
+                "retained_heap_delta_bytes": -729168,
+                "managed_before": 2000,
+                "managed_after": 1000
+              }
+            ]
+          },
+          {
+            "operation": "delete",
+            "mode": "bypass",
+            "rows": 1000,
+            "median_ms": 0.491125,
+            "min_ms": 0.440459,
+            "max_ms": 0.586083,
+            "median_rows_per_second": 2036141.5118350724,
+            "median_peak_heap_delta_bytes": 256,
+            "samples": [
+              {
+                "wall_ms": 0.440459,
+                "rows_per_second": 2270358.8756274707,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 256,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 0.491125,
+                "rows_per_second": 2036141.5118350724,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 256,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 0.586083,
+                "rows_per_second": 1706242.9724117573,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 256,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              }
+            ]
+          },
+          {
+            "operation": "delete",
+            "mode": "clear",
+            "rows": 1000,
+            "median_ms": 0.773792,
+            "min_ms": 0.551417,
+            "max_ms": 0.911667,
+            "median_rows_per_second": 1292336.9587692816,
+            "median_peak_heap_delta_bytes": 1544,
+            "samples": [
+              {
+                "wall_ms": 0.551417,
+                "rows_per_second": 1813509.558102126,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1544,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 0.911667,
+                "rows_per_second": 1096891.7378823627,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1544,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 0.773792,
+                "rows_per_second": 1292336.9587692816,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 256,
+                "retained_heap_delta_bytes": -1833752,
+                "managed_before": 2000,
+                "managed_after": 0
+              }
+            ]
+          }
+        ],
+        "method": "One outer transaction including commit per sample. Timed: input/entity construction, target hydration for UoW UPDATE/DELETE, DML and policy handling. Setup, context preloading and verification excluded. SQL counts include the two flush SAVEPOINT statements, but exclude driver begin/commit calls. One warm-up per case; case order rotates. Assigned IDs, no associations/callbacks/RETURNING/L2. PHP heap deltas, not RSS; retained references to preloaded entities stay alive for all modes. CLEAR empties the context on the first INSERT chunk. No Doctrine comparison or timing thresholds."
+      }
+    },
+    {
+      "batch": 3,
+      "variant": "before",
+      "result": {
+        "php": "8.6.0",
+        "os": "Darwin",
+        "postgresql": "19.0 (Homebrew)",
+        "memory_limit": "1G",
+        "rounds": 3,
+        "insert_chunk_size": 1000,
+        "context_rows": 1000,
+        "l2_enabled": false,
+        "statistics_enabled": true,
+        "warmup_rows": 1000,
+        "measurements": [
+          {
+            "operation": "insert",
+            "mode": "uow",
+            "rows": 1000,
+            "median_ms": 46.560584,
+            "min_ms": 41.498292,
+            "max_ms": 48.786917,
+            "median_rows_per_second": 21477.393840249082,
+            "median_peak_heap_delta_bytes": 2284264,
+            "samples": [
+              {
+                "wall_ms": 48.786917,
+                "rows_per_second": 20497.298486805386,
+                "sql_statements": 1002,
+                "peak_heap_delta_bytes": 2284264,
+                "retained_heap_delta_bytes": 1055416,
+                "managed_before": 1000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 41.498292,
+                "rows_per_second": 24097.377308926352,
+                "sql_statements": 1002,
+                "peak_heap_delta_bytes": 2284264,
+                "retained_heap_delta_bytes": 1055416,
+                "managed_before": 1000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 46.560584,
+                "rows_per_second": 21477.393840249082,
+                "sql_statements": 1002,
+                "peak_heap_delta_bytes": 2284264,
+                "retained_heap_delta_bytes": 1055416,
+                "managed_before": 1000,
+                "managed_after": 2000
+              }
+            ]
+          },
+          {
+            "operation": "insert",
+            "mode": "bypass",
+            "rows": 1000,
+            "median_ms": 6.40175,
+            "min_ms": 6.362375,
+            "max_ms": 6.544667,
+            "median_rows_per_second": 156207.2870699418,
+            "median_peak_heap_delta_bytes": 1402936,
+            "samples": [
+              {
+                "wall_ms": 6.40175,
+                "rows_per_second": 156207.2870699418,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1402936,
+                "retained_heap_delta_bytes": 395248,
+                "managed_before": 1000,
+                "managed_after": 1000
+              },
+              {
+                "wall_ms": 6.544667,
+                "rows_per_second": 152796.16212711815,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1402936,
+                "retained_heap_delta_bytes": 395248,
+                "managed_before": 1000,
+                "managed_after": 1000
+              },
+              {
+                "wall_ms": 6.362375,
+                "rows_per_second": 157174.01127723532,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1402936,
+                "retained_heap_delta_bytes": 395248,
+                "managed_before": 1000,
+                "managed_after": 1000
+              }
+            ]
+          },
+          {
+            "operation": "insert",
+            "mode": "clear",
+            "rows": 1000,
+            "median_ms": 6.841375,
+            "min_ms": 6.756792,
+            "max_ms": 7.183709,
+            "median_rows_per_second": 146169.44693135517,
+            "median_peak_heap_delta_bytes": 1404224,
+            "samples": [
+              {
+                "wall_ms": 7.183709,
+                "rows_per_second": 139203.85694910525,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1404224,
+                "retained_heap_delta_bytes": -519960,
+                "managed_before": 1000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 6.756792,
+                "rows_per_second": 147999.22803602656,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1404224,
+                "retained_heap_delta_bytes": -519960,
+                "managed_before": 1000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 6.841375,
+                "rows_per_second": 146169.44693135517,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1404224,
+                "retained_heap_delta_bytes": -519960,
+                "managed_before": 1000,
+                "managed_after": 0
+              }
+            ]
+          },
+          {
+            "operation": "update",
+            "mode": "uow",
+            "rows": 1000,
+            "median_ms": 70.995375,
+            "min_ms": 66.755458,
+            "max_ms": 72.916458,
+            "median_rows_per_second": 14085.424578713755,
+            "median_peak_heap_delta_bytes": 976904,
+            "samples": [
+              {
+                "wall_ms": 72.916458,
+                "rows_per_second": 13714.324960765372,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 976904,
+                "retained_heap_delta_bytes": -16776,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 66.755458,
+                "rows_per_second": 14980.048522773972,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 976904,
+                "retained_heap_delta_bytes": -16776,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 70.995375,
+                "rows_per_second": 14085.424578713755,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 976904,
+                "retained_heap_delta_bytes": -16776,
+                "managed_before": 2000,
+                "managed_after": 2000
+              }
+            ]
+          },
+          {
+            "operation": "update",
+            "mode": "bypass",
+            "rows": 1000,
+            "median_ms": 2.491833,
+            "min_ms": 2.079375,
+            "max_ms": 2.691208,
+            "median_rows_per_second": 401311.0027838944,
+            "median_peak_heap_delta_bytes": 3704,
+            "samples": [
+              {
+                "wall_ms": 2.691208,
+                "rows_per_second": 371580.34607507114,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 3704,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 2.079375,
+                "rows_per_second": 480913.7360985873,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 4992,
+                "retained_heap_delta_bytes": -128,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 2.491833,
+                "rows_per_second": 401311.0027838944,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 3704,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              }
+            ]
+          },
+          {
+            "operation": "update",
+            "mode": "clear",
+            "rows": 1000,
+            "median_ms": 2.773667,
+            "min_ms": 2.18675,
+            "max_ms": 3.154667,
+            "median_rows_per_second": 360533.5463846237,
+            "median_peak_heap_delta_bytes": 4992,
+            "samples": [
+              {
+                "wall_ms": 2.18675,
+                "rows_per_second": 457299.6455927747,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 4992,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 2.773667,
+                "rows_per_second": 360533.5463846237,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 4992,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 3.154667,
+                "rows_per_second": 316990.66811172146,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 4992,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              }
+            ]
+          },
+          {
+            "operation": "delete",
+            "mode": "uow",
+            "rows": 1000,
+            "median_ms": 59.010709,
+            "min_ms": 57.730125,
+            "max_ms": 59.116958,
+            "median_rows_per_second": 16946.07668584358,
+            "median_peak_heap_delta_bytes": 476952,
+            "samples": [
+              {
+                "wall_ms": 59.010709,
+                "rows_per_second": 16946.07668584358,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 476952,
+                "retained_heap_delta_bytes": -729168,
+                "managed_before": 2000,
+                "managed_after": 1000
+              },
+              {
+                "wall_ms": 57.730125,
+                "rows_per_second": 17321.978776245505,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 476952,
+                "retained_heap_delta_bytes": -729168,
+                "managed_before": 2000,
+                "managed_after": 1000
+              },
+              {
+                "wall_ms": 59.116958,
+                "rows_per_second": 16915.620049326626,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 476952,
+                "retained_heap_delta_bytes": -729168,
+                "managed_before": 2000,
+                "managed_after": 1000
+              }
+            ]
+          },
+          {
+            "operation": "delete",
+            "mode": "bypass",
+            "rows": 1000,
+            "median_ms": 0.520042,
+            "min_ms": 0.441542,
+            "max_ms": 0.569834,
+            "median_rows_per_second": 1922921.6101776396,
+            "median_peak_heap_delta_bytes": 256,
+            "samples": [
+              {
+                "wall_ms": 0.569834,
+                "rows_per_second": 1754897.040190652,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 256,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 0.441542,
+                "rows_per_second": 2264790.2124826177,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 256,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 0.520042,
+                "rows_per_second": 1922921.6101776396,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 256,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              }
+            ]
+          },
+          {
+            "operation": "delete",
+            "mode": "clear",
+            "rows": 1000,
+            "median_ms": 0.597084,
+            "min_ms": 0.514,
+            "max_ms": 1.427583,
+            "median_rows_per_second": 1674806.2249197771,
+            "median_peak_heap_delta_bytes": 1544,
+            "samples": [
+              {
+                "wall_ms": 0.597084,
+                "rows_per_second": 1674806.2249197771,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1544,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 0.514,
+                "rows_per_second": 1945525.2918287937,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1544,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 1.427583,
+                "rows_per_second": 700484.6653399487,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 256,
+                "retained_heap_delta_bytes": -1833752,
+                "managed_before": 2000,
+                "managed_after": 0
+              }
+            ]
+          }
+        ],
+        "method": "One outer transaction including commit per sample. Timed: input/entity construction, target hydration for UoW UPDATE/DELETE, DML and policy handling. Setup, context preloading and verification excluded. SQL counts include the two flush SAVEPOINT statements, but exclude driver begin/commit calls. One warm-up per case; case order rotates. Assigned IDs, no associations/callbacks/RETURNING/L2. PHP heap deltas, not RSS; retained references to preloaded entities stay alive for all modes. CLEAR empties the context on the first INSERT chunk. No Doctrine comparison or timing thresholds."
+      }
+    },
+    {
+      "batch": 3,
+      "variant": "after",
+      "result": {
+        "php": "8.6.0",
+        "os": "Darwin",
+        "postgresql": "19.0 (Homebrew)",
+        "memory_limit": "1G",
+        "rounds": 3,
+        "insert_chunk_size": 1000,
+        "context_rows": 1000,
+        "l2_enabled": false,
+        "statistics_enabled": true,
+        "warmup_rows": 1000,
+        "measurements": [
+          {
+            "operation": "insert",
+            "mode": "uow",
+            "rows": 1000,
+            "median_ms": 52.169583,
+            "min_ms": 45.595958,
+            "max_ms": 59.074833,
+            "median_rows_per_second": 19168.25748827626,
+            "median_peak_heap_delta_bytes": 2284264,
+            "samples": [
+              {
+                "wall_ms": 59.074833,
+                "rows_per_second": 16927.68221621549,
+                "sql_statements": 1002,
+                "peak_heap_delta_bytes": 2284264,
+                "retained_heap_delta_bytes": 1055416,
+                "managed_before": 1000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 52.169583,
+                "rows_per_second": 19168.25748827626,
+                "sql_statements": 1002,
+                "peak_heap_delta_bytes": 2284264,
+                "retained_heap_delta_bytes": 1055416,
+                "managed_before": 1000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 45.595958,
+                "rows_per_second": 21931.768601067663,
+                "sql_statements": 1002,
+                "peak_heap_delta_bytes": 2284264,
+                "retained_heap_delta_bytes": 1055416,
+                "managed_before": 1000,
+                "managed_after": 2000
+              }
+            ]
+          },
+          {
+            "operation": "insert",
+            "mode": "bypass",
+            "rows": 1000,
+            "median_ms": 6.485542,
+            "min_ms": 6.450541,
+            "max_ms": 6.859667,
+            "median_rows_per_second": 154189.11788714037,
+            "median_peak_heap_delta_bytes": 1402936,
+            "samples": [
+              {
+                "wall_ms": 6.859667,
+                "rows_per_second": 145779.67122893868,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1402936,
+                "retained_heap_delta_bytes": 395248,
+                "managed_before": 1000,
+                "managed_after": 1000
+              },
+              {
+                "wall_ms": 6.450541,
+                "rows_per_second": 155025.75675435594,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1402936,
+                "retained_heap_delta_bytes": 395248,
+                "managed_before": 1000,
+                "managed_after": 1000
+              },
+              {
+                "wall_ms": 6.485542,
+                "rows_per_second": 154189.11788714037,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1402936,
+                "retained_heap_delta_bytes": 395248,
+                "managed_before": 1000,
+                "managed_after": 1000
+              }
+            ]
+          },
+          {
+            "operation": "insert",
+            "mode": "clear",
+            "rows": 1000,
+            "median_ms": 6.921125,
+            "min_ms": 6.594459,
+            "max_ms": 7.319792,
+            "median_rows_per_second": 144485.1812385992,
+            "median_peak_heap_delta_bytes": 1404224,
+            "samples": [
+              {
+                "wall_ms": 6.921125,
+                "rows_per_second": 144485.1812385992,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1404224,
+                "retained_heap_delta_bytes": -519960,
+                "managed_before": 1000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 6.594459,
+                "rows_per_second": 151642.46225505383,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1404224,
+                "retained_heap_delta_bytes": -519960,
+                "managed_before": 1000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 7.319792,
+                "rows_per_second": 136615.90383989055,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1404224,
+                "retained_heap_delta_bytes": -519960,
+                "managed_before": 1000,
+                "managed_after": 0
+              }
+            ]
+          },
+          {
+            "operation": "update",
+            "mode": "uow",
+            "rows": 1000,
+            "median_ms": 70.135625,
+            "min_ms": 68.420541,
+            "max_ms": 75.640708,
+            "median_rows_per_second": 14258.089237816015,
+            "median_peak_heap_delta_bytes": 976904,
+            "samples": [
+              {
+                "wall_ms": 68.420541,
+                "rows_per_second": 14615.493905550966,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 976904,
+                "retained_heap_delta_bytes": -16776,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 70.135625,
+                "rows_per_second": 14258.089237816015,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 976904,
+                "retained_heap_delta_bytes": -16776,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 75.640708,
+                "rows_per_second": 13220.394499744767,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 976904,
+                "retained_heap_delta_bytes": -16776,
+                "managed_before": 2000,
+                "managed_after": 2000
+              }
+            ]
+          },
+          {
+            "operation": "update",
+            "mode": "bypass",
+            "rows": 1000,
+            "median_ms": 2.394833,
+            "min_ms": 2.279709,
+            "max_ms": 3.147583,
+            "median_rows_per_second": 417565.65071551956,
+            "median_peak_heap_delta_bytes": 3704,
+            "samples": [
+              {
+                "wall_ms": 2.279709,
+                "rows_per_second": 438652.47713633627,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 3704,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 2.394833,
+                "rows_per_second": 417565.65071551956,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 4992,
+                "retained_heap_delta_bytes": -128,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 3.147583,
+                "rows_per_second": 317704.09231464274,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 3704,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              }
+            ]
+          },
+          {
+            "operation": "update",
+            "mode": "clear",
+            "rows": 1000,
+            "median_ms": 2.419125,
+            "min_ms": 2.201583,
+            "max_ms": 2.439584,
+            "median_rows_per_second": 413372.6037306877,
+            "median_peak_heap_delta_bytes": 4992,
+            "samples": [
+              {
+                "wall_ms": 2.201583,
+                "rows_per_second": 454218.6235994737,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 4992,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 2.439584,
+                "rows_per_second": 409905.9511785616,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 4992,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 2.419125,
+                "rows_per_second": 413372.6037306877,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 4992,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              }
+            ]
+          },
+          {
+            "operation": "delete",
+            "mode": "uow",
+            "rows": 1000,
+            "median_ms": 67.081417,
+            "min_ms": 67.025459,
+            "max_ms": 67.11075,
+            "median_rows_per_second": 14907.25814572462,
+            "median_peak_heap_delta_bytes": 476952,
+            "samples": [
+              {
+                "wall_ms": 67.081417,
+                "rows_per_second": 14907.25814572462,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 476952,
+                "retained_heap_delta_bytes": -729168,
+                "managed_before": 2000,
+                "managed_after": 1000
+              },
+              {
+                "wall_ms": 67.025459,
+                "rows_per_second": 14919.70386954008,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 476952,
+                "retained_heap_delta_bytes": -729168,
+                "managed_before": 2000,
+                "managed_after": 1000
+              },
+              {
+                "wall_ms": 67.11075,
+                "rows_per_second": 14900.74242949155,
+                "sql_statements": 1003,
+                "peak_heap_delta_bytes": 476952,
+                "retained_heap_delta_bytes": -729168,
+                "managed_before": 2000,
+                "managed_after": 1000
+              }
+            ]
+          },
+          {
+            "operation": "delete",
+            "mode": "bypass",
+            "rows": 1000,
+            "median_ms": 0.814208,
+            "min_ms": 0.54075,
+            "max_ms": 1.19675,
+            "median_rows_per_second": 1228187.3919195095,
+            "median_peak_heap_delta_bytes": 256,
+            "samples": [
+              {
+                "wall_ms": 0.814208,
+                "rows_per_second": 1228187.3919195095,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 256,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 1.19675,
+                "rows_per_second": 835596.4069354503,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 256,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              },
+              {
+                "wall_ms": 0.54075,
+                "rows_per_second": 1849283.4026814608,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 256,
+                "retained_heap_delta_bytes": -1416,
+                "managed_before": 2000,
+                "managed_after": 2000
+              }
+            ]
+          },
+          {
+            "operation": "delete",
+            "mode": "clear",
+            "rows": 1000,
+            "median_ms": 0.811625,
+            "min_ms": 0.664542,
+            "max_ms": 1.331708,
+            "median_rows_per_second": 1232096.1034960726,
+            "median_peak_heap_delta_bytes": 1544,
+            "samples": [
+              {
+                "wall_ms": 1.331708,
+                "rows_per_second": 750915.365830948,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1544,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 0.811625,
+                "rows_per_second": 1232096.1034960726,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 1544,
+                "retained_heap_delta_bytes": -1832464,
+                "managed_before": 2000,
+                "managed_after": 0
+              },
+              {
+                "wall_ms": 0.664542,
+                "rows_per_second": 1504795.7841641312,
+                "sql_statements": 1,
+                "peak_heap_delta_bytes": 256,
+                "retained_heap_delta_bytes": -1833752,
+                "managed_before": 2000,
+                "managed_after": 0
+              }
+            ]
+          }
+        ],
+        "method": "One outer transaction including commit per sample. Timed: input/entity construction, target hydration for UoW UPDATE/DELETE, DML and policy handling. Setup, context preloading and verification excluded. SQL counts include the two flush SAVEPOINT statements, but exclude driver begin/commit calls. One warm-up per case; case order rotates. Assigned IDs, no associations/callbacks/RETURNING/L2. PHP heap deltas, not RSS; retained references to preloaded entities stay alive for all modes. CLEAR empties the context on the first INSERT chunk. No Doctrine comparison or timing thresholds."
+      }
+    }
+  ],
+  "summary": [
+    {
+      "operation": "insert",
+      "mode": "uow",
+      "rows": 1000,
+      "before_ms": 46.560584,
+      "after_ms": 44.000958,
+      "time_change_percent": -5.497409568574141
+    },
+    {
+      "operation": "insert",
+      "mode": "bypass",
+      "rows": 1000,
+      "before_ms": 6.528166,
+      "after_ms": 6.668459,
+      "time_change_percent": 2.1490415531713047
+    },
+    {
+      "operation": "insert",
+      "mode": "clear",
+      "rows": 1000,
+      "before_ms": 6.841375,
+      "after_ms": 6.921125,
+      "time_change_percent": 1.1657013392775584
+    },
+    {
+      "operation": "update",
+      "mode": "uow",
+      "rows": 1000,
+      "before_ms": 75.705084,
+      "after_ms": 70.203375,
+      "time_change_percent": -7.2672913222049935
+    },
+    {
+      "operation": "update",
+      "mode": "bypass",
+      "rows": 1000,
+      "before_ms": 2.491833,
+      "after_ms": 2.279709,
+      "time_change_percent": -8.512769515453089
+    },
+    {
+      "operation": "update",
+      "mode": "clear",
+      "rows": 1000,
+      "before_ms": 2.435291,
+      "after_ms": 2.439584,
+      "time_change_percent": 0.17628283437174375
+    },
+    {
+      "operation": "delete",
+      "mode": "uow",
+      "rows": 1000,
+      "before_ms": 59.618334,
+      "after_ms": 62.026084,
+      "time_change_percent": 4.038606647411513
+    },
+    {
+      "operation": "delete",
+      "mode": "bypass",
+      "rows": 1000,
+      "before_ms": 0.491125,
+      "after_ms": 0.617333,
+      "time_change_percent": 25.697734792568095
+    },
+    {
+      "operation": "delete",
+      "mode": "clear",
+      "rows": 1000,
+      "before_ms": 0.597084,
+      "after_ms": 0.691166,
+      "time_change_percent": 15.75691192529025
+    }
+  ]
+}

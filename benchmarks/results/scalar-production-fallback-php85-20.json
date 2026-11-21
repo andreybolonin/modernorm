@@ -1,0 +1,41 @@
+{
+    "php": "8.5.12",
+    "width": 20,
+    "entities": 100000,
+    "cases": [
+        {
+            "percent": 0,
+            "mutation": "all",
+            "samples": {
+                "before": [
+                    {
+                        "ms": 910.131291,
+                        "peak_bytes": 809272
+                    },
+                    {
+                        "ms": 910.932625,
+                        "peak_bytes": 2672
+                    },
+                    {
+                        "ms": 929.452458,
+                        "peak_bytes": 2672
+                    }
+                ],
+                "after": [
+                    {
+                        "ms": 943.953958,
+                        "peak_bytes": 809272
+                    },
+                    {
+                        "ms": 946.3105,
+                        "peak_bytes": 809272
+                    },
+                    {
+                        "ms": 1041.558333,
+                        "peak_bytes": 2672
+                    }
+                ]
+            }
+        }
+    ]
+}

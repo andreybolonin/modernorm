@@ -1,0 +1,109 @@
+{
+    "php": "8.5.12",
+    "width": 20,
+    "entities": 100000,
+    "cases": [
+        {
+            "percent": 0,
+            "mutation": "all",
+            "samples": {
+                "before": [
+                    {
+                        "ms": 854.450041,
+                        "peak_bytes": 809272
+                    },
+                    {
+                        "ms": 900.366084,
+                        "peak_bytes": 2672
+                    },
+                    {
+                        "ms": 854.733375,
+                        "peak_bytes": 2672
+                    }
+                ],
+                "after": [
+                    {
+                        "ms": 631.58275,
+                        "peak_bytes": 809272
+                    },
+                    {
+                        "ms": 625.381709,
+                        "peak_bytes": 809272
+                    },
+                    {
+                        "ms": 610.212042,
+                        "peak_bytes": 2672
+                    }
+                ]
+            }
+        },
+        {
+            "percent": 1,
+            "mutation": "all",
+            "samples": {
+                "before": [
+                    {
+                        "ms": 855.5715,
+                        "peak_bytes": 5741344
+                    },
+                    {
+                        "ms": 874.303208,
+                        "peak_bytes": 5741344
+                    },
+                    {
+                        "ms": 842.418042,
+                        "peak_bytes": 5741344
+                    }
+                ],
+                "after": [
+                    {
+                        "ms": 619.244375,
+                        "peak_bytes": 5740704
+                    },
+                    {
+                        "ms": 617.066292,
+                        "peak_bytes": 5740704
+                    },
+                    {
+                        "ms": 608.93175,
+                        "peak_bytes": 5740704
+                    }
+                ]
+            }
+        },
+        {
+            "percent": 100,
+            "mutation": "all",
+            "samples": {
+                "before": [
+                    {
+                        "ms": 1138.209875,
+                        "peak_bytes": 576089232
+                    },
+                    {
+                        "ms": 1206.323125,
+                        "peak_bytes": 576089232
+                    },
+                    {
+                        "ms": 1177.288334,
+                        "peak_bytes": 576089232
+                    }
+                ],
+                "after": [
+                    {
+                        "ms": 711.678291,
+                        "peak_bytes": 576088376
+                    },
+                    {
+                        "ms": 746.686375,
+                        "peak_bytes": 576088376
+                    },
+                    {
+                        "ms": 719.099166,
+                        "peak_bytes": 576088376
+                    }
+                ]
+            }
+        }
+    ]
+}
