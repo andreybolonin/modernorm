@@ -7,6 +7,7 @@ namespace ModernORM\Tools;
 use ModernORM\Exception\ToolsException;
 use BackedEnum;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
+use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
 use Doctrine\DBAL\Schema\AbstractAsset;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Doctrine\DBAL\Schema\ColumnEditor;
@@ -24,6 +25,7 @@ use Doctrine\DBAL\Schema\NamedObject;
 use Doctrine\DBAL\Schema\PrimaryKeyConstraint;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\SchemaConfig;
+use Doctrine\DBAL\Schema\SchemaDiff;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Schema\TableEditor;
 use Doctrine\DBAL\Types\Types;
@@ -103,12 +105,19 @@ class SchemaTool
         $createSchemaSql = $this->getCreateSchemaSql($classes);
         $conn            = $this->em->getConnection();
 
-        foreach ($createSchemaSql as $sql) {
-            try {
-                $conn->executeStatement($sql);
-            } catch (Throwable $e) {
-                throw ToolsException::schemaToolFailure($sql, $e);
+        $apply = static function () use ($conn, $createSchemaSql): void {
+            foreach ($createSchemaSql as $sql) {
+                try {
+                    $conn->executeStatement($sql);
+                } catch (Throwable $e) {
+                    throw ToolsException::schemaToolFailure($sql, $e);
+                }
             }
+        };
+        if ($this->hasTriggerDeclarations($classes)) {
+            $conn->transactional($apply);
+        } else {
+            $apply();
         }
     }
 
@@ -124,7 +133,12 @@ class SchemaTool
     {
         $schema = $this->getOrdinarySchemaFromMetadata($classes);
 
-        return [...$schema->toSql($this->platform), ...(new FullText\SchemaExtension($this->em))->createSql($classes, $schema)];
+        $checks = (new Check\SchemaExtension($this->em))->plan($classes, $schema, true);
+
+        $triggers = (new Trigger\SchemaExtension($this->em))->plan($classes, $schema, true);
+
+        return [...$schema->toSql($this->platform), ...(new FullText\SchemaExtension($this->em))->createSql($classes, $schema),
+            ...$triggers['functions'], ...$checks['up'], ...$triggers['up']];
     }
 
     /**
@@ -198,6 +212,9 @@ class SchemaTool
     public function getSchemaFromMetadata(array $classes): Schema
     {
         foreach ($classes as $class) {
+            if (($class->checks !== [] || $class->triggers !== []) && ! $this->processingNotRequired($class, [])) {
+                throw new RuntimeException('DBAL Schema cannot represent CHECK constraints or triggers. Use SchemaTool getCreateSchemaSql/getUpdateSchemaSql for complete migration SQL.');
+            }
             if ($class->fullTextIndexes !== [] && ! $this->processingNotRequired($class, [])) {
                 throw new RuntimeException('DBAL Schema cannot represent FullTextIndex assets. Use SchemaTool getCreateSchemaSql/getUpdateSchemaSql for complete migration SQL.');
             }
@@ -1118,9 +1135,29 @@ class SchemaTool
     {
         $conn = $this->em->getConnection();
 
-        foreach ($this->getUpdateSchemaSql($classes) as $sql) {
-            $conn->executeStatement($sql);
+        $statements = $this->getUpdateSchemaSql($classes);
+        $apply = static function () use ($conn, $statements): void {
+            foreach ($statements as $sql) {
+                $conn->executeStatement($sql);
+            }
+        };
+        if ($this->hasTriggerDeclarations($classes)) {
+            $conn->transactional($apply);
+        } else {
+            $apply();
         }
+    }
+
+    /** @param list<ClassMetadata> $classes */
+    private function hasTriggerDeclarations(array $classes): bool
+    {
+        foreach ($classes as $class) {
+            if ($class->triggers !== []) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -1136,6 +1173,8 @@ class SchemaTool
     {
         $toSchema   = $this->getOrdinarySchemaFromMetadata($classes);
         $fromSchema = $this->createSchemaForComparison($toSchema);
+        $checks = (new Check\SchemaExtension($this->em))->plan($classes, $toSchema, false);
+        $triggers = (new Trigger\SchemaExtension($this->em))->plan($classes, $toSchema, false);
         $fullTextSql = (new FullText\SchemaExtension($this->em))->updateSql($classes, $fromSchema, $toSchema);
         $this->normalizeEquivalentIndexPredicates($fromSchema, $toSchema);
 
@@ -1146,11 +1185,12 @@ class SchemaTool
         }
 
         $schemaDiff = $comparator->compareSchemas($fromSchema, $toSchema);
+        $this->assertTableObjectsNotDropped($schemaDiff);
 
-        return [...$this->platform->getAlterSchemaSQL($schemaDiff), ...$fullTextSql];
+        return [...$this->platform->getAlterSchemaSQL($schemaDiff), ...$fullTextSql, ...$triggers['functions'], ...$checks['up'], ...$triggers['up']];
     }
 
-    /** Reversible SQL for migration integrations, including owned FTS assets.
+    /** SQL for migration integrations, including PostgreSQL schema objects.
      *  @param list<ClassMetadata> $classes
      *  @return array{up: list<string>, down: list<string>}
      *  @phpstan-impure Reads the live database schema and configuration catalogs.
@@ -1184,12 +1224,55 @@ class SchemaTool
             }
         }
         $fullText = (new FullText\SchemaExtension($this->em))->migrationSql($classes, $from, $to, $fromEmptySchema);
+        $checks = (new Check\SchemaExtension($this->em))->plan($classes, $to, $fromEmptySchema);
+        $triggers = (new Trigger\SchemaExtension($this->em))->plan($classes, $to, $fromEmptySchema);
         $this->normalizeEquivalentIndexPredicates($from, $to);
         $comparator = $this->schemaManager->createComparator((new ComparatorConfig())->withReportModifiedIndexes(false));
+        $up = $comparator->compareSchemas($from, $to);
+        $this->assertTableObjectsNotDropped($up);
+
         return [
-            'up' => [...$this->platform->getAlterSchemaSQL($comparator->compareSchemas($from, $to)), ...$fullText['up']],
-            'down' => [...$fullText['down'], ...$this->platform->getAlterSchemaSQL($comparator->compareSchemas($to, $from))],
+            'up' => [...$this->platform->getAlterSchemaSQL($up), ...$fullText['up'], ...$triggers['functions'], ...$checks['up'], ...$triggers['up']],
+            'down' => $triggers['functions'] !== []
+                ? [Trigger\FunctionRegistry::irreversibleSql()]
+                : [...$triggers['down'], ...$checks['down'], ...$fullText['down'], ...$this->platform->getAlterSchemaSQL($comparator->compareSchemas($to, $from))],
         ];
+    }
+
+    private function assertTableObjectsNotDropped(SchemaDiff $diff): void
+    {
+        if (! $this->platform instanceof PostgreSQLPlatform) {
+            return;
+        }
+        $connection = $this->em->getConnection();
+        foreach ($diff->getDroppedTables() as $table) {
+            $name = $table->getObjectName()->toSQL($this->platform);
+            if ($connection->fetchOne(<<<'SQL'
+                SELECT EXISTS (
+                    SELECT 1 FROM pg_catalog.pg_constraint WHERE conrelid = pg_catalog.to_regclass(?) AND contype = 'c'
+                    UNION ALL
+                    SELECT 1 FROM pg_catalog.pg_trigger WHERE tgrelid = pg_catalog.to_regclass(?) AND NOT tgisinternal
+                )
+                SQL, [$name, $name])) {
+                throw new RuntimeException('Dropping table ' . $name . ' would remove CHECK constraints or triggers. Use an explicit migration.');
+            }
+        }
+        foreach ($diff->getAlteredTables() as $alteration) {
+            $table = $alteration->getOldTable()->getObjectName()->toSQL($this->platform);
+            foreach ($alteration->getDroppedColumns() as $column) {
+                $name = $column->getObjectName()->getIdentifier()->toNormalizedValue($this->platform->getUnquotedIdentifierFolding());
+                if ($connection->fetchOne(<<<'SQL'
+                    SELECT EXISTS (
+                        SELECT 1
+                        FROM pg_catalog.pg_attribute a
+                        JOIN pg_catalog.pg_constraint c ON c.conrelid = a.attrelid AND a.attnum = ANY(c.conkey)
+                        WHERE a.attrelid = pg_catalog.to_regclass(?) AND a.attname = ? AND c.contype = 'c'
+                    )
+                    SQL, [$table, $name])) {
+                    throw new RuntimeException('Dropping column ' . $table . '.' . $name . ' would remove a CHECK constraint. Use an explicit migration.');
+                }
+            }
+        }
     }
 
     /**
@@ -1280,6 +1363,11 @@ class SchemaTool
     private function normalizeIntrospectedSchema(Schema $schema): Schema
     {
         foreach ($schema->getTables() as $table) {
+            if ($table->getObjectName()->getUnqualifiedName()->getValue() === Trigger\FunctionRegistry::TABLE
+                && $table->getComment() === Trigger\FunctionRegistry::TABLE_MARKER) {
+                $schema->dropTable($table->getName());
+                continue;
+            }
             if ($table instanceof NamedObject) {
                 $schema->renameTable($table->getName(), $table->getObjectName()->toSQL($this->platform));
             }

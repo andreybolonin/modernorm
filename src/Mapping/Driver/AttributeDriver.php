@@ -227,6 +227,18 @@ class AttributeDriver implements MappingDriver
             }
         }
 
+        if (isset($classAttributes[Mapping\Check::class])) {
+            foreach ($classAttributes[Mapping\Check::class] as $check) {
+                $metadata->checks[] = $check;
+            }
+        }
+
+        if (isset($classAttributes[Mapping\Trigger::class])) {
+            foreach ($classAttributes[Mapping\Trigger::class] as $trigger) {
+                $metadata->triggers[] = $trigger;
+            }
+        }
+
         if (isset($classAttributes[Mapping\Cacheable::class])) {
             if ($metadata->isMappedSuperclass || $metadata->isEmbeddedClass) {
                 throw new MappingException('Cacheable must be applied to a concrete Entity: ' . $className);

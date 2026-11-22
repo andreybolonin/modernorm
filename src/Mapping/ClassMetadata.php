@@ -345,6 +345,12 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     /** @var list<FullTextIndex> */
     public array $fullTextIndexes = [];
 
+    /** @var list<Check> */
+    public array $checks = [];
+
+    /** @var list<Trigger> */
+    public array $triggers = [];
+
     /**
      * READ-ONLY: The registered lifecycle callbacks for entities of this class.
      *
@@ -599,6 +605,8 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
             'namespace', // TODO: REMOVE
             'table',
             'fullTextIndexes',
+            'checks',
+            'triggers',
             'rootEntityName',
             'idGenerator', //TODO: Does not really need to be serialized. Could be moved to runtime.
         ];
@@ -1514,6 +1522,22 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     public function assertSupportedMapping(): void
     {
         $this->assertSupportedIdentifier();
+        $checkNames = [];
+        foreach ($this->checks as $check) {
+            $check->validate($this);
+            if (isset($checkNames[$check->name])) {
+                throw new MappingException($this->name . ' has a duplicate CHECK name: ' . $check->name);
+            }
+            $checkNames[$check->name] = true;
+        }
+        $triggerNames = [];
+        foreach ($this->triggers as $trigger) {
+            $trigger->validate($this);
+            if (isset($triggerNames[$trigger->name])) {
+                throw new MappingException($this->name . ' has a duplicate trigger name: ' . $trigger->name);
+            }
+            $triggerNames[$trigger->name] = true;
+        }
         $fullTextNames = [];
         $fullTextColumns = [];
         foreach ($this->fullTextIndexes as $index) {

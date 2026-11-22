@@ -408,6 +408,21 @@ class Configuration extends \Doctrine\DBAL\Configuration
         $this->attributes['schemaIgnoreClasses'] = $schemaIgnoreClasses;
     }
 
+    /** Base directory for developer-authored trigger function SQL files. */
+    public function setTriggerFunctionSqlRoot(string $directory): void
+    {
+        $root = realpath($directory);
+        if ($root === false || ! is_dir($root)) {
+            throw new LogicException('The trigger function SQL root must be an existing directory.');
+        }
+        $this->attributes['triggerFunctionSqlRoot'] = $root;
+    }
+
+    public function getTriggerFunctionSqlRoot(): ?string
+    {
+        return $this->attributes['triggerFunctionSqlRoot'] ?? null;
+    }
+
     /** Opt-in lazy ManyToOne, OneToMany, and ManyToMany batching. One preserves single-row loading. */
     public function setLazyFetchBatchSize(int $batchSize): void
     {

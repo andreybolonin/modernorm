@@ -68,9 +68,34 @@ final class Document extends IdentifiedRecord
 
 A MappedSuperclass shares fields, associations and callbacks but has no table and cannot be a query root. Its concrete subclasses have separate tables, identifiers and Identity Maps. A class cannot be both Entity and MappedSuperclass. Inherited integer version types, identifiers, associations/callbacks, native lazy loading and SQL joins are covered by the retained regression suite.
 
+## PostgreSQL CHECK constraints
+
+Use repeatable `#[ORM\Check(name: 'ordered_dates', expression: 'end_date >= start_date')]` attributes on a concrete entity. Predicates use physical SQL column names and can refer to multiple columns of the same row. PostgreSQL accepts both `TRUE` and `UNKNOWN` as passing results. Declare columns `NOT NULL` separately when required. Supply predicates only from trusted application code.
+
+`SchemaTool` adds missing declared checks after ordinary table DDL. PostgreSQL validates existing rows on addition. Removing a declaration leaves its database constraint in place. Use an explicit migration to change or remove a constraint.
+
+For existing checks, schema diff parses the desired predicate on a temporary copy of the table and rolls back the probe. It needs a writable transaction and permission to create temporary tables. When normalization is unavailable or cannot establish equivalence, diff reports `ambiguous_definition`. Qualify custom functions and types in predicates to keep their resolution stable across sessions.
+
+## PostgreSQL row triggers
+
+```php
+#[ORM\Trigger(
+    name: 'trg_order_audit',
+    timing: 'AFTER',
+    events: ['INSERT', 'UPDATE', 'DELETE'],
+    functionSql: 'database/functions/fn_order_audit.sql',
+)]
+```
+
+Omit `function` to derive `fn_order_audit` from the `trg_` prefix. An explicit `function` accepts a name in the entity table's schema or a qualified name. Declare `BEFORE` or `AFTER` and one or more row-level events from `INSERT`, `UPDATE` and `DELETE`.
+
+Omit `functionSql` when an earlier migration provides the function. Otherwise, set the SQL root with `Configuration::setTriggerFunctionSqlRoot()`. ModernORMBundle sets it to Symfony's project directory. Paths are resolved inside the root. A source file contains one schema-qualified `CREATE OR REPLACE FUNCTION ...() RETURNS trigger LANGUAGE plpgsql AS $tag$...$tag$;` statement. The file's function name must match the resolved attribute target. Use trusted application SQL.
+
+Generated migrations embed the source and its SHA-256. The `modernorm_trigger_functions` table in each function schema records applied hashes. PostgreSQL commits the function definition and hash in the same transaction. Changes to the source update the function without recreating its triggers. Functions provided by existing external migrations remain externally managed. Migrations that change a managed function require an explicit rollback migration. Removing a declaration leaves the database object in place.
+
 ## Cache formats and migration
 
-Current internal salts are `__MODERNORM_TYPED_MAPPING_V15__` for metadata and `sql_entity_v4_` for entity projection plans. They reject old internal formats; they are not an automatic mapping fingerprint. Applications must version metadata/query cache namespaces and create new EntityManagers when their own mappings change.
+Current internal salts are `__MODERNORM_TYPED_MAPPING_V17__` for metadata and `sql_entity_v4_` for entity projection plans. They reject old internal formats; they are not an automatic mapping fingerprint. Applications must version metadata/query cache namespaces and create new EntityManagers when their own mappings change.
 
 Move XML/programmatic sources to attributes. Removing inheritance attributes alone does not migrate an inheritance schema: choose concrete models/composition and explicitly migrate their tables/data. A discriminator column may remain as an ordinary business field, but no automatic PHP subclass dispatch occurs. Separate entities are not a polymorphic Identity Map substitute.
 
