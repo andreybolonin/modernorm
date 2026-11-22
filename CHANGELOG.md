@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+## 1.0.0-rc.1 (candidate)
+
+- Add declarative PostgreSQL CHECK constraints, row triggers with optional migration-managed SQL functions, partial indexes, GiST exclusion constraints and STORED generated columns.
+- Plan schema changes in read-only PostgreSQL transactions. Compare both declaration and catalog fingerprints for managed definitions, and require explicit migrations for ambiguous or unsafe changes.
+- Version the metadata cache at V18. Reset metadata and query-plan caches and restart long-running workers on upgrade. See the [release candidate guide](docs/1.0-release-candidate.md).
+
+
 - Reuse the eligible scalar plan for one-cast reads during UPDATE recomputation. Preserve missing-baseline-as-null comparison, changeset merging, preUpdate additions, snapshots and scheduling; keep pending INSERTs, tracked lazy references and unsupported metadata on accessors.
 
 - Read eligible scalar dirty-check state with one object-to-array cast per entity and precompiled private/protected keys. Preserve accessor eligibility/fallback, uninitialized/null values, reference-independent snapshots, metadata order and UPDATE scheduling.
