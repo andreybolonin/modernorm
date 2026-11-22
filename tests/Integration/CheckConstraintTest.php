@@ -137,6 +137,36 @@ final class CheckConstraintTest extends TestCase
         $tool->getUpdateSchemaSql([$changed]);
     }
 
+    public function testRecreatedCheckWithOldCommentBlocksReadOnlyDiff(): void
+    {
+        $metadata = $this->metadata();
+        $tool = new SchemaTool($this->em);
+        $tool->createSchema([$metadata]);
+        $connection = $this->em->getConnection();
+        $table = $this->table();
+        $constraint = '"Ordered Range"';
+        $lookup = "SELECT pg_catalog.obj_description(oid, 'pg_constraint') FROM pg_catalog.pg_constraint
+            WHERE conrelid = pg_catalog.to_regclass(?) AND conname = ?";
+        $parameters = [$table, 'Ordered Range'];
+        $comment = $connection->fetchOne($lookup, $parameters);
+        self::assertIsString($comment);
+        self::assertStringContainsString('modernorm:definition:', $comment);
+
+        $connection->executeStatement("ALTER TABLE $table DROP CONSTRAINT $constraint");
+        $connection->executeStatement("ALTER TABLE $table ADD CONSTRAINT $constraint CHECK (\"End\" > \"Start\")");
+        $connection->executeStatement("COMMENT ON CONSTRAINT $constraint ON $table IS " . $connection->quote($comment));
+        self::assertSame($comment, $connection->fetchOne($lookup, $parameters));
+
+        $connection->beginTransaction();
+        try {
+            $connection->executeStatement('SET TRANSACTION READ ONLY');
+            $this->expectExceptionMessage('definition_drift');
+            $tool->getSchemaMigrationSql([$metadata]);
+        } finally {
+            $connection->rollBack();
+        }
+    }
+
     public function testMigrationForExistingTableAddsAndRevertsOnlyTheMissingCheck(): void
     {
         $metadata = $this->metadata();
@@ -148,12 +178,14 @@ final class CheckConstraintTest extends TestCase
         $table = $this->table();
         $connection->executeStatement('INSERT INTO ' . $table . ' VALUES (1, -1, NULL)');
         $plan = $tool->getSchemaMigrationSql([$metadata]);
-        self::assertCount(1, $plan['up']);
+        self::assertCount(2, $plan['up']);
         self::assertCount(1, $plan['down']);
         $this->assertCheckViolation($plan['up'][0]);
 
         $connection->executeStatement('UPDATE ' . $table . ' SET "Start" = 0');
-        $connection->executeStatement($plan['up'][0]);
+        foreach ($plan['up'] as $statement) {
+            $connection->executeStatement($statement);
+        }
         self::assertSame([], $tool->getUpdateSchemaSql([$metadata]));
         $connection->executeStatement($plan['down'][0]);
         self::assertSame([], $tool->getUpdateSchemaSql([$initial]));
@@ -175,21 +207,19 @@ final class CheckConstraintTest extends TestCase
         $tool->getUpdateSchemaSql([$metadata]);
     }
 
-    public function testReadOnlyComparisonReportsAmbiguityWithoutBreakingTransaction(): void
+    public function testReadOnlyComparisonConverges(): void
     {
         $metadata = $this->metadata();
         $tool = new SchemaTool($this->em);
         $tool->createSchema([$metadata]);
         $connection = $this->em->getConnection();
         $connection->beginTransaction();
-        $connection->executeStatement('SET TRANSACTION READ ONLY');
-
         try {
-            $tool->getUpdateSchemaSql([$metadata]);
-            self::fail('Expected an ambiguous CHECK definition');
-        } catch (RuntimeException $failure) {
-            self::assertStringContainsString('ambiguous_definition', $failure->getMessage());
-            self::assertSame(1, (int) $connection->fetchOne('SELECT 1'));
+            $connection->executeStatement('SET TRANSACTION READ ONLY');
+            self::assertSame([], $tool->getUpdateSchemaSql([$metadata]));
+            self::assertSame(['up' => [], 'down' => []], $tool->getSchemaMigrationSql([$metadata]));
+        } finally {
+            $connection->rollBack();
         }
     }
 

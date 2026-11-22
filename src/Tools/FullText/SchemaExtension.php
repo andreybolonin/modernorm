@@ -68,8 +68,12 @@ final class SchemaExtension
         foreach ($this->classes($classes, $to) as $class) {
             $tableSql = $this->tableSql($class);
             $relation = $fromEmptySchema ? false : $this->connection->fetchAssociative(
-                'SELECT c.oid, c.relkind, n.nspname AS schema_name FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace WHERE c.oid = pg_catalog.to_regclass(?)',
-                [$tableSql],
+                'SELECT c.oid, c.relkind, n.nspname AS schema_name FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace WHERE n.nspname = ? AND c.relname = ?',
+                [
+                    $this->schemaName($to, $class),
+                    $this->schemaTable($to, $class)->getObjectName()->getUnqualifiedName()
+                        ->toNormalizedValue($this->connection->getDatabasePlatform()->getUnquotedIdentifierFolding()),
+                ],
             );
             if ($relation === false) {
                 foreach ($class->fullTextIndexes as $index) {

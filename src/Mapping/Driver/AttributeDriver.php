@@ -170,6 +170,18 @@ class AttributeDriver implements MappingDriver
                     $index['options'] = $indexAnnot->options;
                 }
 
+                if ($indexAnnot->where !== null) {
+                    if (trim($indexAnnot->where) === '' || str_contains($indexAnnot->where, "\0")
+                        || (array_key_exists('where', $index['options'] ?? []) && $index['options']['where'] !== $indexAnnot->where)) {
+                        throw new MappingException($className . ' has an empty, invalid or conflicting index predicate.');
+                    }
+                    $index['options']['where'] = $indexAnnot->where;
+                    $index['options']['modernorm_declared_predicate'] = true;
+                }
+                if ($indexAnnot->unique) {
+                    $index['unique'] = true;
+                }
+
                 if (! empty($indexAnnot->name)) {
                     $primaryTable['indexes'][$indexAnnot->name] = $index;
                 } else {
@@ -224,6 +236,12 @@ class AttributeDriver implements MappingDriver
         if (isset($classAttributes[Mapping\FullTextIndex::class])) {
             foreach ($classAttributes[Mapping\FullTextIndex::class] as $index) {
                 $metadata->fullTextIndexes[] = $index;
+            }
+        }
+
+        if (isset($classAttributes[Mapping\Exclude::class])) {
+            foreach ($classAttributes[Mapping\Exclude::class] as $exclude) {
+                $metadata->exclusions[] = $exclude;
             }
         }
 
@@ -801,7 +819,14 @@ class AttributeDriver implements MappingDriver
         }
 
         if ($column->generated !== null) {
-            $mapping['generated'] = $this->getGeneratedMode($column->generated);
+            if (in_array($column->generated, ['NEVER', 'INSERT', 'ALWAYS'], true)) {
+                $mapping['generated'] = $this->getGeneratedMode($column->generated);
+            } else {
+                $mapping['storedExpression'] = $column->generated;
+                $mapping['generated'] = ClassMetadata::GENERATED_ALWAYS;
+                $mapping['notInsertable'] = true;
+                $mapping['notUpdatable'] = true;
+            }
         }
 
         if ($column->enumType) {

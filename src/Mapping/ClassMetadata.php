@@ -348,6 +348,9 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     /** @var list<Check> */
     public array $checks = [];
 
+    /** @var list<Exclude> */
+    public array $exclusions = [];
+
     /** @var list<Trigger> */
     public array $triggers = [];
 
@@ -606,6 +609,7 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
             'table',
             'fullTextIndexes',
             'checks',
+            'exclusions',
             'triggers',
             'rootEntityName',
             'idGenerator', //TODO: Does not really need to be serialized. Could be moved to runtime.
@@ -1522,6 +1526,25 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     public function assertSupportedMapping(): void
     {
         $this->assertSupportedIdentifier();
+        foreach ($this->fieldMappings as $field => $mapping) {
+            if ($mapping->storedExpression === null) {
+                continue;
+            }
+            if (trim($mapping->storedExpression) === '' || str_contains($mapping->storedExpression, "\0")
+                || $mapping->columnDefinition !== null || array_key_exists('default', $mapping->options ?? [])
+                || $this->isIdentifier($field) || $this->versionField === $field || $field === $this->softDeleteField
+                || ! $mapping->notInsertable || ! $mapping->notUpdatable) {
+                throw new MappingException($this->name . '::' . $field . ' has incompatible STORED column mapping.');
+            }
+        }
+        $excludeNames = [];
+        foreach ($this->exclusions as $exclude) {
+            $exclude->validate($this);
+            if (isset($excludeNames[$exclude->name])) {
+                throw new MappingException($this->name . ' has a duplicate EXCLUDE name: ' . $exclude->name);
+            }
+            $excludeNames[$exclude->name] = true;
+        }
         $checkNames = [];
         foreach ($this->checks as $check) {
             $check->validate($this);

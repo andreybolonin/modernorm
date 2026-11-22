@@ -1,0 +1,172 @@
+# RFC: ModernORM — PostgreSQL EXCLUDE, Partial Indexes, Generated Columns
+
+**Status:** Proposed · **Target:** PostgreSQL · **Audience:** Codex · **Scope:** ORM metadata, schema generation/introspection/diff, migrations, runtime handling of generated columns.
+
+## 1. Goal
+
+Add three declarative PostgreSQL features to ModernORM without introducing a parallel schema engine:
+
+1. `#[Exclude]` for exclusion constraints.
+2. `where` on the existing `#[Index]` for partial indexes.
+3. `generated` on the existing `#[Column]` for PostgreSQL stored generated columns.
+
+Use the project's existing naming, metadata, platform, schema comparator, migration generator, and test conventions. **Do not implement unrelated PostgreSQL features or modify data-transfer commands.**
+
+## 2. Public PHP API
+
+Examples illustrate the intended contract; adapt attribute namespaces and existing option names to the repository rather than creating duplicate APIs.
+
+```php
+#[Entity]
+#[Index(
+    name: 'idx_active_orders',
+    columns: ['organization_id', 'status'],
+    where: 'deleted_at IS NULL'
+)]
+class ProductionOrder
+{
+    #[Column(type: 'decimal', precision: 18, scale: 3)]
+    private string $quantity;
+
+    #[Column(type: 'decimal', precision: 18, scale: 2)]
+    private string $unitPrice;
+
+    #[Column(
+        type: 'decimal', precision: 24, scale: 5,
+        generated: 'quantity * unit_price'
+    )]
+    private ?string $amount = null;
+}
+
+#[Entity]
+#[Exclude(
+    name: 'excl_confirmed_resource_booking',
+    using: 'gist',
+    elements: ['resource_id WITH =', 'period WITH &&'],
+    where: "status = 'confirmed'"
+)]
+class ResourceBooking {}
+```
+
+### `#[Index]`
+
+- Add optional `?string $where = null` to the **existing** attribute and index metadata.
+- Preserve existing behavior for indexes without `where`.
+- Partial predicates are PostgreSQL SQL fragments, **not DQL**; never interpolate runtime user values.
+- `unique: true` must remain supported for partial unique indexes.
+- Existing column-name mapping must be honored for `columns`; the `where` expression uses actual database column names, not PHP property names.
+
+### `#[Exclude]`
+
+- Repeatable class-level attribute: `name: string`, `elements: non-empty list<string>`, `using: string = 'gist'`, `where: ?string = null`.
+- MVP accepts PostgreSQL SQL fragments such as `resource_id WITH =`, `period WITH &&` as supplied. No generic SQL expression parser.
+- Allow only supported method `gist` in MVP; fail explicitly for others rather than silently generating invalid SQL.
+- Constraint names unique per table; validate nonempty names, nonempty elements, and duplicate declarations.
+- `btree_gist` is required for common scalar equality operators (e.g. BIGINT `WITH =`); **do not automatically install extensions**. Document `CREATE EXTENSION IF NOT EXISTS btree_gist` as an explicit prerequisite where applicable.
+- If exclusion constraint uses `tstzrange`, its column type and operators must already be supported by schema or provisioned manually; implementing a new range DBAL type is out of scope.
+
+### `#[Column(generated: ...)]`
+
+- Add optional `?string $generated = null` to the existing column attribute/metadata.
+- MVP supports **`GENERATED ALWAYS AS (<expression>) STORED` only**. No virtual generated columns or identity columns conflation.
+- Expression is trusted, developer-authored PostgreSQL SQL using physical column names.
+- PostgreSQL enforces generated-expression restrictions (e.g. immutable functions, same-row dependencies); surface DB errors clearly, do not build an SQL parser.
+- Generated columns must be excluded from `INSERT`, `UPDATE`, bulk writes, and dirty-field write sets. They are **readable** and hydrated from `SELECT`/`RETURNING`.
+- If a generated value is required immediately after `INSERT`/`UPDATE`, use existing refresh/RETURNING capabilities or document the need for `refresh()`; do not invent values in PHP.
+- Reject explicit application assignment to generated columns if the ORM already has readonly-field enforcement; otherwise ignore them in write SQL and document the behavior. Do not allow a generated column to be treated as an ORM-generated identity/PK without separate design.
+
+## 3. PostgreSQL DDL
+
+### Partial index
+
+```sql
+CREATE INDEX idx_active_orders
+    ON production_order (organization_id, status)
+    WHERE deleted_at IS NULL;
+
+CREATE UNIQUE INDEX uq_active_order_number
+    ON production_order (organization_id, order_number)
+    WHERE deleted_at IS NULL;
+```
+
+### EXCLUDE
+
+```sql
+-- Explicit setup if resource_id is a scalar type requiring btree_gist:
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+
+ALTER TABLE resource_booking
+    ADD CONSTRAINT excl_confirmed_resource_booking
+    EXCLUDE USING gist (
+        resource_id WITH =,
+        period WITH &&
+    ) WHERE (status = 'confirmed');
+```
+
+### Generated column
+
+```sql
+CREATE TABLE production_order_line (
+    id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+    quantity NUMERIC(18, 3) NOT NULL,
+    unit_price NUMERIC(18, 2) NOT NULL,
+    amount NUMERIC(24, 5)
+        GENERATED ALWAYS AS (quantity * unit_price) STORED
+);
+```
+
+SQL identifiers (table, column, constraint, index names) must be quoted using the existing PostgreSQL platform. Do not quote SQL expressions as identifiers or bind them as values. Preserve existing schema-qualified table handling.
+
+## 4. Introspection and Schema Diff
+
+Use existing schema representation and comparison pipeline. Do not implement a second comparator.
+
+- **Partial indexes:** introspect `pg_index.indpred` using `pg_get_expr(indpred, indrelid)`; retain index uniqueness, columns, and predicate. A non-partial index is not equivalent to a partial one.
+- **EXCLUDE:** introspect `pg_constraint` with `contype = 'x'`, using `pg_get_constraintdef(oid)` and/or relevant catalog fields. Represent exclusions separately from ordinary indexes: the backing index must not be treated as an independent application index, and must not be dropped independently.
+- **Generated columns:** introspect `pg_attribute.attgenerated` (`s` for stored) and `pg_attrdef` / `pg_get_expr(adbin, adrelid)` for expression; do not mistake them for DEFAULT or identity columns.
+- PostgreSQL may deparse expressions with added parentheses, casts, or whitespace. Normalize only safe formatting differences already handled by the repository. **Do not promise semantic SQL equivalence.** If comparison is uncertain, prefer a clear diagnostic or explicit migration rather than endless destructive diffs.
+- Stable no-op round trip is mandatory: create schema -> introspect -> diff should generate no changes for the documented examples.
+- Preserve unrelated indexes, constraints and columns; do not delete unmanaged DB objects by default.
+
+## 5. Migration behavior
+
+- **Create:** create base columns/table first, then indexes and exclusion constraints in the existing dependency order.
+- **Partial index change:** PostgreSQL does not support editing the predicate in place. Generate `DROP INDEX` + `CREATE INDEX` where the project's migration safety policy permits; flag that recreation can lock tables and, for unique indexes, may fail on existing duplicates. Do not silently use `CONCURRENTLY` inside a transaction.
+- **EXCLUDE change:** `DROP CONSTRAINT` + `ADD CONSTRAINT` only through explicit schema diff/migration with a clear potentially destructive-operation warning. New constraints validate existing data and may fail.
+- **Generated expression change:** PostgreSQL support for modifying generated expressions varies by server version; for MVP **do not automatically drop/recreate a populated column**. Emit an actionable unsupported-change diagnostic requiring a hand-written migration (or use a supported native ALTER only when verified against the targeted PG version and tested).
+- **Removing `generated`:** likewise require an explicit migration if no safe native transition is supported.
+- Respect existing migration transactional behavior and idempotency conventions; no automatic destructive fallback.
+
+## 6. Validation and platform scope
+
+- Support PostgreSQL only for the new SQL features. On other platforms, fail with a descriptive unsupported-feature error rather than silently omitting constraints.
+- Validate attribute structure before DDL generation; avoid attempting to parse arbitrary PostgreSQL expressions.
+- Do not auto-install `btree_gist`, rewrite existing entities, or introduce new migrations solely to install extensions.
+- Reuse existing metadata cache invalidation/serialization mechanisms for the new fields.
+- Maintain backwards compatibility for all existing attribute constructor signatures and positional arguments: append optional parameters or follow the repository's established compatibility strategy.
+
+## 7. Tests / acceptance criteria
+
+Use the repository's testing framework and a real supported PostgreSQL instance for integration tests.
+
+1. Existing `#[Index]` behavior unchanged when `where` omitted.
+2. Partial and partial UNIQUE index DDL, introspection and stable no-op diff; uniqueness applies only to predicate-matching rows.
+3. EXCLUDE DDL, introspection and stable no-op diff; overlapping confirmed reservations for the same resource fail, non-overlapping or non-confirmed ones succeed.
+4. Generated column DDL, metadata, hydration; `INSERT`/`UPDATE` omit generated field; database computes correct result after changing quantity/price.
+5. Generated column not emitted as `DEFAULT`, identity, or writable field.
+6. Unsupported platform, invalid declarations, missing extension, incompatible expressions, and unsafe schema modifications yield clear errors.
+7. Migration generator handles new declarations and detects modifications without producing duplicate operations for backing EXCLUDE indexes.
+8. Existing schema/migration/runtime regression suite passes.
+
+## 8. Implementation plan for Codex
+
+1. Inspect current `Index`, `Column`, metadata, PostgreSQL schema builder, introspector, comparator, migration generator, and UnitOfWork/persister implementations.
+2. Extend existing attributes and metadata; introduce only the new `Exclude` attribute and matching schema metadata.
+3. Implement DDL, introspection and diff with no-op round-trip tests.
+4. Implement generated-column write exclusion and hydration tests.
+5. Implement safe migration behavior and explicit unsupported-change diagnostics.
+6. Run unit/integration/regression tests and summarize changed files, supported PG versions, and any limitations.
+
+### Codex prompt
+
+> Implement this RFC in the current ModernORM repository. First inspect the existing architecture and reuse its schema and metadata abstractions; do not invent parallel systems. Keep the public API backward-compatible. Implement PostgreSQL partial indexes, exclusion constraints and stored generated columns with DDL, introspection, stable schema diff, migration generation, and runtime write protection for generated columns. Use real PostgreSQL integration tests. Do not auto-install extensions or perform destructive generated-column rebuilds. If an architectural assumption in this RFC conflicts with the repository, explain it and choose the smallest compatible change. Do not modify data-transfer functionality.

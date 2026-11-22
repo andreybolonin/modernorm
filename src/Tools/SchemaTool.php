@@ -39,6 +39,7 @@ use ModernORM\Mapping\ManyToManyOwningSideMapping;
 use ModernORM\Exception\MappingException;
 use ModernORM\Mapping\QuoteStrategy;
 use ModernORM\Tools\Event\GenerateSchemaEventArgs;
+use ModernORM\Tools\PostgreSql\AdvancedSchema;
 use ModernORM\Tools\Event\GenerateSchemaTableEventArgs;
 use ModernORM\Exception\MissingColumnException;
 use ModernORM\Exception\NotSupported;
@@ -136,9 +137,10 @@ class SchemaTool
         $checks = (new Check\SchemaExtension($this->em))->plan($classes, $schema, true);
 
         $triggers = (new Trigger\SchemaExtension($this->em))->plan($classes, $schema, true);
+        $advanced = (new AdvancedSchema($this->em))->plan($classes, $schema, null);
 
         return [...$schema->toSql($this->platform), ...(new FullText\SchemaExtension($this->em))->createSql($classes, $schema),
-            ...$triggers['functions'], ...$checks['up'], ...$triggers['up']];
+            ...$triggers['functions'], ...$checks['up'], ...$advanced['up'], ...$triggers['up']];
     }
 
     /**
@@ -212,8 +214,8 @@ class SchemaTool
     public function getSchemaFromMetadata(array $classes): Schema
     {
         foreach ($classes as $class) {
-            if (($class->checks !== [] || $class->triggers !== []) && ! $this->processingNotRequired($class, [])) {
-                throw new RuntimeException('DBAL Schema cannot represent CHECK constraints or triggers. Use SchemaTool getCreateSchemaSql/getUpdateSchemaSql for complete migration SQL.');
+            if (($class->checks !== [] || $class->triggers !== [] || $class->exclusions !== []) && ! $this->processingNotRequired($class, [])) {
+                throw new RuntimeException('DBAL Schema cannot represent CHECK constraints, EXCLUDE constraints or triggers. Use SchemaTool getCreateSchemaSql/getUpdateSchemaSql for complete migration SQL.');
             }
             if ($class->fullTextIndexes !== [] && ! $this->processingNotRequired($class, [])) {
                 throw new RuntimeException('DBAL Schema cannot represent FullTextIndex assets. Use SchemaTool getCreateSchemaSql/getUpdateSchemaSql for complete migration SQL.');
@@ -283,20 +285,7 @@ class SchemaTool
                 }
             }
 
-            if (isset($class->table['indexes'])) {
-                foreach ($class->table['indexes'] as $indexName => $indexData) {
-                    if (! isset($indexData['flags'])) {
-                        $indexData['flags'] = [];
-                    }
-
-                    $table->addIndex(
-                        $this->getIndexColumns($class, $indexData),
-                        is_numeric($indexName) ? null : $indexName,
-                        (array) $indexData['flags'],
-                        $indexData['options'] ?? [],
-                    );
-                }
-            }
+            $this->gatherIndexes($class, $table);
 
             if (isset($class->table['uniqueConstraints'])) {
                 foreach ($class->table['uniqueConstraints'] as $indexName => $indexData) {
@@ -447,20 +436,7 @@ class SchemaTool
                 }
             }
 
-            if (isset($class->table['indexes'])) {
-                foreach ($class->table['indexes'] as $indexName => $indexData) {
-                    if (! isset($indexData['flags'])) {
-                        $indexData['flags'] = [];
-                    }
-
-                    $table->addIndex(
-                        $this->getIndexColumns($class, $indexData),
-                        is_numeric($indexName) ? null : $indexName,
-                        (array) $indexData['flags'],
-                        $indexData['options'] ?? [],
-                    );
-                }
-            }
+            $this->gatherIndexes($class, $table);
 
             if (isset($class->table['uniqueConstraints'])) {
                 foreach ($class->table['uniqueConstraints'] as $indexName => $indexData) {
@@ -563,6 +539,23 @@ class SchemaTool
 
         // Always retrieve the schema (listener may have mutated it)
         return $schemaEventArgs->getSchema();
+    }
+
+    private function gatherIndexes(ClassMetadata $class, Table $table): void
+    {
+        foreach ($class->table['indexes'] ?? [] as $indexName => $indexData) {
+            $columns = $this->getIndexColumns($class, $indexData);
+            $name = is_numeric($indexName) ? null : $indexName;
+            $options = $indexData['options'] ?? [];
+            if (isset($options['where'], $options[AdvancedSchema::DECLARED_PREDICATE]) && ! $this->platform instanceof PostgreSQLPlatform) {
+                throw new RuntimeException($class->name . ' declares a partial index, which requires PostgreSQL.');
+            }
+            if ($indexData['unique'] ?? false) {
+                $table->addUniqueIndex($columns, $name, $options);
+            } else {
+                $table->addIndex($columns, $name, (array) ($indexData['flags'] ?? []), $options);
+            }
+        }
     }
 
     /**
@@ -683,6 +676,21 @@ class SchemaTool
             $table->modifyColumn($columnName, $options);
         } else {
             $table->addColumn($columnName, $columnType, $options);
+        }
+
+        if ($mapping->storedExpression !== null) {
+            if (! $this->platform instanceof PostgreSQLPlatform) {
+                throw new RuntimeException($class->name . ' declares a STORED column, which requires PostgreSQL.');
+            }
+            $column = $table->getColumn($columnName);
+            $type = $this->em->getConnection()->getConfiguration()->getTypeProvider()->get($columnType);
+            $declaration = $type->getSQLDeclaration($column->toArray(true), $this->platform);
+            $collation = $column->getCollation();
+            if ($collation !== null) {
+                $declaration .= ' ' . $this->platform->getColumnCollationDeclarationSQL($collation);
+            }
+            $column->setColumnDefinition($declaration . ' GENERATED ALWAYS AS (' . $mapping->storedExpression . ') STORED'
+                . ($column->getNotnull() ? ' NOT NULL' : ''));
         }
 
         $isUnique = $mapping->unique ?? false;
@@ -1176,6 +1184,7 @@ class SchemaTool
         $checks = (new Check\SchemaExtension($this->em))->plan($classes, $toSchema, false);
         $triggers = (new Trigger\SchemaExtension($this->em))->plan($classes, $toSchema, false);
         $fullTextSql = (new FullText\SchemaExtension($this->em))->updateSql($classes, $fromSchema, $toSchema);
+        $advanced = (new AdvancedSchema($this->em))->plan($classes, $toSchema, $fromSchema);
         $this->normalizeEquivalentIndexPredicates($fromSchema, $toSchema);
 
         if (class_exists(ComparatorConfig::class)) {
@@ -1187,7 +1196,7 @@ class SchemaTool
         $schemaDiff = $comparator->compareSchemas($fromSchema, $toSchema);
         $this->assertTableObjectsNotDropped($schemaDiff);
 
-        return [...$this->platform->getAlterSchemaSQL($schemaDiff), ...$fullTextSql, ...$triggers['functions'], ...$checks['up'], ...$triggers['up']];
+        return [...$this->platform->getAlterSchemaSQL($schemaDiff), ...$fullTextSql, ...$triggers['functions'], ...$checks['up'], ...$advanced['up'], ...$triggers['up']];
     }
 
     /** SQL for migration integrations, including PostgreSQL schema objects.
@@ -1226,16 +1235,17 @@ class SchemaTool
         $fullText = (new FullText\SchemaExtension($this->em))->migrationSql($classes, $from, $to, $fromEmptySchema);
         $checks = (new Check\SchemaExtension($this->em))->plan($classes, $to, $fromEmptySchema);
         $triggers = (new Trigger\SchemaExtension($this->em))->plan($classes, $to, $fromEmptySchema);
+        $advanced = (new AdvancedSchema($this->em))->plan($classes, $to, $fromEmptySchema ? null : $from);
         $this->normalizeEquivalentIndexPredicates($from, $to);
         $comparator = $this->schemaManager->createComparator((new ComparatorConfig())->withReportModifiedIndexes(false));
         $up = $comparator->compareSchemas($from, $to);
         $this->assertTableObjectsNotDropped($up);
 
         return [
-            'up' => [...$this->platform->getAlterSchemaSQL($up), ...$fullText['up'], ...$triggers['functions'], ...$checks['up'], ...$triggers['up']],
+            'up' => [...$this->platform->getAlterSchemaSQL($up), ...$fullText['up'], ...$triggers['functions'], ...$checks['up'], ...$advanced['up'], ...$triggers['up']],
             'down' => $triggers['functions'] !== []
                 ? [Trigger\FunctionRegistry::irreversibleSql()]
-                : [...$triggers['down'], ...$checks['down'], ...$fullText['down'], ...$this->platform->getAlterSchemaSQL($comparator->compareSchemas($to, $from))],
+                : [...$triggers['down'], ...$advanced['down'], ...$checks['down'], ...$fullText['down'], ...$this->platform->getAlterSchemaSQL($comparator->compareSchemas($to, $from))],
         ];
     }
 
@@ -1247,32 +1257,53 @@ class SchemaTool
         $connection = $this->em->getConnection();
         foreach ($diff->getDroppedTables() as $table) {
             $name = $table->getObjectName()->toSQL($this->platform);
-            if ($connection->fetchOne(<<<'SQL'
+            $oid = $this->catalogTableOid($table);
+            if ($oid !== false && $connection->fetchOne(<<<'SQL'
                 SELECT EXISTS (
-                    SELECT 1 FROM pg_catalog.pg_constraint WHERE conrelid = pg_catalog.to_regclass(?) AND contype = 'c'
+                    SELECT 1 FROM pg_catalog.pg_constraint WHERE conrelid = ? AND contype IN ('c', 'x')
                     UNION ALL
-                    SELECT 1 FROM pg_catalog.pg_trigger WHERE tgrelid = pg_catalog.to_regclass(?) AND NOT tgisinternal
+                    SELECT 1 FROM pg_catalog.pg_trigger WHERE tgrelid = ? AND NOT tgisinternal
+                    UNION ALL
+                    SELECT 1 FROM pg_catalog.pg_index WHERE indrelid = ? AND indpred IS NOT NULL
+                    UNION ALL
+                    SELECT 1 FROM pg_catalog.pg_attribute WHERE attrelid = ? AND attgenerated <> ''
                 )
-                SQL, [$name, $name])) {
-                throw new RuntimeException('Dropping table ' . $name . ' would remove CHECK constraints or triggers. Use an explicit migration.');
+                SQL, [$oid, $oid, $oid, $oid])) {
+                throw new RuntimeException('Dropping table ' . $name . ' would remove CHECK constraints or triggers, EXCLUDE constraints, partial indexes or generated columns. Use an explicit migration.');
             }
         }
         foreach ($diff->getAlteredTables() as $alteration) {
             $table = $alteration->getOldTable()->getObjectName()->toSQL($this->platform);
-            foreach ($alteration->getDroppedColumns() as $column) {
+            $droppedColumns = $alteration->getDroppedColumns();
+            if ($droppedColumns === [] || ($oid = $this->catalogTableOid($alteration->getOldTable())) === false) {
+                continue;
+            }
+            foreach ($droppedColumns as $column) {
                 $name = $column->getObjectName()->getIdentifier()->toNormalizedValue($this->platform->getUnquotedIdentifierFolding());
                 if ($connection->fetchOne(<<<'SQL'
                     SELECT EXISTS (
                         SELECT 1
                         FROM pg_catalog.pg_attribute a
                         JOIN pg_catalog.pg_constraint c ON c.conrelid = a.attrelid AND a.attnum = ANY(c.conkey)
-                        WHERE a.attrelid = pg_catalog.to_regclass(?) AND a.attname = ? AND c.contype = 'c'
+                        WHERE a.attrelid = ? AND a.attname = ? AND c.contype IN ('c', 'x')
                     )
-                    SQL, [$table, $name])) {
-                    throw new RuntimeException('Dropping column ' . $table . '.' . $name . ' would remove a CHECK constraint. Use an explicit migration.');
+                    SQL, [$oid, $name])) {
+                    throw new RuntimeException('Dropping column ' . $table . '.' . $name . ' would remove a CHECK or EXCLUDE constraint. Use an explicit migration.');
                 }
             }
         }
+    }
+
+    private function catalogTableOid(Table $table): mixed
+    {
+        $name = $table->getObjectName();
+        $folding = $this->platform->getUnquotedIdentifierFolding();
+
+        return $this->em->getConnection()->fetchOne(
+            'SELECT c.oid FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace'
+                . ' WHERE n.nspname = coalesce(?, pg_catalog.current_schema()) AND c.relname = ?',
+            [$name->getQualifier()?->toNormalizedValue($folding), $name->getUnqualifiedName()->toNormalizedValue($folding)],
+        );
     }
 
     /**

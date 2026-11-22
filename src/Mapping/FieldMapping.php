@@ -27,6 +27,8 @@ final class FieldMapping
     public string|null $columnDefinition = null;
     /** @phpstan-var ClassMetadata::GENERATED_*|null */
     public int|null $generated = null;
+
+    public ?string $storedExpression = null;
     /** @var class-string<BackedEnum>|null */
     public string|null $enumType = null;
     /**
@@ -99,6 +101,7 @@ final class FieldMapping
      *     notUpdatable?: bool|null,
      *     columnDefinition?: string|null,
      *     generated?: ClassMetadata::GENERATED_*|null,
+     *     storedExpression?: string|null,
      *     enumType?: string|null,
      *     precision?: int|null,
      *     scale?: int|null,
@@ -154,6 +157,7 @@ final class FieldMapping
                 'length',
                 'columnDefinition',
                 'generated',
+                'storedExpression',
                 'enumType',
                 'precision',
                 'scale',

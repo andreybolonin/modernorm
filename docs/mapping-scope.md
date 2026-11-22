@@ -74,7 +74,7 @@ Use repeatable `#[ORM\Check(name: 'ordered_dates', expression: 'end_date >= star
 
 `SchemaTool` adds missing declared checks after ordinary table DDL. PostgreSQL validates existing rows on addition. Removing a declaration leaves its database constraint in place. Use an explicit migration to change or remove a constraint.
 
-For existing checks, schema diff parses the desired predicate on a temporary copy of the table and rolls back the probe. It needs a writable transaction and permission to create temporary tables. When normalization is unavailable or cannot establish equivalence, diff reports `ambiguous_definition`. Qualify custom functions and types in predicates to keep their resolution stable across sessions.
+Schema diff reads CHECK definitions from PostgreSQL catalogs. New constraints record the source and catalog fingerprints in their comments during migration apply. Existing checks without fingerprints use conservative comparison with PostgreSQL’s deparsed SQL. Ambiguous comparisons require an explicit migration. Qualify custom functions and types in predicates to keep their resolution stable across sessions.
 
 ## PostgreSQL row triggers
 
@@ -93,9 +93,19 @@ Omit `functionSql` when an earlier migration provides the function. Otherwise, s
 
 Generated migrations embed the source and its SHA-256. The `modernorm_trigger_functions` table in each function schema records applied hashes. PostgreSQL commits the function definition and hash in the same transaction. Changes to the source update the function without recreating its triggers. Functions provided by existing external migrations remain externally managed. Migrations that change a managed function require an explicit rollback migration. Removing a declaration leaves the database object in place.
 
+## PostgreSQL partial indexes, exclusion constraints and STORED columns
+
+`#[ORM\Index(name: 'active_order_number', columns: ['order_number'], where: 'deleted_at IS NULL', unique: true)]` creates a partial unique index. Use physical column names in predicates and `fields` for mapped PHP properties in the index key. Predicates are trusted SQL. Existing `options['where']` mappings are supported.
+
+`#[ORM\Exclude(name: 'no_overlap', elements: ['resource_id WITH =', 'period WITH &&'], where: 'confirmed')]` creates a GiST exclusion constraint. Provision any required range types and operator classes before applying the migration. For scalar equality operators that require `btree_gist`, install it in a prerequisite migration with `CREATE EXTENSION IF NOT EXISTS btree_gist`.
+
+`#[ORM\Column(type: 'decimal', precision: 24, scale: 5, generated: 'quantity * unit_price')]` declares a PostgreSQL STORED expression. The reserved values `NEVER`, `INSERT` and `ALWAYS` retain their existing fetch-mode meaning. The ORM ignores direct property assignments to STORED fields when building its write set, fetches database-generated values after writes, and allows bulk `RETURNING` to read them. The bulk write API rejects assigning these fields.
+
+Schema diff reads PostgreSQL catalogs in read-only transactions. On creation, the migration records fingerprints of the source declaration and PostgreSQL’s stored definition in the object comment. This keeps the next diff stable even when PostgreSQL emits implicit casts. For pre-existing objects without fingerprints, the comparison accepts matching deparsed SQL with redundant outer parentheses removed. Use a hand-written migration for changes to a declared partial predicate, exclusion definition or STORED expression, and for changes between regular and generated columns. Existing undeclared partial indexes, exclusion constraints and generated columns are preserved during ordinary diff. Keep the generated DDL and its fingerprint statement together. When changing the definition in a hand-written migration, remove the old fingerprint and verify the new definition by diff. If PostgreSQL rewrites catalog definitions during restore or upgrade, an existing fingerprint may require explicit reconciliation.
+
 ## Cache formats and migration
 
-Current internal salts are `__MODERNORM_TYPED_MAPPING_V17__` for metadata and `sql_entity_v4_` for entity projection plans. They reject old internal formats; they are not an automatic mapping fingerprint. Applications must version metadata/query cache namespaces and create new EntityManagers when their own mappings change.
+Current internal salts are `__MODERNORM_TYPED_MAPPING_V18__` for metadata and `sql_entity_v4_` for entity projection plans. They reject old internal formats; they are not an automatic mapping fingerprint. Applications must version metadata/query cache namespaces and create new EntityManagers when their own mappings change.
 
 Move XML/programmatic sources to attributes. Removing inheritance attributes alone does not migrate an inheritance schema: choose concrete models/composition and explicitly migrate their tables/data. A discriminator column may remain as an ordinary business field, but no automatic PHP subclass dispatch occurs. Separate entities are not a polymorphic Identity Map substitute.
 
