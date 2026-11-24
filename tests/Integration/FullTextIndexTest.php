@@ -73,15 +73,8 @@ final class FullTextIndexTest extends TestCase
         $connection->close();
     }
 
-    public static function schemaApis(): iterable
+    private function create(): SchemaTool
     {
-        yield 'classic' => [false];
-        yield 'editor' => [true];
-    }
-
-    private function create(bool $editor = false): SchemaTool
-    {
-        $this->em->getConfiguration()->setUseDbalEditorApi($editor);
         $tool = new SchemaTool($this->em);
         $create = $tool->getCreateSchemaSql([$this->metadata]);
         self::assertStringContainsString('USING GIN ("SearchVector")', implode("\n", $create));
@@ -111,10 +104,9 @@ final class FullTextIndexTest extends TestCase
         ));
     }
 
-    #[DataProvider('schemaApis')]
-    public function testStoredVectorsWeightsAndOrdinaryChangesConverge(bool $editor): void
+    public function testStoredVectorsWeightsAndOrdinaryChangesConverge(): void
     {
-        $tool = $this->create($editor);
+        $tool = $this->create();
         $this->assertConverged($tool);
         foreach ([[1, 'промышленное оборудование', null], [2, 'станок', 'промышленное оборудование']] as [$id, $name, $description]) {
             $entity = new FullTextProduct();
@@ -156,10 +148,8 @@ final class FullTextIndexTest extends TestCase
         self::assertNull($this->em->getConnection()->fetchOne('SELECT to_regclass(?)', [$this->table]));
     }
 
-    #[DataProvider('schemaApis')]
-    public function testMissingAssetsAreRepairedAndNewTableCanBeCreatedByUpdate(bool $editor): void
+    public function testMissingAssetsAreRepairedAndNewTableCanBeCreatedByUpdate(): void
     {
-        $this->em->getConfiguration()->setUseDbalEditorApi($editor);
         $tool = new SchemaTool($this->em);
         $tool->updateSchema([$this->metadata]);
         $this->assertConverged($tool);

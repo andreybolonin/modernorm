@@ -165,16 +165,8 @@ final class P1MappingRegressionTest extends TestCase
         }
     }
 
-    public static function schemaApis(): iterable
+    public function testExplicitInheritedSequenceKeepsNameAllocationAndInitialValue(): void
     {
-        yield 'classic' => [false];
-        yield 'editor' => [true];
-    }
-
-    #[DataProvider('schemaApis')]
-    public function testExplicitInheritedSequenceKeepsNameAllocationAndInitialValue(bool $editor): void
-    {
-        $this->em->getConfiguration()->setUseDbalEditorApi($editor);
         $classes = array_map($this->em->getClassMetadata(...), [P1SequenceFirst::class, P1SequenceSecond::class, P1SequenceOverride::class]);
         foreach (array_slice($classes, 0, 2) as $metadata) {
             self::assertSame($this->schema . '.InheritedSeq', $metadata->sequenceGeneratorDefinition['sequenceName']);
@@ -201,10 +193,8 @@ final class P1MappingRegressionTest extends TestCase
         self::assertSame(17, $fresh->id);
     }
 
-    #[DataProvider('schemaApis')]
-    public function testDefaultSequenceIsIndependentForEachConcreteChild(bool $editor): void
+    public function testDefaultSequenceIsIndependentForEachConcreteChild(): void
     {
-        $this->em->getConfiguration()->setUseDbalEditorApi($editor);
         $classes = array_map($this->em->getClassMetadata(...), [P1DefaultSequenceFirst::class, P1DefaultSequenceSecond::class]);
         self::assertNotSame($classes[0]->sequenceGeneratorDefinition['sequenceName'], $classes[1]->sequenceGeneratorDefinition['sequenceName']);
         (new SchemaTool($this->em))->createSchema($classes);

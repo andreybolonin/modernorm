@@ -44,7 +44,7 @@ final readonly class AdvancedSchema
      * @param list<ClassMetadata> $classes
      * @return array{up: list<string>, down: list<string>}
      */
-    public function plan(array $classes, Schema $target, ?Schema $current): array
+    public function plan(array $classes, Schema $target, ?Schema &$current): array
     {
         $connection = $this->em->getConnection();
         $platform = $connection->getDatabasePlatform();
@@ -82,6 +82,7 @@ final readonly class AdvancedSchema
             $relation = [$schema, $tableName];
 
             $actual = [];
+            $original = $old;
             if ($old !== null) {
                 foreach ($connection->fetchAllAssociative(self::EXCLUSIONS, $relation) as $exclusion) {
                     $actual[$exclusion['conname']] = $exclusion;
@@ -90,11 +91,11 @@ final readonly class AdvancedSchema
                         throw new RuntimeException($tableSql . ' index ' . $index . ' conflicts with an EXCLUDE backing index.');
                     }
                     if ($old->hasIndex($index)) {
-                        $old->dropIndex($index);
+                        $old = $old->edit()->dropIndex($old->getIndex($index)->getObjectName())->create();
                     }
                 }
-                $this->protectGeneratedColumns($old, $table, $tableSql, $relation);
-                $this->protectPartialIndexes($old, $table, $tableSql);
+                $old = $this->protectGeneratedColumns($old, $table, $tableSql, $relation);
+                $old = $this->protectPartialIndexes($old, $table, $tableSql);
             }
 
             foreach ($class->exclusions as $exclude) {
@@ -138,7 +139,13 @@ final readonly class AdvancedSchema
             }
 
             if ($old !== null && ($class->exclusions !== [] || $actual !== [])) {
-                $this->preserveUnmappedAssets($old, $table);
+                $old = $this->preserveUnmappedAssets($old, $table);
+            }
+            if ($current !== null && $old !== null && $old !== $original) {
+                $current = $current->edit()->setTables(...array_map(
+                    static fn (Table $candidate): Table => $candidate === $original ? $old : $candidate,
+                    $current->getTables(),
+                ))->create();
             }
         }
 
@@ -148,37 +155,44 @@ final readonly class AdvancedSchema
         return ['up' => [...array_values($up), ...$stamps], 'down' => array_values($down)];
     }
 
-    private function preserveUnmappedAssets(Table $old, Table $target): void
+    private function preserveUnmappedAssets(Table $old, Table $target): Table
     {
         // Current declarations cannot establish ownership of an omitted asset.
+        $editor = $old->edit();
         foreach ($old->getUniqueConstraints() as $constraint) {
-            $name = $constraint->getName();
-            if (! $target->hasUniqueConstraint($name) && ! $target->hasIndex($name)) {
-                $old->removeUniqueConstraint($name);
+            $name = $constraint->getObjectName();
+            if ($name !== null && ! $target->hasUniqueConstraint($name->toString()) && ! $target->hasIndex($name->toString())) {
+                $editor->dropUniqueConstraint($name);
             }
         }
-        foreach ($old->getIndexes() as $index) {
-            $name = $index->getName();
-            if (! $index->isPrimary() && ! $target->hasIndex($name) && ! $target->hasUniqueConstraint($name)) {
-                $old->dropIndex($name);
-            }
-        }
+        $primary = $old->getPrimaryKeyConstraint()?->getObjectName()?->toString() ?? 'primary';
+        $editor->setIndexes(...array_values(array_filter(
+            $old->getIndexes(),
+            static function ($index) use ($primary, $target): bool {
+                $name = $index->getObjectName()->toString();
+
+                return $name !== $primary && ($target->hasIndex($name) || $target->hasUniqueConstraint($name));
+            },
+        )));
         foreach ($old->getForeignKeys() as $key) {
-            if (! $target->hasForeignKey($key->getName())
-                && ! array_any($target->getForeignKeys(), static fn ($candidate): bool => $candidate->getLocalColumns() === $key->getLocalColumns())) {
-                $old->removeForeignKey($key->getName());
+            $name = $key->getObjectName();
+            if ($name !== null && ! $target->hasForeignKey($name->toString())
+                && ! array_any($target->getForeignKeys(), static fn ($candidate): bool => $candidate->getReferencingColumnNames() == $key->getReferencingColumnNames())) {
+                $editor->dropForeignKeyConstraint($name);
             }
         }
         foreach ($old->getColumns() as $column) {
-            $name = $column->getObjectName()->getIdentifier()->toSQL($this->em->getConnection()->getDatabasePlatform());
-            if (! $target->hasColumn($name)) {
-                $old->dropColumn($name);
+            $name = $column->getObjectName();
+            if (! $target->hasColumn($name->toSQL($this->em->getConnection()->getDatabasePlatform()))) {
+                $editor->dropColumn($name);
             }
         }
+
+        return $editor->create();
     }
 
     /** @param list<string> $relation */
-    private function protectGeneratedColumns(Table $old, Table $target, string $tableSql, array $relation): void
+    private function protectGeneratedColumns(Table $old, Table $target, string $tableSql, array $relation): Table
     {
         $connection = $this->em->getConnection();
         foreach ($connection->fetchFirstColumn(self::GENERATED, $relation) as $column) {
@@ -189,27 +203,35 @@ final readonly class AdvancedSchema
             if (! $old->hasColumn($name)) {
                 continue;
             }
+            $editor = $old->edit();
             foreach ($old->getIndexes() as $index) {
-                if (! $target->hasIndex($index->getName()) && in_array($column, $index->getColumns(), true)) {
-                    $old->dropIndex($index->getName());
+                $indexName = $index->getObjectName();
+                if (! $target->hasIndex($indexName->toString())
+                    && array_any($index->getIndexedColumns(), static fn ($indexed): bool => $indexed->getColumnName()->getIdentifier()->getValue() === $column)) {
+                    $editor->dropIndex($indexName);
                 }
             }
-            $old->dropColumn($name);
+            $old = $editor->dropColumn($old->getColumn($name)->getObjectName())->create();
         }
+
+        return $old;
     }
 
-    private function protectPartialIndexes(Table $old, Table $target, string $tableSql): void
+    private function protectPartialIndexes(Table $old, Table $target, string $tableSql): Table
     {
         foreach ($old->getIndexes() as $index) {
-            if (! $index->hasOption('where')) {
+            if ($index->getPredicate() === null) {
                 continue;
             }
-            if (! $target->hasIndex($index->getName())) {
-                $old->dropIndex($index->getName());
-            } elseif (! $target->getIndex($index->getName())->hasOption('where')) {
-                throw new RuntimeException($tableSql . '.' . $index->getName() . ' removes a partial index predicate. Use an explicit migration.');
+            $name = $index->getObjectName();
+            if (! $target->hasIndex($name->toString())) {
+                $old = $old->edit()->dropIndex($name)->create();
+            } elseif ($target->getIndex($name->toString())->getPredicate() === null) {
+                throw new RuntimeException($tableSql . '.' . $name->toString() . ' removes a partial index predicate. Use an explicit migration.');
             }
         }
+
+        return $old;
     }
 
     /** @param array<string,mixed> $actual */

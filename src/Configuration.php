@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace ModernORM;
 
 use Doctrine\DBAL\Platforms\AbstractPlatform;
-use Doctrine\DBAL\Schema\Schema;
 use ModernORM\Cache\CacheConfiguration;
 use ModernORM\Exception\InvalidEntityRepository;
 use ModernORM\Internal\Hydration\AbstractHydrator;
@@ -53,24 +52,6 @@ class Configuration extends \Doctrine\DBAL\Configuration
     public function getIdentityGenerationPreferences(): array
     {
         return $this->identityGenerationPreferences;
-    }
-
-    public function getUseDbalEditorApi(): bool
-    {
-        return $this->attributes['use_dbal_editor_api'] ?? false;
-    }
-
-    /**
-     * @internal
-     */
-    public function setUseDbalEditorApi(bool $useDbalEditorApi): void
-    {
-        /** @phpstan-ignore function.alreadyNarrowedType (This API is not always available) */
-        if ($useDbalEditorApi && ! method_exists(Schema::class, 'edit')) {
-            throw new LogicException('Using the DBAL editor API requires doctrine/dbal 4.5 or higher.');
-        }
-
-        $this->attributes['use_dbal_editor_api'] = $useDbalEditorApi;
     }
 
     /**

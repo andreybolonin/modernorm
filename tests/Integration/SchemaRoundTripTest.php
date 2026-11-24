@@ -22,7 +22,6 @@ use ModernORM\Id\SequenceGenerator;
 use ModernORM\Mapping as ORM;
 use ModernORM\ORMSetup;
 use ModernORM\Tools\SchemaTool;
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Cache\Adapter\ArrayAdapter;
 
@@ -118,17 +117,8 @@ final class SchemaRoundTripTest extends TestCase
         return array_map($this->em->getClassMetadata(...), [RoundTripAccount::class, RoundTripLedger::class, RoundTripSequence::class]);
     }
 
-    public static function schemaApis(): iterable
+    private function create(): SchemaTool
     {
-        yield 'classic DBAL schema API' => [false];
-        if ((new \ReflectionClass(Schema::class))->hasMethod('edit')) {
-            yield 'DBAL editor API' => [true];
-        }
-    }
-
-    private function create(bool $editor): SchemaTool
-    {
-        $this->em->getConfiguration()->setUseDbalEditorApi($editor);
         $tool = new SchemaTool($this->em);
         $tool->createSchema($this->metadata());
         return $tool;
@@ -146,10 +136,9 @@ final class SchemaRoundTripTest extends TestCase
         self::assertSame([], $tool->getUpdateSchemaSql($this->metadata()));
     }
 
-    #[DataProvider('schemaApis')]
-    public function testCreateAndIntrospectionConvergeWithRealIdentifiers(bool $editor): void
+    public function testCreateAndIntrospectionConvergeWithRealIdentifiers(): void
     {
-        $tool = $this->create($editor);
+        $tool = $this->create();
         $guard = $this->em->getConnection()->quoteSingleIdentifier($this->schema) . '."UnmanagedGuard"';
         $this->em->getConnection()->executeStatement('CREATE TABLE ' . $guard . ' (id INT)');
         $this->assertConverged($tool);
@@ -169,10 +158,9 @@ final class SchemaRoundTripTest extends TestCase
         self::assertSame('entry', $this->em->find(RoundTripLedger::class, 'a')->code);
     }
 
-    #[DataProvider('schemaApis')]
-    public function testAlterDefaultsColumnsIndexesForeignKeysAndSequenceConverges(bool $editor): void
+    public function testAlterDefaultsColumnsIndexesForeignKeysAndSequenceConverges(): void
     {
-        $tool = $this->create($editor);
+        $tool = $this->create();
         $this->assertConverged($tool);
         $ledger = $this->em->getClassMetadata(RoundTripLedger::class);
         $ledger->fieldMappings['note']->length = 256;
@@ -204,10 +192,9 @@ final class SchemaRoundTripTest extends TestCase
         self::assertSame(10, $record->id);
     }
 
-    #[DataProvider('schemaApis')]
-    public function testRepeatedDropHasNoRemainingMappedAssets(bool $editor): void
+    public function testRepeatedDropHasNoRemainingMappedAssets(): void
     {
-        $tool = $this->create($editor);
+        $tool = $this->create();
         $this->assertConverged($tool);
         // Drop introspection must see the owned assets even with the application's restrictive filter.
         $this->em->getConnection()->getConfiguration()->setSchemaAssetsFilter(fn (string|AbstractAsset $asset): bool => str_starts_with($asset instanceof AbstractAsset ? $asset->getName() : $asset, $this->schema . '.'));
@@ -215,10 +202,8 @@ final class SchemaRoundTripTest extends TestCase
         self::assertSame([], $tool->getDropSchemaSQL($this->metadata()));
         $tool->dropSchema($this->metadata());
     }
-    #[DataProvider('schemaApis')]
-    public function testSimplePartialPredicateConvergesAndRealChangeIsDetected(bool $editor): void
+    public function testSimplePartialPredicateConvergesAndRealChangeIsDetected(): void
     {
-        $this->em->getConfiguration()->setUseDbalEditorApi($editor);
         $account = $this->em->getClassMetadata(RoundTripAccount::class);
         $account->table['indexes']['account_positive_idx'] = ['fields' => ['id'], 'options' => ['where' => 'id > 0']];
         $tool = new SchemaTool($this->em);
@@ -233,10 +218,8 @@ final class SchemaRoundTripTest extends TestCase
         self::assertSame([], $tool->getUpdateSchemaSql([$account]));
     }
 
-    #[DataProvider('schemaApis')]
-    public function testDropUsesActualForeignKeyNames(bool $editor): void
+    public function testDropUsesActualForeignKeyNames(): void
     {
-        $this->em->getConfiguration()->setUseDbalEditorApi($editor);
         $account = $this->em->getClassMetadata(RoundTripAccount::class);
         $ledger = $this->em->getClassMetadata(RoundTripLedger::class);
         $ledger->table['name'] = 'ledger_unquoted';

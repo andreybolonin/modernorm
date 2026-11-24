@@ -14,7 +14,6 @@ use ModernORM\EntityManager;
 use ModernORM\Mapping as ORM;
 use ModernORM\Mapping\Driver\AttributeDriver;
 use ModernORM\Tools\SchemaTool;
-use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 #[ORM\Entity, ORM\Table(name: 'modernorm_test_connection_types')]
@@ -46,14 +45,7 @@ final class ScopedStringType extends StringType
 
 final class ConnectionTypeProviderTest extends TestCase
 {
-    public static function schemaApis(): iterable
-    {
-        yield 'classic' => [false];
-        yield 'editor' => [true];
-    }
-
-    #[DataProvider('schemaApis')]
-    public function testScopedTypesRoundTripThroughSchemaWritesAndQueries(bool $editor): void
+    public function testScopedTypesRoundTripThroughSchemaWritesAndQueries(): void
     {
         foreach (['first:', 'second:'] as $prefix) {
             $type = new ScopedStringType($prefix);
@@ -69,7 +61,6 @@ final class ConnectionTypeProviderTest extends TestCase
             ], $dbal);
             $config = new Configuration();
             $config->setMetadataDriverImpl(new AttributeDriver([]));
-            $config->setUseDbalEditorApi($editor);
             $em = new EntityManager($connection, $config);
             $schema = new SchemaTool($em);
             $classes = [$em->getClassMetadata(ConnectionTypeEntity::class)];

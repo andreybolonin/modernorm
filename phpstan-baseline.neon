@@ -397,12 +397,6 @@ parameters:
 			path: src/Tools/SchemaTool.php
 
 		-
-			message: '#^Call to function method_exists\(\) with ''Doctrine\\\\DBAL\\\\Schema\\\\Index'' and ''getIndexedColumns'' will always evaluate to true\.$#'
-			identifier: function.alreadyNarrowedType
-			count: 1
-			path: src/Tools/SchemaTool.php
-
-		-
 			message: '#^Strict comparison using \=\=\= between callable\(\)\: mixed and null will always evaluate to false\.$#'
 			identifier: identical.alwaysFalse
 			count: 1

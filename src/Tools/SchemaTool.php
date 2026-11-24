@@ -8,9 +8,8 @@ use ModernORM\Exception\ToolsException;
 use BackedEnum;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Platforms\PostgreSQLPlatform;
-use Doctrine\DBAL\Schema\AbstractAsset;
 use Doctrine\DBAL\Schema\AbstractSchemaManager;
-use Doctrine\DBAL\Schema\ColumnEditor;
+use Doctrine\DBAL\Schema\Column;
 use Doctrine\DBAL\Schema\ComparatorConfig;
 use Doctrine\DBAL\Schema\DefaultExpression;
 use Doctrine\DBAL\Schema\DefaultExpression\CurrentDate;
@@ -19,13 +18,16 @@ use Doctrine\DBAL\Schema\DefaultExpression\CurrentTimestamp;
 use Doctrine\DBAL\Schema\ForeignKeyConstraint;
 use Doctrine\DBAL\Schema\Index;
 use Doctrine\DBAL\Schema\Index\IndexedColumn;
+use Doctrine\DBAL\Schema\Index\IndexType;
 use Doctrine\DBAL\Schema\Name\Identifier;
+use Doctrine\DBAL\Schema\Name\OptionallyQualifiedName;
 use Doctrine\DBAL\Schema\Name\UnqualifiedName;
 use Doctrine\DBAL\Schema\NamedObject;
 use Doctrine\DBAL\Schema\PrimaryKeyConstraint;
 use Doctrine\DBAL\Schema\Schema;
 use Doctrine\DBAL\Schema\SchemaConfig;
 use Doctrine\DBAL\Schema\SchemaDiff;
+use Doctrine\DBAL\Schema\Sequence;
 use Doctrine\DBAL\Schema\Table;
 use Doctrine\DBAL\Schema\TableEditor;
 use Doctrine\DBAL\Types\Types;
@@ -45,7 +47,6 @@ use ModernORM\Exception\MissingColumnException;
 use ModernORM\Exception\NotSupported;
 use RuntimeException;
 use Throwable;
-use UnitEnum;
 
 use function array_diff;
 use function array_diff_key;
@@ -55,15 +56,12 @@ use function array_intersect_key;
 use function array_map;
 use function array_values;
 use function assert;
-use function class_exists;
 use function count;
 use function current;
 use function implode;
 use function in_array;
 use function interface_exists;
 use function is_numeric;
-use function method_exists;
-use function preg_match;
 use function sprintf;
 use function strtolower;
 
@@ -80,7 +78,6 @@ class SchemaTool
     private readonly AbstractPlatform $platform;
     private readonly QuoteStrategy $quoteStrategy;
     private readonly AbstractSchemaManager $schemaManager;
-    private readonly bool $useDbalEditorApi;
 
     /**
      * Initializes a new SchemaTool instance that uses the connection of the
@@ -91,7 +88,6 @@ class SchemaTool
         $this->platform         = $em->getConnection()->getDatabasePlatform();
         $this->quoteStrategy    = $em->getConfiguration()->getQuoteStrategy();
         $this->schemaManager    = $em->getConnection()->createSchemaManager();
-        $this->useDbalEditorApi = $em->getConfiguration()->getUseDbalEditorApi();
     }
 
     /**
@@ -137,7 +133,8 @@ class SchemaTool
         $checks = (new Check\SchemaExtension($this->em))->plan($classes, $schema, true);
 
         $triggers = (new Trigger\SchemaExtension($this->em))->plan($classes, $schema, true);
-        $advanced = (new AdvancedSchema($this->em))->plan($classes, $schema, null);
+        $current = null;
+        $advanced = (new AdvancedSchema($this->em))->plan($classes, $schema, $current);
 
         return [...$schema->toSql($this->platform), ...(new FullText\SchemaExtension($this->em))->createSql($classes, $schema),
             ...$triggers['functions'], ...$checks['up'], ...$advanced['up'], ...$triggers['up']];
@@ -227,161 +224,6 @@ class SchemaTool
     /** @param list<ClassMetadata> $classes */
     private function getOrdinarySchemaFromMetadata(array $classes): Schema
     {
-        if ($this->useDbalEditorApi) {
-            return $this->experimentalGetSchemaFromMetadata($classes);
-        }
-
-        Deprecation::ignoreDeprecations('https://github.com/doctrine/dbal/pull/7373');
-        Deprecation::ignoreDeprecations('https://github.com/doctrine/dbal/pull/7381');
-        Deprecation::ignoreDeprecations('https://github.com/doctrine/dbal/pull/7389');
-
-        // Reminder for processed classes, used for hierarchies
-        $processedClasses     = [];
-        $eventManager         = $this->em->getEventManager();
-        $metadataSchemaConfig = $this->schemaManager->createSchemaConfig();
-
-        $schema = new Schema([], [], $metadataSchemaConfig);
-
-        $addedFks       = [];
-        $blacklistedFks = [];
-
-        foreach ($classes as $class) {
-            if ($this->processingNotRequired($class, $processedClasses)) {
-                continue;
-            }
-
-            $tableName = $this->quoteStrategy->getTableName($class, $this->platform);
-
-            $table = $schema->createTable($tableName);
-
-            // For new schema API: collect join tables to add after this entity table
-            $joinTablesToAdd = [];
-
-            $this->gatherColumns($class, $table);
-            $this->gatherRelationsSql(
-                $class,
-                $table,
-                $schema,
-                $addedFks,
-                $blacklistedFks,
-                $metadataSchemaConfig,
-                $joinTablesToAdd,
-            );
-
-            $pkColumns = [$this->quoteStrategy->getColumnName($class->identifier[0], $class, $this->platform)];
-
-            if (! $table->hasIndex('primary')) {
-                self::addPrimaryKeyConstraint($table, $pkColumns);
-            }
-
-            // there can be unique indexes automatically created for join column
-            // if join column is also primary key we should keep only primary key on this column
-            // so, remove indexes overruled by primary key
-            $primaryKey = $table->getIndex('primary');
-
-            foreach ($table->getIndexes() as $idxKey => $existingIndex) {
-                if ($existingIndex !== $primaryKey && $primaryKey->spansColumns(self::getIndexedColumns($existingIndex))) {
-                    $table->dropIndex($idxKey);
-                }
-            }
-
-            $this->gatherIndexes($class, $table);
-
-            if (isset($class->table['uniqueConstraints'])) {
-                foreach ($class->table['uniqueConstraints'] as $indexName => $indexData) {
-                    $uniqIndex = new Index('tmp__' . $indexName, $this->getIndexColumns($class, $indexData), true, false, [], $indexData['options'] ?? []);
-
-                    foreach ($table->getIndexes() as $tableIndexName => $tableIndex) {
-                        if (self::isIndexRedundantForUniqueConstraint($tableIndex, $uniqIndex)) {
-                            $table->dropIndex($tableIndexName);
-                            break;
-                        }
-                    }
-
-                    $table->addUniqueIndex(self::getIndexedColumns($uniqIndex), is_numeric($indexName) ? null : $indexName, $indexData['options'] ?? []);
-                }
-            }
-
-            if (isset($class->table['options'])) {
-                foreach ($class->table['options'] as $key => $val) {
-                    $table->addOption($key, $val);
-                }
-            }
-
-            $processedClasses[$class->name] = true;
-
-            if ($class->isIdGeneratorSequence()) {
-                $seqDef     = $class->sequenceGeneratorDefinition;
-                $quotedName = $this->quoteStrategy->getSequenceName($seqDef, $class, $this->platform);
-                if (! $schema->hasSequence($quotedName)) {
-                    $schema->createSequence(
-                        $quotedName,
-                        (int) $seqDef['allocationSize'],
-                        (int) $seqDef['initialValue'],
-                    );
-                }
-            }
-
-            $tableEventArgs = new GenerateSchemaTableEventArgs($class, $schema, $table);
-            $eventManager->dispatchEvent(
-                ToolEvents::postGenerateSchemaTable,
-                $tableEventArgs,
-            );
-
-            // Always retrieve the schema (listener may have mutated it)
-            $schema = $tableEventArgs->getSchema();
-
-            // If the listener mutated the table, we need to replace it in the schema
-            if ($tableEventArgs->classTableWasMutated()) {
-                $originalTableName = $table->getObjectName();
-                $newTable          = $tableEventArgs->getClassTable();
-
-                $schema = $schema->edit()
-                    ->dropTable($originalTableName)
-                    ->addTable($newTable)
-                    ->create();
-
-                $table = $newTable;
-            }
-        }
-
-        // After all classes have been processed and all FK metadata collected,
-        // apply the non-conflicting FK constraints to their respective tables
-        foreach ($addedFks as $compositeName => $fkData) {
-            // Skip if this composite key was blacklisted due to conflicts
-            if (isset($blacklistedFks[$compositeName])) {
-                continue;
-            }
-
-            // Add the FK constraint to the table
-            $fkData['table']->addForeignKeyConstraint(
-                $fkData['foreignTableName'],
-                $fkData['localColumns'],
-                $fkData['foreignColumns'],
-                $fkData['fkOptions'],
-                $fkData['name'],
-            );
-        }
-
-        $schemaEventArgs = new GenerateSchemaEventArgs($this->em, $schema);
-        $eventManager->dispatchEvent(
-            ToolEvents::postGenerateSchema,
-            $schemaEventArgs,
-        );
-
-        // Always retrieve the schema (listener may have mutated it)
-        return $schemaEventArgs->getSchema();
-    }
-
-    /**
-     * Creates a Schema instance from a given set of metadata classes, using the DBAL editor API
-     *
-     * @phpstan-param list<ClassMetadata> $classes
-     *
-     * @throws NotSupported
-     */
-    private function experimentalGetSchemaFromMetadata(array $classes): Schema
-    {
         // Reminder for processed classes, used for hierarchies
         $processedClasses     = [];
         $eventManager         = $this->em->getEventManager();
@@ -412,7 +254,6 @@ class SchemaTool
             $this->gatherRelationsSql(
                 $class,
                 $table,
-                $schema,
                 $addedFks,
                 $blacklistedFks,
                 $metadataSchemaConfig,
@@ -421,8 +262,8 @@ class SchemaTool
 
             $pkColumns = [$this->quoteStrategy->getColumnName($class->identifier[0], $class, $this->platform)];
 
-            if (! $table->hasIndex('primary')) {
-                self::addPrimaryKeyConstraint($table, $pkColumns);
+            if ($table->getPrimaryKeyConstraint() === null) {
+                $table = $this->addPrimaryKeyConstraint($table, $pkColumns);
             }
 
             // there can be unique indexes automatically created for join column
@@ -430,9 +271,9 @@ class SchemaTool
             // so, remove indexes overruled by primary key
             $primaryKey = $table->getIndex('primary');
 
-            foreach ($table->getIndexes() as $idxKey => $existingIndex) {
+            foreach ($table->getIndexes() as $existingIndex) {
                 if ($existingIndex !== $primaryKey && $primaryKey->spansColumns(self::getIndexedColumns($existingIndex))) {
-                    $table->dropIndex($idxKey);
+                    $table = $table->edit()->dropIndex($existingIndex->getObjectName())->create();
                 }
             }
 
@@ -442,19 +283,19 @@ class SchemaTool
                 foreach ($class->table['uniqueConstraints'] as $indexName => $indexData) {
                     $uniqIndex = new Index('tmp__' . $indexName, $this->getIndexColumns($class, $indexData), true, false, [], $indexData['options'] ?? []);
 
-                    foreach ($table->getIndexes() as $tableIndexName => $tableIndex) {
+                    foreach ($table->getIndexes() as $tableIndex) {
                         if (self::isIndexRedundantForUniqueConstraint($tableIndex, $uniqIndex)) {
-                            $table->dropIndex($tableIndexName);
+                            $table = $table->edit()->dropIndex($tableIndex->getObjectName())->create();
                             break;
                         }
                     }
 
-                    $table->addUniqueIndex(self::getIndexedColumns($uniqIndex), is_numeric($indexName) ? null : $indexName, $indexData['options'] ?? []);
+                    $table = $this->addIndex($table, self::getIndexedColumns($uniqIndex), is_numeric($indexName) ? null : $indexName, true, options: $indexData['options'] ?? []);
                 }
             }
 
             if (isset($class->table['options'])) {
-                $table = $table->edit()->setOptions($class->table['options'])->create();
+                $table = $table->edit()->setOptions($class->table['options'] + $table->getOptions())->create();
             }
 
             $processedClasses[$class->name] = true;
@@ -475,11 +316,11 @@ class SchemaTool
                 $seqDef     = $class->sequenceGeneratorDefinition;
                 $quotedName = $this->quoteStrategy->getSequenceName($seqDef, $class, $this->platform);
                 if (! $schema->hasSequence($quotedName)) {
-                    $schema->createSequence(
+                    $schema = $schema->edit()->addSequence(new Sequence(
                         $quotedName,
                         (int) $seqDef['allocationSize'],
                         (int) $seqDef['initialValue'],
-                    );
+                    ))->create();
                 }
             }
 
@@ -524,7 +365,7 @@ class SchemaTool
                             foreignTableName: $fkData['foreignTableName'],
                             foreignColumnNames: $fkData['foreignColumns'],
                             options: $fkData['fkOptions'],
-                            name: $fkData['name'] ?? '',
+                            name: $fkData['name'],
                         ));
                     },
                 )->create();
@@ -541,12 +382,12 @@ class SchemaTool
         return $schemaEventArgs->getSchema();
     }
 
-    private function gatherIndexes(ClassMetadata $class, Table $table): void
+    private function gatherIndexes(ClassMetadata $class, Table &$table): void
     {
         foreach ($class->table['indexes'] ?? [] as $indexName => $indexData) {
             $columns = $this->getIndexColumns($class, $indexData);
             $name = is_numeric($indexName) ? null : $indexName;
-            $table->addIndex($columns, $name, (array) ($indexData['flags'] ?? []), $indexData['options'] ?? []);
+            $table = $this->addIndex($table, $columns, $name, false, (array) ($indexData['flags'] ?? []), $indexData['options'] ?? []);
         }
     }
 
@@ -554,7 +395,7 @@ class SchemaTool
      * Gathers the column definitions as required by the DBAL of all field mappings
      * found in the given class.
      */
-    private function gatherColumns(ClassMetadata $class, Table $table): void
+    private function gatherColumns(ClassMetadata $class, Table &$table): void
     {
         foreach ($class->fieldMappings as $mapping) {
             $this->gatherColumn($class, $mapping, $table);
@@ -570,7 +411,7 @@ class SchemaTool
     private function gatherColumn(
         ClassMetadata $class,
         FieldMapping $mapping,
-        Table $table,
+        Table &$table,
     ): void {
         $columnName = $this->quoteStrategy->getColumnName($mapping->fieldName, $class, $this->platform);
         $columnType = $mapping->type;
@@ -663,21 +504,16 @@ class SchemaTool
             $options['autoincrement'] = true;
         }
 
-        if ($table->hasColumn($columnName)) {
-            // required in some inheritance scenarios
-            $table->modifyColumn($columnName, $options);
-        } else {
-            $table->addColumn($columnName, $columnType, $options);
-        }
+        $table = $this->addColumn($table, $columnName, $columnType, $options);
 
         $isUnique = $mapping->unique ?? false;
         if ($isUnique) {
-            $table->addUniqueIndex([$columnName]);
+            $table = $this->addIndex($table, [$columnName], null, true);
         }
 
         $isIndex = $mapping->index ?? false;
         if ($isIndex) {
-            $table->addIndex([$columnName]);
+            $table = $this->addIndex($table, [$columnName], null, false);
         }
     }
 
@@ -700,8 +536,7 @@ class SchemaTool
      */
     private function gatherRelationsSql(
         ClassMetadata $class,
-        Table $table,
-        Schema &$schema,
+        Table &$table,
         array &$addedFks,
         array &$blacklistedFks,
         SchemaConfig $schemaConfig,
@@ -729,23 +564,11 @@ class SchemaTool
 
                 $tableName = $this->quoteStrategy->getJoinTableName($mapping, $foreignClass, $this->platform);
 
-                // Create the join table object
-                if ($this->useDbalEditorApi) {
-                    $theJoinTable = new Table(
-                        name: $tableName,
-                        options: $joinTable->options,
-                        configuration: $schemaConfig->toTableConfiguration(),
-                    );
-                    // Add default table options (charset, collation, engine, etc.)
-                    foreach ($schemaConfig->getDefaultTableOptions() as $option => $value) {
-                        $theJoinTable->addOption($option, $value);
-                    }
-                } else {
-                    $theJoinTable = $schema->createTable($tableName);
-                    foreach ($joinTable->options as $key => $val) {
-                        $theJoinTable->addOption($key, $val);
-                    }
-                }
+                $theJoinTable = new Table(
+                    name: $tableName,
+                    options: $joinTable->options + $schemaConfig->getDefaultTableOptions(),
+                    configuration: $schemaConfig->toTableConfiguration(),
+                );
 
                 $primaryKeyColumns = [];
 
@@ -773,11 +596,7 @@ class SchemaTool
                     $joinTable->inverseForeignKeyName ?? null,
                 );
 
-                self::addPrimaryKeyConstraint($theJoinTable, $primaryKeyColumns);
-
-                if ($this->useDbalEditorApi) {
-                    $joinTablesToAdd[] = $theJoinTable;
-                }
+                $joinTablesToAdd[] = $this->addPrimaryKeyConstraint($theJoinTable, $primaryKeyColumns);
             }
         }
     }
@@ -817,7 +636,7 @@ class SchemaTool
      */
     private function gatherRelationJoinColumns(
         array $joinColumns,
-        Table $theJoinTable,
+        Table &$theJoinTable,
         ClassMetadata $class,
         AssociationMapping $mapping,
         array &$primaryKeyColumns,
@@ -889,7 +708,7 @@ class SchemaTool
 
                 $columnOptions = $this->gatherColumnOptions($joinColumn) + $columnOptions;
 
-                $theJoinTable->addColumn($quotedColumnName, $fieldMapping->type, $columnOptions);
+                $theJoinTable = $this->addColumn($theJoinTable, $quotedColumnName, $fieldMapping->type, $columnOptions);
             }
 
             if (isset($joinColumn->unique) && $joinColumn->unique === true) {
@@ -908,7 +727,7 @@ class SchemaTool
         // Prefer unique constraints over implicit simple indexes created for foreign keys.
         // Also avoids index duplication.
         foreach ($uniqueConstraints as $indexName => $unique) {
-            $theJoinTable->addUniqueIndex($unique['columns'], is_numeric($indexName) ? null : $indexName);
+            $theJoinTable = $this->addIndex($theJoinTable, $unique['columns'], is_numeric($indexName) ? null : $indexName, true);
         }
 
         // Extract and validate foreign key name from join columns
@@ -963,7 +782,7 @@ class SchemaTool
             if (! isset($blacklistedFks[$compositeName])) {
                 // Add an index for the local columns since we won't be adding a FK
                 // (FKs normally create implicit indexes).
-                $theJoinTable->addIndex($localColumns);
+                $theJoinTable = $this->addIndex($theJoinTable, $localColumns, null, false);
             }
 
             $blacklistedFks[$compositeName] = true;
@@ -974,7 +793,7 @@ class SchemaTool
                 'foreignColumns' => $foreignColumns,
                 'localColumns' => $localColumns,
                 'fkOptions' => $fkOptions,
-                'name' => $finalForeignKeyName,
+                'name' => $finalForeignKeyName ?? $this->generatedAssetName($theJoinTable, $localColumns, 'fk'),
                 'table' => $theJoinTable,
             ];
         }
@@ -1063,50 +882,33 @@ class SchemaTool
 
         $deployedSchema = $this->createSchemaForComparison($schema);
 
-        foreach ($schema->getTables() as $table) {
-            if (! $deployedSchema->hasTable($this->getAssetName($table))) {
-                $schema->dropTable($this->getAssetName($table));
-            }
+        $sequences = array_filter(
+            $schema->getSequences(),
+            fn (Sequence $sequence): bool => $deployedSchema->hasSequence($this->getAssetName($sequence)),
+        );
+        $sequenceNames = [];
+        foreach ($sequences as $sequence) {
+            $sequenceNames[$this->getAssetName($sequence)] = true;
         }
 
-        foreach ($schema->getSequences() as $sequence) {
-            if (! $deployedSchema->hasSequence($this->getAssetName($sequence))) {
-                $schema->dropSequence($this->getAssetName($sequence));
-            }
-        }
-
+        // Use deployed tables so the drop SQL includes the actual constraint names.
+        $deployedTables = [];
         foreach ($schema->getTables() as $table) {
-            if (method_exists($table, 'getPrimaryKeyConstraint')) {
-                $primaryKey = $table->getPrimaryKeyConstraint();
-            } else {
-                $primaryKey = $table->getPrimaryKey();
-            }
-
-            if ($primaryKey === null) {
+            $name = $this->getAssetName($table);
+            if (! $deployedSchema->hasTable($name)) {
                 continue;
             }
-
-            if ($primaryKey instanceof PrimaryKeyConstraint) {
-                $columns = array_map(static fn (UnqualifiedName $name) => $name->toString(), $primaryKey->getColumnNames());
-            } else {
-                $columns = self::getIndexedColumns($primaryKey);
-            }
-
+            $deployedTables[] = $deployedSchema->getTable($name);
+            $columns = $table->getPrimaryKeyConstraint()?->getColumnNames() ?? [];
             if (count($columns) === 1) {
-                $checkSequence = $this->getAssetName($table) . '_' . $columns[0] . '_seq';
-                if ($deployedSchema->hasSequence($checkSequence) && ! $schema->hasSequence($checkSequence)) {
-                    $schema->createSequence($checkSequence);
+                $checkSequence = $name . '_' . $columns[0]->toString() . '_seq';
+                if ($deployedSchema->hasSequence($checkSequence) && ! isset($sequenceNames[$checkSequence])) {
+                    $sequences[] = $deployedSchema->getSequence($checkSequence);
+                    $sequenceNames[$checkSequence] = true;
                 }
             }
         }
-
-        // The editor API allows unnamed metadata FKs; PostgreSQL assigns their real names.
-        // Use deployed constraints when dropping mapped tables instead of emitting an empty name.
-        $deployedTables = [];
-        foreach ($schema->getTables() as $table) {
-            $deployedTables[] = $deployedSchema->getTable($this->getAssetName($table));
-        }
-        $dropSchema = new Schema($deployedTables, $schema->getSequences(), $this->schemaManager->createSchemaConfig());
+        $dropSchema = new Schema($deployedTables, $sequences, $this->schemaManager->createSchemaConfig());
         return $dropSchema->toDropSql($this->platform);
     }
 
@@ -1162,18 +964,14 @@ class SchemaTool
         $triggers = (new Trigger\SchemaExtension($this->em))->plan($classes, $toSchema, false);
         $fullTextSql = (new FullText\SchemaExtension($this->em))->updateSql($classes, $fromSchema, $toSchema);
         $advanced = (new AdvancedSchema($this->em))->plan($classes, $toSchema, $fromSchema);
-        $this->normalizeEquivalentIndexPredicates($fromSchema, $toSchema);
+        $toSchema = $this->normalizeEquivalentIndexPredicates($fromSchema, $toSchema);
 
-        if (class_exists(ComparatorConfig::class)) {
-            $comparator = $this->schemaManager->createComparator((new ComparatorConfig())->withReportModifiedIndexes(false));
-        } else {
-            $comparator = $this->schemaManager->createComparator();
-        }
+        $comparator = $this->schemaManager->createComparator((new ComparatorConfig())->withReportModifiedIndexes(false));
 
         $schemaDiff = $comparator->compareSchemas($fromSchema, $toSchema);
         $this->assertTableObjectsNotDropped($schemaDiff);
 
-        return [...$this->platform->getAlterSchemaSQL($schemaDiff), ...$fullTextSql, ...$triggers['functions'], ...$checks['up'], ...$advanced['up'], ...$triggers['up']];
+        return [...$this->getAlterSchemaSql($schemaDiff), ...$fullTextSql, ...$triggers['functions'], ...$checks['up'], ...$advanced['up'], ...$triggers['up']];
     }
 
     /** SQL for migration integrations, including PostgreSQL schema objects.
@@ -1187,14 +985,6 @@ class SchemaTool
         $from = $fromEmptySchema
             ? new Schema([], [], $this->schemaManager->createSchemaConfig())
             : $this->createSchemaForComparison($to);
-        // Schema filters do not cover namespaces. Never drop an existing unrelated namespace.
-        foreach ($this->schemaManager->listSchemaNames() as $namespace) {
-            foreach ([$from, $to] as $schema) {
-                if (! $schema->hasNamespace($namespace)) {
-                    $schema->createNamespace($namespace);
-                }
-            }
-        }
         $targetTables = [];
         foreach ($to->getTables() as $table) {
             $targetTables[$table->getObjectName()->toSQL($this->platform)] = true;
@@ -1212,18 +1002,41 @@ class SchemaTool
         $fullText = (new FullText\SchemaExtension($this->em))->migrationSql($classes, $from, $to, $fromEmptySchema);
         $checks = (new Check\SchemaExtension($this->em))->plan($classes, $to, $fromEmptySchema);
         $triggers = (new Trigger\SchemaExtension($this->em))->plan($classes, $to, $fromEmptySchema);
-        $advanced = (new AdvancedSchema($this->em))->plan($classes, $to, $fromEmptySchema ? null : $from);
-        $this->normalizeEquivalentIndexPredicates($from, $to);
+        $current = $fromEmptySchema ? null : $from;
+        $advanced = (new AdvancedSchema($this->em))->plan($classes, $to, $current);
+        $from = $current ?? $from;
+        $to = $this->normalizeEquivalentIndexPredicates($from, $to);
         $comparator = $this->schemaManager->createComparator((new ComparatorConfig())->withReportModifiedIndexes(false));
         $up = $comparator->compareSchemas($from, $to);
         $this->assertTableObjectsNotDropped($up);
 
         return [
-            'up' => [...$this->platform->getAlterSchemaSQL($up), ...$fullText['up'], ...$triggers['functions'], ...$checks['up'], ...$advanced['up'], ...$triggers['up']],
+            'up' => [...$this->getAlterSchemaSql($up), ...$fullText['up'], ...$triggers['functions'], ...$checks['up'], ...$advanced['up'], ...$triggers['up']],
             'down' => $triggers['functions'] !== []
                 ? [Trigger\FunctionRegistry::irreversibleSql()]
-                : [...$triggers['down'], ...$advanced['down'], ...$checks['down'], ...$fullText['down'], ...$this->platform->getAlterSchemaSQL($comparator->compareSchemas($to, $from))],
+                : [...$triggers['down'], ...$advanced['down'], ...$checks['down'], ...$fullText['down'], ...$this->getAlterSchemaSql($comparator->compareSchemas($to, $from))],
         ];
+    }
+
+    /** @return list<string> */
+    private function getAlterSchemaSql(SchemaDiff $diff): array
+    {
+        $created = $diff->getCreatedSchemas();
+        if ($created !== [] && $this->platform->supportsSchemas()) {
+            // SchemaEditor derives namespaces from assets, omitting existing empty namespaces.
+            $diff = new SchemaDiff(
+                array_diff($created, $this->schemaManager->listSchemaNames()),
+                $diff->getDroppedSchemas(),
+                $diff->getCreatedTables(),
+                $diff->getAlteredTables(),
+                $diff->getDroppedTables(),
+                $diff->getCreatedSequences(),
+                $diff->getAlteredSequences(),
+                $diff->getDroppedSequences(),
+            );
+        }
+
+        return $this->platform->getAlterSchemaSQL($diff);
     }
 
     private function assertTableObjectsNotDropped(SchemaDiff $diff): void
@@ -1315,7 +1128,6 @@ class SchemaTool
         }
 
         // whitelist assets we already know about in $toSchema, use the existing filter otherwise
-        $getAssetName = $this->getAssetName(...);
         $platform = $this->platform;
         $quotedNames = [];
         foreach ([...$toSchema->getTables(), ...$toSchema->getSequences()] as $asset) {
@@ -1323,13 +1135,13 @@ class SchemaTool
                 $quotedNames[$asset->getObjectName()->toSQL($platform)] = true;
             }
         }
-        $config->setSchemaAssetsFilter(static function ($asset) use ($previousFilter, $toSchema, $getAssetName, $quotedNames, $platform): bool {
-            $assetName = $asset instanceof AbstractAsset ? $getAssetName($asset) : $asset;
+        $config->setSchemaAssetsFilter(static function ($asset) use ($previousFilter, $toSchema, $quotedNames, $platform): bool {
+            $assetName = $asset instanceof NamedObject ? $asset->getObjectName()->toString() : $asset;
             if ($toSchema->hasTable($assetName) || $toSchema->hasSequence($assetName)) {
                 return true;
             }
             // DBAL's legacy schema lookup does not normalize mixed quoting (schema."Table").
-            // Use the parsed name API when present, retaining DBAL 4.3 compatibility otherwise.
+            // Compare the parsed SQL name as well as the legacy key.
             if ($quotedNames !== []) {
                 $name = $asset instanceof NamedObject
                     ? $asset->getObjectName()
@@ -1350,8 +1162,9 @@ class SchemaTool
     }
 
     /** PostgreSQL wraps simple predicates in parentheses during introspection. */
-    private function normalizeEquivalentIndexPredicates(Schema $fromSchema, Schema $toSchema): void
+    private function normalizeEquivalentIndexPredicates(Schema $fromSchema, Schema $toSchema): Schema
     {
+        $editor = $toSchema->edit();
         foreach ($toSchema->getTables() as $table) {
             $name = $this->getAssetName($table);
             if (! $fromSchema->hasTable($name)) {
@@ -1359,76 +1172,113 @@ class SchemaTool
             }
             $fromTable = $fromSchema->getTable($name);
             foreach ($table->getIndexes() as $indexName => $index) {
-                if (! $index->hasOption('where') || ! $fromTable->hasIndex($indexName)) {
+                if ($index->getPredicate() === null || ! $fromTable->hasIndex($indexName)) {
                     continue;
                 }
-                $fromIndex = $fromTable->getIndex($indexName);
-                if (! $fromIndex->hasOption('where')) {
+                $actual = $fromTable->getIndex($indexName)->getPredicate();
+                if ($actual !== '(' . $index->getPredicate() . ')') {
                     continue;
                 }
-                $predicate = $index->getOption('where');
-                $actual = $fromIndex->getOption('where');
-                if (! is_string($predicate) || $actual !== '(' . $predicate . ')') {
-                    continue;
-                }
-                $options = $index->getOptions();
-                $options['where'] = $actual;
-                $table->dropIndex($indexName);
-                if ($index->isUnique()) {
-                    $table->addUniqueIndex(self::getIndexedColumns($index), $indexName, $options);
-                } else {
-                    $table->addIndex(self::getIndexedColumns($index), $indexName, $index->getFlags(), $options);
-                }
+                $editor->modifyTable($table->getObjectName(), static function (TableEditor $tableEditor) use ($index, $actual): void {
+                    $tableEditor->dropIndex($index->getObjectName())->addIndex($index->edit()->setPredicate($actual)->create());
+                });
             }
         }
+        return $editor->create();
     }
 
-    /** Normalize DBAL's mixed quoted-name display before legacy Schema key comparison. */
     private function normalizeIntrospectedSchema(Schema $schema): Schema
     {
+        $editor = $schema->edit();
         foreach ($schema->getTables() as $table) {
-            if ($table->getObjectName()->getUnqualifiedName()->getValue() === Trigger\FunctionRegistry::TABLE
+            $name = $table->getObjectName();
+            $identifier = $name->getUnqualifiedName();
+            if ($identifier->getValue() === Trigger\FunctionRegistry::TABLE
                 && $table->getComment() === Trigger\FunctionRegistry::TABLE_MARKER) {
-                $schema->dropTable($table->getName());
+                $editor->dropTable($name);
                 continue;
             }
-            if ($table instanceof NamedObject) {
-                $schema->renameTable($table->getName(), $table->getObjectName()->toSQL($this->platform));
+
+            // Schema still uses string keys which cannot look up schema."Table" as "schema"."Table".
+            $qualifier = $name->getQualifier();
+            if ($identifier->isQuoted() && $qualifier !== null && ! $qualifier->isQuoted()) {
+                $editor->modifyTable($name, static function (TableEditor $tableEditor) use ($identifier, $qualifier): void {
+                    $tableEditor->setName(new OptionallyQualifiedName($identifier, Identifier::quoted($qualifier->getValue())));
+                });
             }
         }
-        return $schema;
+
+        return $editor->create();
     }
 
     /** @param non-empty-array<non-empty-string> $primaryKeyColumns */
-    private function addPrimaryKeyConstraint(Table $table, array $primaryKeyColumns): void
+    private function addPrimaryKeyConstraint(Table $table, array $primaryKeyColumns): Table
     {
-        if (! class_exists(PrimaryKeyConstraint::class)) {
-            $table->setPrimaryKey(array_values($primaryKeyColumns));
+        $columnNames = array_map(
+            static fn (string $name): UnqualifiedName => $table->getColumn($name)->getObjectName(),
+            $primaryKeyColumns,
+        );
 
-            return;
+        return $table->edit()->addPrimaryKeyConstraint(new PrimaryKeyConstraint(null, array_values($columnNames), true))->create();
+    }
+
+    /** @param array<string, mixed> $options */
+    private function addColumn(Table $table, string $name, string $type, array $options): Table
+    {
+        if ($table->getColumns() === []) {
+            $config = $this->schemaManager->createSchemaConfig();
+
+            return $table::editor()
+                ->setName($table->getObjectName())
+                ->setOptions($table->getOptions())
+                ->setConfiguration($config->toTableConfiguration())
+                ->setTypeProvider($config->getTypeProvider())
+                ->addColumn(new Column($name, $type, $options))
+                ->create();
         }
 
-        $primaryKeyColumnNames = [];
+        if ($table->hasColumn($name)) {
+            $column = $table->getColumn($name);
+            $previous = array_diff_key($column->toArray(true), $column->getPlatformOptions(), ['name' => true, 'typeName' => true]);
+            $previous['platformOptions'] = $column->getPlatformOptions();
+            $replacement = new Column($name, $column->getTypeName(), $options + $previous);
 
-        foreach ($primaryKeyColumns as $primaryKeyColumn) {
-            if (preg_match('/^"(.+)"$/', $primaryKeyColumn, $matches) === 1) {
-                $primaryKeyColumnNames[] = new UnqualifiedName(Identifier::quoted($matches[1]));
-            } else {
-                $primaryKeyColumnNames[] = new UnqualifiedName(Identifier::unquoted($primaryKeyColumn));
-            }
+            return $table->edit()->setColumns(...array_values(array_map(
+                static fn (Column $candidate): Column => $candidate === $column ? $replacement : $candidate,
+                $table->getColumns(),
+            )))->create();
         }
 
-        $table->addPrimaryKeyConstraint(new PrimaryKeyConstraint(null, $primaryKeyColumnNames, true));
+        return $table->edit()->addColumn(new Column($name, $type, $options))->create();
+    }
+
+    /**
+     * @param non-empty-list<string> $columns
+     * @param list<string> $flags
+     * @param array<string, mixed> $options
+     */
+    private function addIndex(Table $table, array $columns, ?string $name, bool $unique, array $flags = [], array $options = []): Table
+    {
+        $name ??= $this->generatedAssetName($table, $columns, $unique ? 'uniq' : 'idx');
+        return $table->edit()->addIndex(new Index($name, $columns, $unique, false, $flags, $options))->create();
+    }
+
+    /** @param list<string> $columns */
+    private function generatedAssetName(Table $table, array $columns, string $prefix): string
+    {
+        // Preserve names produced by the former DBAL mutators for existing installations.
+        $name = $table->getObjectName();
+        $qualifier = $name->getQualifier();
+        $tableName = ($qualifier === null ? '' : $qualifier->getValue() . '.') . $name->getUnqualifiedName()->getValue();
+        $hash = implode('', array_map(static fn (string $part): string => dechex(crc32($part)), [$tableName, ...$columns]));
+
+        return strtoupper(substr($prefix . '_' . $hash, 0, $this->schemaManager->createSchemaConfig()->getMaxIdentifierLength()));
     }
 
     /** @return string[] */
     private static function getIndexedColumns(Index $index): array
     {
-        if (method_exists(Index::class, 'getIndexedColumns')) {
-            return array_map(static fn (IndexedColumn $indexedColumn) => $indexedColumn->getColumnName()->toString(), $index->getIndexedColumns());
-        }
-
-        return $index->getColumns();
+        return array_map(static fn (IndexedColumn $indexedColumn): string => $indexedColumn->getColumnName()->toString(), $index->getIndexedColumns());
     }
 
     /**
@@ -1449,25 +1299,11 @@ class SchemaTool
      */
     private static function indexFlagsAreCompatible(Index $existingIndex): bool
     {
-        // @phpstan-ignore function.alreadyNarrowedType (DBAL < 4.3 has no Index::getType())
-        if (method_exists($existingIndex, 'getType')) {
-            $existingTypeName = self::getIndexTypeName($existingIndex->getType());
-
-            return $existingTypeName !== 'FULLTEXT' && $existingTypeName !== 'SPATIAL';
-        }
-
-        return $existingIndex->getFlags() === [];
+        return ! in_array($existingIndex->getType(), [IndexType::FULLTEXT, IndexType::SPATIAL], true);
     }
 
-    private static function getIndexTypeName(mixed $type): string
+    private function getAssetName(Table|Sequence $asset): string
     {
-        return $type instanceof UnitEnum ? $type->name : '';
-    }
-
-    private function getAssetName(AbstractAsset $asset): string
-    {
-        return $asset instanceof NamedObject
-            ? $asset->getObjectName()->toString()
-            : $asset->getName();
+        return $asset->getObjectName()->toString();
     }
 }

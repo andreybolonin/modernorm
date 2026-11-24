@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Use the DBAL Editor API for schema generation and comparison. Remove the internal editor toggle and global DBAL deprecation suppression.
+
 - Raise optional native hydration to ext-deepclone 0.8.13 and pin CI to the release commit.
 
 ## 1.0.0-rc.1 (candidate)

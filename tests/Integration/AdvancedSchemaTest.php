@@ -68,16 +68,8 @@ final class AdvancedSchemaTest extends TestCase
         $this->em->getConnection()->close();
     }
 
-    public static function schemaApis(): iterable
+    public function testMigrationRoundTripAndExternallyManagedAssets(): void
     {
-        yield 'classic' => [false];
-        yield 'editor' => [true];
-    }
-
-    #[DataProvider('schemaApis')]
-    public function testMigrationRoundTripAndExternallyManagedAssets(bool $editor): void
-    {
-        $this->em->getConfiguration()->setUseDbalEditorApi($editor);
         $metadata = $this->metadata();
         $tool = new SchemaTool($this->em);
         $this->apply($tool->getSchemaMigrationSql([$metadata], true)['up']);
@@ -137,17 +129,14 @@ final class AdvancedSchemaTest extends TestCase
 
     public static function partialIndexDependencies(): iterable
     {
-        foreach (self::schemaApis() as $api => [$editor]) {
-            yield $api . ' predicate' => [$editor, '(code) WHERE "External Flag"'];
-            yield $api . ' key' => [$editor, '("External Flag", code) WHERE active'];
-            yield $api . ' expression' => [$editor, '((NOT "External Flag"), code) WHERE active'];
-        }
+        yield 'predicate' => ['(code) WHERE "External Flag"'];
+        yield 'key' => ['("External Flag", code) WHERE active'];
+        yield 'expression' => ['((NOT "External Flag"), code) WHERE active'];
     }
 
     #[DataProvider('partialIndexDependencies')]
-    public function testDroppingColumnReferencedByPartialIndexRequiresExplicitMigration(bool $editor, string $definition): void
+    public function testDroppingColumnReferencedByPartialIndexRequiresExplicitMigration(string $definition): void
     {
-        $this->em->getConfiguration()->setUseDbalEditorApi($editor);
         $metadata = $this->metadata();
         $metadata->exclusions = [];
         $tool = new SchemaTool($this->em);

@@ -45,7 +45,7 @@ final class SchemaExtension
      *  @param list<ClassMetadata> $classes
      *  @return list<string>
      */
-    public function updateSql(array $classes, Schema $from, Schema $to): array
+    public function updateSql(array $classes, Schema &$from, Schema $to): array
     {
         return $this->plan($classes, $from, $to, false, false)['up'];
     }
@@ -53,7 +53,7 @@ final class SchemaExtension
     /** @param list<ClassMetadata> $classes
      *  @return array{up: list<string>, down: list<string>}
      */
-    public function migrationSql(array $classes, Schema $from, Schema $to, bool $fromEmptySchema): array
+    public function migrationSql(array $classes, Schema &$from, Schema $to, bool $fromEmptySchema): array
     {
         return $this->plan($classes, $from, $to, true, $fromEmptySchema);
     }
@@ -61,7 +61,7 @@ final class SchemaExtension
     /** @param list<ClassMetadata> $classes
      *  @return array{up: list<string>, down: list<string>}
      */
-    private function plan(array $classes, Schema $from, Schema $to, bool $reverse, bool $fromEmptySchema): array
+    private function plan(array $classes, Schema &$from, Schema $to, bool $reverse, bool $fromEmptySchema): array
     {
         $sql = [];
         $down = [];
@@ -102,6 +102,7 @@ final class SchemaExtension
                 }
             }
             $fromTable = $this->schemaTable($from, $class);
+            $original = $fromTable;
             $toTable = $this->schemaTable($to, $class);
             foreach ($class->fullTextIndexes as $index) {
                 $this->assertTarget($class, $index, $to);
@@ -173,7 +174,7 @@ final class SchemaExtension
                         || $indexState['opcname'] !== 'tsvector_ops' || $indexState['opclass_schema'] !== 'pg_catalog') {
                         throw new RuntimeException('FullTextIndex index collision or unsupported GIN definition: ' . $index->name);
                     }
-                    $fromTable->dropIndex($index->name);
+                    $fromTable = $fromTable->edit()->dropIndex($fromTable->getIndex($index->name)->getObjectName())->create();
                 }
                 foreach ($fromTable->getIndexes() as $other) {
                     $otherColumns = array_map(
@@ -185,8 +186,14 @@ final class SchemaExtension
                     }
                 }
                 if ($state !== null) {
-                    $fromTable->dropColumn($index->column);
+                    $fromTable = $fromTable->edit()->dropColumn($fromTable->getColumn($index->column)->getObjectName())->create();
                 }
+            }
+            if ($fromTable !== $original) {
+                $from = $from->edit()->setTables(...array_map(
+                    static fn (Table $candidate): Table => $candidate === $original ? $fromTable : $candidate,
+                    $from->getTables(),
+                ))->create();
             }
         }
         return ['up' => $sql, 'down' => $down];
