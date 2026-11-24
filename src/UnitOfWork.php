@@ -1237,8 +1237,12 @@ class UnitOfWork implements PropertyChangedListener
             $entity = $class->newInstance();
 
             $this->statistics?->entityCreatedDuringHydration();
-            $oid = spl_object_id($entity);
-            $this->registerManaged($entity, $id, $data);
+            if ($this::class === self::class && $entity::class === $class->name && ! in_array(null, $id, true)) {
+                $this->entityStateManager->recordManaged(spl_object_id($entity), $id, $data);
+                $this->identityMap->add($class->name, $idHash, $entity);
+            } else {
+                $this->registerManaged($entity, $id, $data);
+            }
 
             if (isset($hints[Query::HINT_READ_ONLY]) && $hints[Query::HINT_READ_ONLY] === true) {
                 $this->changeTrackingCoordinator->markReadOnly($entity);

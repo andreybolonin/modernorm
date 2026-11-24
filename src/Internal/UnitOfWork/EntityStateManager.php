@@ -36,13 +36,23 @@ final class EntityStateManager
      */
     public function registerManaged(object $entity, array $id, array $data): void
     {
-        $oid = spl_object_id($entity);
-        $this->identifiers[$oid] = $id;
-        $this->states[$oid] = UnitOfWork::STATE_MANAGED;
-        $this->snapshots[$oid] = $data;
+        $this->recordManaged(spl_object_id($entity), $id, $data);
 
         // Keep metadata/identity validation at its original point, after recording state.
         ($this->publishIdentity)($entity);
+    }
+
+    /**
+     * Record managed state before publishing a known identity.
+     *
+     * @param array<string, mixed> $id
+     * @param array<string, mixed> $data
+     */
+    public function recordManaged(int $oid, array $id, array $data): void
+    {
+        $this->identifiers[$oid] = $id;
+        $this->states[$oid] = UnitOfWork::STATE_MANAGED;
+        $this->snapshots[$oid] = $data;
     }
 
     /** The coordinator has already converted and assigned the ID property. */
