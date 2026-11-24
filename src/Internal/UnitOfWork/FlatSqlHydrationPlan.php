@@ -36,7 +36,7 @@ final readonly class FlatSqlHydrationPlan
     public static function available(): bool
     {
         static $available = extension_loaded('deepclone')
-            && version_compare(phpversion('deepclone'), '0.8.11', '>=')
+            && version_compare(phpversion('deepclone'), '0.8.13', '>=')
             && function_exists('deepclone_hydrate')
             && defined('DEEPCLONE_HYDRATE_NO_LAZY_INIT');
         return $available;

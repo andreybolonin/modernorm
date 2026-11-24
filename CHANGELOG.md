@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Raise optional native hydration to ext-deepclone 0.8.13 and pin CI to the release commit.
+
 ## 1.0.0-rc.1 (candidate)
 
 - Add declarative PostgreSQL CHECK constraints, row triggers with optional migration-managed SQL functions, and GiST exclusion constraints.

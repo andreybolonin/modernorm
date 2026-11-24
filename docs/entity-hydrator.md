@@ -12,7 +12,7 @@ This preserves input order and partial-assignment failure behavior: if a later a
 
 ## Optional deepclone acceleration
 
-Install and enable [ext-deepclone](https://github.com/symfony/php-ext-deepclone) >=0.8.11 to enable automatic native assignment for flat entities. It is a Composer suggestion, with no mandatory dependency or ORM configuration. The runtime also checks for `deepclone_hydrate()` and `DEEPCLONE_HYDRATE_NO_LAZY_INIT`; missing or older extensions use the accessor path.
+Install and enable [ext-deepclone](https://github.com/symfony/php-ext-deepclone) >=0.8.13 to enable automatic native assignment for flat entities. It is a Composer suggestion, with no mandatory dependency or ORM configuration. The runtime also checks for `deepclone_hydrate()` and `DEEPCLONE_HYDRATE_NO_LAZY_INIT`; missing or older extensions use the accessor path.
 
 Eligible mappings use standard raw/typed accessors, including backed-enum properties whose declared type matches the ORM enum mapping. Field keys preserve inherited private and protected scope. One native call writes the filtered mapped fields in input order without invoking hooks. Entity construction remains under ClassMetadata/UnitOfWork.
 
@@ -66,4 +66,4 @@ ToManyHydrationTest covers private-property assignment, supplied initialized/uni
 
 No public API, schema or cache-format migration is introduced.
 
-Deepclone 0.8.11 is the minimum native version, including the NO_LAZY_INIT request-shutdown memory fix and lazy/readonly/reference write corrections. CI pins release commit `03cd6a61821618d862628652f969780646bf661f`. Full-suite verification with 0.8.11 on PHP 8.4/8.5: 1329 tests / 8772 assertions / 21 Redis skips per runtime. Older extensions retain the accessor fallback.
+Deepclone 0.8.13 is the minimum native version. CI builds release commit `b2968b36bdc33b0c633484b6c574aa3e9bee58c5`. Older extensions use the accessor fallback.
