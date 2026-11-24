@@ -1197,8 +1197,16 @@ class UnitOfWork implements PropertyChangedListener
      */
     public function createEntity(string $className, array $data, array &$hints = []): object
     {
-        $class = $this->em->getClassMetadata($className);
+        return $this->createEntityWithMetadata($this->em->getClassMetadata($className), $data, $hints);
+    }
 
+    /**
+     * @internal Entry point for the built-in hydrator with resolved metadata for this result.
+     * @param array<string, mixed> $data
+     * @param array<string, mixed> $hints
+     */
+    final public function createEntityWithMetadata(ClassMetadata $class, array $data, array &$hints): object
+    {
         $id     = $this->identifierFlattener->flattenIdentifier($class, $data);
         $idHash = self::getIdHashByIdentifier($id);
 

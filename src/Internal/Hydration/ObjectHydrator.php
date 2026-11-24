@@ -248,6 +248,10 @@ class ObjectHydrator extends AbstractHydrator
             $this->compileFlatSqlPlan($this->metadataCache[$className], $data);
         }
 
+        if ($this::class === self::class && $this->uow::class === UnitOfWork::class) {
+            return $this->uow->createEntityWithMetadata($this->getClassMetadata($className), $data, $this->hints);
+        }
+
         return $this->uow->createEntity($className, $data, $this->hints);
     }
 
