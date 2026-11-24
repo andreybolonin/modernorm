@@ -2,15 +2,20 @@
 
 ## Unreleased
 
+## 1.0.0-rc.2
+
 - Use the DBAL Editor API for schema generation and comparison. Remove the internal editor toggle and global DBAL deprecation suppression.
 
 - Raise optional native hydration to ext-deepclone 0.8.13 and pin CI to the release commit.
+- Manage STORED generated columns and partial unique indexes in SQL migrations. Require an explicit migration for a column drop when its removal would also remove a partial index.
 
-## 1.0.0-rc.1 (candidate)
+- Version the metadata cache at V19. Reset metadata and query-plan caches and restart long-running workers on upgrade. See the [release candidate guide](docs/1.0-release-candidate.md).
+
+## 1.0.0-rc.1
 
 - Add declarative PostgreSQL CHECK constraints, row triggers with optional migration-managed SQL functions, and GiST exclusion constraints.
 - Plan schema changes in read-only PostgreSQL transactions. Compare both declaration and catalog fingerprints for managed definitions, and require explicit migrations for ambiguous or unsafe changes.
-- Version the metadata cache at V18. Reset metadata and query-plan caches and restart long-running workers on upgrade. See the [release candidate guide](docs/1.0-release-candidate.md).
+- Version the metadata cache at V18.
 
 
 - Reuse the eligible scalar plan for one-cast reads during UPDATE recomputation. Preserve missing-baseline-as-null comparison, changeset merging, preUpdate additions, snapshots and scheduling; keep pending INSERTs, tracked lazy references and unsupported metadata on accessors.

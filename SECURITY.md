@@ -9,3 +9,5 @@ GitHub private vulnerability reporting is enabled for this repository. If it bec
 There is no promised response-time SLA. Fixes are reviewed through the project's own issue/PR process; ModernORM does not automatically inherit or port security patches from Doctrine. A Doctrine advisory alone does not establish whether ModernORM is affected: report a reproducer against ModernORM where possible.
 
 Parameterized values do not make arbitrary SQL fragments safe. Applications are responsible for authorization, tenant predicates, identifier allowlists and external writers' cache invalidation. The supported L2 and transaction boundaries are documented in the [beta contract](docs/beta-release.md).
+
+PostgreSQL error details can include bound values, for example when a unique constraint fails. Treat database exception messages and their cause chains as sensitive in application logs and telemetry.
