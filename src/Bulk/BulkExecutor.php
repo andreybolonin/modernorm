@@ -87,7 +87,6 @@ final class BulkExecutor
         }
         $sets = [];
         foreach ($values as $field => $value) {
-            $this->assertWritable($metadata, $field);
             $name = '__morm_bulk_' . count($sets);
             $sets[] = $this->column($metadata, $field) . ' = ' . $this->placeholder($metadata, $field, ':' . $name);
             $parameters[$name] = $value instanceof BackedEnum ? $value->value : $value;
@@ -163,9 +162,6 @@ final class BulkExecutor
             throw new \InvalidArgumentException('Bulk INSERT requires a nonempty list of nonempty rows.');
         }
         $fields = array_keys($rows[0]);
-        foreach ($fields as $field) {
-            $this->assertWritable($metadata, $field);
-        }
         $columns = array_map(fn (string $field): string => $this->column($metadata, $field), $fields);
         $parameters = $types = $tuples = [];
         foreach ($rows as $row) {
@@ -219,13 +215,6 @@ final class BulkExecutor
     private function table(ClassMetadata $metadata): string
     {
         return $this->em->getConfiguration()->getQuoteStrategy()->getTableName($metadata, $this->em->getConnection()->getDatabasePlatform());
-    }
-
-    private function assertWritable(ClassMetadata $metadata, string $field): void
-    {
-        if (isset($metadata->fieldMappings[$field]->storedExpression)) {
-            throw new \InvalidArgumentException('Bulk writes cannot assign generated column ' . $metadata->name . '::' . $field);
-        }
     }
 
     private function column(ClassMetadata $metadata, string $field): string

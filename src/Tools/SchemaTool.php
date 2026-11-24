@@ -546,15 +546,7 @@ class SchemaTool
         foreach ($class->table['indexes'] ?? [] as $indexName => $indexData) {
             $columns = $this->getIndexColumns($class, $indexData);
             $name = is_numeric($indexName) ? null : $indexName;
-            $options = $indexData['options'] ?? [];
-            if (isset($options['where'], $options[AdvancedSchema::DECLARED_PREDICATE]) && ! $this->platform instanceof PostgreSQLPlatform) {
-                throw new RuntimeException($class->name . ' declares a partial index, which requires PostgreSQL.');
-            }
-            if ($indexData['unique'] ?? false) {
-                $table->addUniqueIndex($columns, $name, $options);
-            } else {
-                $table->addIndex($columns, $name, (array) ($indexData['flags'] ?? []), $options);
-            }
+            $table->addIndex($columns, $name, (array) ($indexData['flags'] ?? []), $indexData['options'] ?? []);
         }
     }
 
@@ -676,21 +668,6 @@ class SchemaTool
             $table->modifyColumn($columnName, $options);
         } else {
             $table->addColumn($columnName, $columnType, $options);
-        }
-
-        if ($mapping->storedExpression !== null) {
-            if (! $this->platform instanceof PostgreSQLPlatform) {
-                throw new RuntimeException($class->name . ' declares a STORED column, which requires PostgreSQL.');
-            }
-            $column = $table->getColumn($columnName);
-            $type = $this->em->getConnection()->getConfiguration()->getTypeProvider()->get($columnType);
-            $declaration = $type->getSQLDeclaration($column->toArray(true), $this->platform);
-            $collation = $column->getCollation();
-            if ($collation !== null) {
-                $declaration .= ' ' . $this->platform->getColumnCollationDeclarationSQL($collation);
-            }
-            $column->setColumnDefinition($declaration . ' GENERATED ALWAYS AS (' . $mapping->storedExpression . ') STORED'
-                . ($column->getNotnull() ? ' NOT NULL' : ''));
         }
 
         $isUnique = $mapping->unique ?? false;

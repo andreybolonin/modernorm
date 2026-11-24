@@ -18,8 +18,7 @@ use RuntimeException;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'bookings')]
-#[ORM\Index(name: 'active_codes', fields: ['code'], where: 'active = true', unique: true)]
-#[ORM\Index(name: 'inactive_codes', columns: ['code'], where: 'active = false')]
+#[ORM\Index(name: 'inactive_codes', columns: ['code'], options: ['where' => 'active = false'])]
 #[ORM\Exclude(name: 'no_overlaps', elements: ['resource WITH =', 'int4range(starts, ends) WITH &&'], where: "active AND code <> 'ignored'")]
 final class AdvancedBooking
 {
@@ -43,9 +42,6 @@ final class AdvancedBooking
 
     #[ORM\Column(type: 'decimal', precision: 12, scale: 2)]
     public string $rate = '2.50';
-
-    #[ORM\Column(type: 'decimal', precision: 16, scale: 2, nullable: true, generated: '(ends - starts) * rate')]
-    public ?string $total = null;
 }
 
 final class AdvancedSchemaTest extends TestCase
@@ -79,7 +75,7 @@ final class AdvancedSchemaTest extends TestCase
     }
 
     #[DataProvider('schemaApis')]
-    public function testMigrationRoundTripAndRuntimeSemantics(bool $editor): void
+    public function testMigrationRoundTripAndExternallyManagedAssets(bool $editor): void
     {
         $this->em->getConfiguration()->setUseDbalEditorApi($editor);
         $metadata = $this->metadata();
@@ -100,20 +96,17 @@ final class AdvancedSchemaTest extends TestCase
             $connection->executeStatement('DROP ROLE ' . $role);
         }
 
-        $first = new AdvancedBooking();
-        $first->id = 1;
-        $first->code = 'occupied';
-        $first->total = '999.99';
-        $this->em->persist($first);
-        $this->em->flush();
-        self::assertSame('25.00', $first->total);
-        $first->rate = '3.00';
-        $this->em->flush();
-        self::assertSame('30.00', $first->total);
-        $this->em->clear();
-        self::assertSame('30.00', $this->em->find(AdvancedBooking::class, 1)?->total);
-
         $table = $this->schema . '.bookings';
+        $connection->executeStatement("CREATE UNIQUE INDEX active_codes ON $table (code) WHERE active = true");
+        $connection->executeStatement("ALTER TABLE $table ADD COLUMN total numeric GENERATED ALWAYS AS ((ends - starts) * rate) STORED");
+        self::assertSame([], $tool->getUpdateSchemaSql([$metadata]));
+        self::assertSame(['up' => [], 'down' => []], $tool->getSchemaMigrationSql([$metadata]));
+        $this->em->bulk()->insert(AdvancedBooking::class, [[
+            'id' => 1, 'code' => 'occupied', 'active' => true, 'resource' => 1,
+            'starts' => 10, 'ends' => 20, 'rate' => '2.50',
+        ]], BulkPolicy::BYPASS);
+        self::assertSame('25.00', $connection->fetchOne("SELECT total FROM $table WHERE id = 1"));
+
         $this->assertSqlState('23P01', "INSERT INTO $table VALUES (2, 'other', true, 1, 15, 20, 1)");
         $this->assertSqlState('23505', "INSERT INTO $table VALUES (2, 'occupied', true, 1, 20, 30, 1)");
         $this->em->getConnection()->executeStatement("INSERT INTO $table VALUES (2, 'occupied', false, 1, 15, 20, 1)");
@@ -128,59 +121,31 @@ final class AdvancedSchemaTest extends TestCase
         unset($withoutExclude->table['indexes']['inactive_codes']);
         self::assertSame([], $tool->getUpdateSchemaSql([$withoutExclude]));
         $this->assertSqlState('23P01', "INSERT INTO $table VALUES (4, 'other', true, 1, 15, 20, 1)");
-
-        $returned = $this->em->bulk()->update(AdvancedBooking::class, ['rate' => '4.00'], 'id = 1', BulkPolicy::BYPASS, returning: ['total']);
-        self::assertSame('40.00', $returned->returnedRows[0]['total']);
-        try {
-            $this->em->bulk()->update(AdvancedBooking::class, ['total' => '100.00'], 'id = 1', BulkPolicy::BYPASS);
-            self::fail('Expected bulk writes to reject a generated field');
-        } catch (\InvalidArgumentException $failure) {
-            self::assertStringContainsString('cannot assign generated column', $failure->getMessage());
-        }
     }
 
-    public static function unsafeChanges(): iterable
-    {
-        yield 'index predicate' => ['index'];
-        yield 'exclusion predicate' => ['exclude'];
-        yield 'generated expression' => ['expression'];
-        yield 'generated removal' => ['remove'];
-    }
-
-    #[DataProvider('unsafeChanges')]
-    public function testUnsafeChangesRequireExplicitMigration(string $change): void
+    public function testChangedExclusionRequiresExplicitMigration(): void
     {
         $metadata = $this->metadata();
         $tool = new SchemaTool($this->em);
         $tool->createSchema([$metadata]);
-        match ($change) {
-            'index' => $metadata->table['indexes']['active_codes']['options']['where'] = 'active = false',
-            'exclude' => $metadata->exclusions = [new ORM\Exclude('no_overlaps', ['resource WITH =', 'int4range(starts, ends) WITH &&'], where: 'NOT active')],
-            'expression' => $metadata->fieldMappings['total']->storedExpression = '(ends - starts) * rate * 2',
-            'remove' => $metadata->fieldMappings['total']->storedExpression = null,
-        };
+        $metadata->exclusions = [new ORM\Exclude('no_overlaps', ['resource WITH =', 'int4range(starts, ends) WITH &&'], where: 'NOT active')];
+
         $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('explicit migration');
         $tool->getSchemaMigrationSql([$metadata]);
     }
 
-    public function testGeneratedColumnCanBeAddedBeforeAnIndexInAnExistingTable(): void
+    public function testGeneratedColumnCannotBeReplacedByMappedColumn(): void
     {
         $metadata = $this->metadata();
         $tool = new SchemaTool($this->em);
-        $existing = clone $metadata;
-        unset($existing->fieldMappings['total']);
-        $tool->createSchema([$existing]);
+        $tool->createSchema([$metadata]);
+        $table = $this->schema . '.bookings';
+        $this->em->getConnection()->executeStatement("ALTER TABLE $table ADD COLUMN total numeric GENERATED ALWAYS AS ((ends - starts) * rate) STORED");
+        $metadata->mapField(['fieldName' => 'total', 'type' => 'decimal']);
 
-        $metadata->table['indexes']['positive_totals'] = [
-            'fields' => ['total'],
-            'options' => ['where' => 'total > 0', 'modernorm_declared_predicate' => true],
-        ];
-        $plan = $tool->getSchemaMigrationSql([$metadata]);
-        $this->apply($plan['up']);
-        self::assertSame([], $tool->getUpdateSchemaSql([$metadata]));
-        $this->apply($plan['down']);
-        self::assertSame([], $tool->getUpdateSchemaSql([$existing]));
+        $this->expectExceptionMessage('is a generated column in PostgreSQL');
+        $tool->getSchemaMigrationSql([$metadata]);
     }
 
     public function testExclusionCannotReplaceAnUnmanagedIndexWithTheSameName(): void
@@ -203,12 +168,12 @@ final class AdvancedSchemaTest extends TestCase
         $tool->createSchema([$metadata]);
         $connection = $this->em->getConnection();
         $table = $this->schema . '.bookings';
-        $lookup = "SELECT pg_catalog.col_description(attrelid, attnum) FROM pg_catalog.pg_attribute WHERE attrelid = pg_catalog.to_regclass(?) AND attname = 'total'";
+        $lookup = "SELECT pg_catalog.obj_description(oid, 'pg_constraint') FROM pg_catalog.pg_constraint WHERE conrelid = pg_catalog.to_regclass(?) AND conname = 'no_overlaps'";
         $comment = $connection->fetchOne($lookup, [$table]);
         self::assertIsString($comment);
         self::assertStringContainsString('modernorm:definition:', $comment);
-        $connection->executeStatement("ALTER TABLE $table ALTER COLUMN total SET EXPRESSION AS (rate * 4)");
-        self::assertSame($comment, $connection->fetchOne($lookup, [$table]));
+        $connection->executeStatement("ALTER TABLE $table DROP CONSTRAINT no_overlaps, ADD CONSTRAINT no_overlaps EXCLUDE USING gist (resource WITH =, int4range(starts, ends) WITH &&) WHERE (NOT active)");
+        $connection->executeStatement("COMMENT ON CONSTRAINT no_overlaps ON $table IS " . $connection->quote($comment));
 
         $this->expectExceptionMessage('changed or ambiguous PostgreSQL definition');
         $tool->getSchemaMigrationSql([$metadata]);

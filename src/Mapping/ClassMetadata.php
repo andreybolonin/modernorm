@@ -1526,17 +1526,6 @@ class ClassMetadata implements PersistenceClassMetadata, Stringable
     public function assertSupportedMapping(): void
     {
         $this->assertSupportedIdentifier();
-        foreach ($this->fieldMappings as $field => $mapping) {
-            if ($mapping->storedExpression === null) {
-                continue;
-            }
-            if (trim($mapping->storedExpression) === '' || str_contains($mapping->storedExpression, "\0")
-                || $mapping->columnDefinition !== null || array_key_exists('default', $mapping->options ?? [])
-                || $this->isIdentifier($field) || $this->versionField === $field || $field === $this->softDeleteField
-                || ! $mapping->notInsertable || ! $mapping->notUpdatable) {
-                throw new MappingException($this->name . '::' . $field . ' has incompatible STORED column mapping.');
-            }
-        }
         $excludeNames = [];
         foreach ($this->exclusions as $exclude) {
             $exclude->validate($this);

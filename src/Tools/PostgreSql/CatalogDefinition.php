@@ -27,15 +27,6 @@ final class CatalogDefinition
         return self::withoutOuterParentheses($desired) === self::withoutOuterParentheses($deparsed);
     }
 
-    public static function preserveStamp(string $desiredComment, string $actualComment): string
-    {
-        if (preg_match(self::PATTERN, $actualComment, $marker) !== 1) {
-            return $desiredComment;
-        }
-
-        return ($desiredComment === '' ? '' : $desiredComment . "\n") . self::MARKER . $marker[1] . ':' . $marker[2];
-    }
-
     /** @param list<string> $arguments */
     public static function stamp(Connection $connection, string $object, string $source, string $lookup, array $arguments): string
     {

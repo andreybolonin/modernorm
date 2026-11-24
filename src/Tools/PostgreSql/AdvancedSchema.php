@@ -14,8 +14,6 @@ use RuntimeException;
 /** @internal Projects PostgreSQL-specific catalog state into the ordinary DBAL diff. */
 final readonly class AdvancedSchema
 {
-    public const DECLARED_PREDICATE = 'modernorm_declared_predicate';
-
     private const EXCLUSIONS = <<<'SQL'
         SELECT c.conname, i.relname AS backing_index, pg_catalog.pg_get_constraintdef(c.oid) AS definition,
                pg_catalog.obj_description(c.oid, 'pg_constraint') AS object_comment,
@@ -31,29 +29,11 @@ final readonly class AdvancedSchema
         SQL;
 
     private const GENERATED = <<<'SQL'
-        SELECT a.attname, a.attgenerated, pg_catalog.pg_get_expr(d.adbin, d.adrelid) AS expression,
-               pg_catalog.col_description(a.attrelid, a.attnum) AS object_comment,
-               pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(
-                   ROW(a.attgenerated, a.atttypid, a.atttypmod, a.attcollation, d.adbin::text, pg_catalog.pg_get_expr(d.adbin, d.adrelid))::text, 'UTF8')), 'hex') AS fingerprint
+        SELECT a.attname
         FROM pg_catalog.pg_attribute a
-        LEFT JOIN pg_catalog.pg_attrdef d ON d.adrelid = a.attrelid AND d.adnum = a.attnum
         JOIN pg_catalog.pg_class t ON t.oid = a.attrelid
         JOIN pg_catalog.pg_namespace n ON n.oid = t.relnamespace
-        WHERE n.nspname = ? AND t.relname = ? AND a.attnum > 0 AND NOT a.attisdropped
-        SQL;
-
-    private const PARTIAL = <<<'SQL'
-        SELECT pg_catalog.pg_get_expr(i.indpred, i.indrelid) AS predicate,
-               pg_catalog.obj_description(c.oid, 'pg_class') AS object_comment,
-               pg_catalog.encode(pg_catalog.sha256(pg_catalog.convert_to(
-                   ROW(a.amname, i.indisunique, i.indkey, i.indclass, i.indcollation, i.indoption,
-                       i.indexprs::text, i.indpred::text, pg_catalog.pg_get_indexdef(i.indexrelid))::text, 'UTF8')), 'hex') AS fingerprint,
-               a.amname AS method, (i.indisvalid AND i.indisready) AS valid
-        FROM pg_catalog.pg_index i
-        JOIN pg_catalog.pg_class c ON c.oid = i.indexrelid
-        JOIN pg_catalog.pg_am a ON a.oid = c.relam
-        JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
-        WHERE n.nspname = ? AND c.relname = ?
+        WHERE n.nspname = ? AND t.relname = ? AND a.attnum > 0 AND NOT a.attisdropped AND a.attgenerated <> ''
         SQL;
 
     public function __construct(private EntityManagerInterface $em)
@@ -86,10 +66,7 @@ final readonly class AdvancedSchema
             $mappedName = $config->getQuoteStrategy()->getTableName($class, $platform);
             $table = $target->getTable($mappedName);
             $old = $current?->hasTable($mappedName) ? $current->getTable($mappedName) : null;
-            $hasDeclarations = $class->exclusions !== []
-                || array_any($class->fieldMappings, static fn ($field): bool => $field->storedExpression !== null)
-                || array_any($table->getIndexes(), static fn ($index): bool => $index->hasOption(self::DECLARED_PREDICATE));
-            if ($old === null && ! $hasDeclarations) {
+            if ($old === null && $class->exclusions === []) {
                 continue;
             }
             $identity = $table->getObjectName();
@@ -116,40 +93,8 @@ final readonly class AdvancedSchema
                         $old->dropIndex($index);
                     }
                 }
-                $this->reconcileGeneratedColumns($class, $old, $table, $tableSql, $relation);
-                $this->reconcilePartialIndexes($old, $table, $tableSql, $schema);
-            }
-
-            foreach ($class->fieldMappings as $field) {
-                if ($field->storedExpression === null) {
-                    continue;
-                }
-                $column = $table->getColumn($config->getQuoteStrategy()->getColumnName($field->fieldName, $class, $platform));
-                $name = $column->getObjectName()->getIdentifier()->toNormalizedValue($folding);
-                $quoted = $platform->quoteSingleIdentifier($name);
-                if ($old === null || ! $old->hasColumn($quoted)) {
-                    $stamps[] = CatalogDefinition::stamp(
-                        $connection,
-                        'COLUMN ' . $tableSql . '.' . $quoted,
-                        $field->storedExpression,
-                        self::GENERATED . ' AND a.attname = ?',
-                        [...$relation, $name]
-                    );
-                }
-            }
-            foreach ($table->getIndexes() as $index) {
-                if (! $index->hasOption(self::DECLARED_PREDICATE) || ($old !== null && $old->hasIndex($index->getName()))) {
-                    continue;
-                }
-                $indexName = $index->getObjectName()->getIdentifier()->toNormalizedValue($folding);
-                $qualified = $schemaSql . '.' . $platform->quoteSingleIdentifier($indexName);
-                $stamps[] = CatalogDefinition::stamp(
-                    $connection,
-                    'INDEX ' . $qualified,
-                    $index->getPredicate() ?? '',
-                    self::PARTIAL,
-                    [$schema, $indexName]
-                );
+                $this->protectGeneratedColumns($old, $table, $tableSql, $relation);
+                $this->protectPartialIndexes($old, $table, $tableSql);
             }
 
             foreach ($class->exclusions as $exclude) {
@@ -192,7 +137,7 @@ final readonly class AdvancedSchema
                 );
             }
 
-            if ($old !== null && ($hasDeclarations || $actual !== [])) {
+            if ($old !== null && ($class->exclusions !== [] || $actual !== [])) {
                 $this->preserveUnmappedAssets($old, $table);
             }
         }
@@ -233,55 +178,28 @@ final readonly class AdvancedSchema
     }
 
     /** @param list<string> $relation */
-    private function reconcileGeneratedColumns(ClassMetadata $class, Table $old, Table $target, string $tableSql, array $relation): void
+    private function protectGeneratedColumns(Table $old, Table $target, string $tableSql, array $relation): void
     {
         $connection = $this->em->getConnection();
-        $platform = $connection->getDatabasePlatform();
-        $quote = $this->em->getConfiguration()->getQuoteStrategy();
-        $declared = [];
-        foreach ($class->fieldMappings as $field) {
-            if ($field->storedExpression !== null) {
-                $column = $target->getColumn($quote->getColumnName($field->fieldName, $class, $platform));
-                $name = $column->getObjectName()->getIdentifier()->toNormalizedValue($platform->getUnquotedIdentifierFolding());
-                $declared[$name] = $field->storedExpression;
+        foreach ($connection->fetchFirstColumn(self::GENERATED, $relation) as $column) {
+            $name = $connection->quoteSingleIdentifier($column);
+            if ($target->hasColumn($name)) {
+                throw new RuntimeException($tableSql . '.' . $name . ' is a generated column in PostgreSQL. Manage its schema with an explicit migration.');
             }
-        }
-        foreach ($connection->fetchAllAssociative(self::GENERATED, $relation) as $actual) {
-            $name = $platform->quoteSingleIdentifier($actual['attname']);
-            $context = $tableSql . '.' . $name;
-            if (! $target->hasColumn($name)) {
-                if ($actual['attgenerated'] !== '' && $old->hasColumn($name)) {
-                    // Keep externally managed generated columns and their indexes in the database.
-                    foreach ($old->getIndexes() as $index) {
-                        if (! $target->hasIndex($index->getName()) && in_array($actual['attname'], $index->getColumns(), true)) {
-                            $old->dropIndex($index->getName());
-                        }
-                    }
-                    $old->dropColumn($name);
+            if (! $old->hasColumn($name)) {
+                continue;
+            }
+            foreach ($old->getIndexes() as $index) {
+                if (! $target->hasIndex($index->getName()) && in_array($column, $index->getColumns(), true)) {
+                    $old->dropIndex($index->getName());
                 }
-                continue;
             }
-
-            $column = $target->getColumn($name);
-            $isDeclared = isset($declared[$actual['attname']]);
-            if (! $isDeclared && $actual['attgenerated'] === '') {
-                continue;
-            }
-            if (! $isDeclared || $actual['attgenerated'] !== 's') {
-                throw new RuntimeException($context . ' changes the generated column kind. Use an explicit migration.');
-            }
-            $this->requireEquivalent($declared[$actual['attname']], $actual['expression'], $actual, $context);
-            // DBAL can report adbin as a DEFAULT. Compare the ordinary column properties separately.
-            $oldColumn = $old->getColumn($name);
-            $oldColumn->setDefault(null);
-            $column->setComment(CatalogDefinition::preserveStamp($column->getComment(), $oldColumn->getComment()));
-            $column->setColumnDefinition(null);
+            $old->dropColumn($name);
         }
     }
 
-    private function reconcilePartialIndexes(Table $old, Table $target, string $tableSql, string $schema): void
+    private function protectPartialIndexes(Table $old, Table $target, string $tableSql): void
     {
-        $platform = $this->em->getConnection()->getDatabasePlatform();
         foreach ($old->getIndexes() as $index) {
             if (! $index->hasOption('where')) {
                 continue;
@@ -290,32 +208,6 @@ final readonly class AdvancedSchema
                 $old->dropIndex($index->getName());
             } elseif (! $target->getIndex($index->getName())->hasOption('where')) {
                 throw new RuntimeException($tableSql . '.' . $index->getName() . ' removes a partial index predicate. Use an explicit migration.');
-            }
-        }
-        foreach ($target->getIndexes() as $index) {
-            if (! $index->hasOption(self::DECLARED_PREDICATE) || ! $old->hasIndex($index->getName())) {
-                continue;
-            }
-            $current = $old->getIndex($index->getName());
-            $context = $tableSql . '.' . $index->getName();
-            if (! $current->hasOption('where') || $index->isUnique() !== $current->isUnique()
-                || $index->getColumns() !== $current->getColumns()) {
-                throw new RuntimeException($context . ' changes the partial index shape. Use an explicit migration.');
-            }
-            $actualName = $current->getObjectName()->getIdentifier()->toNormalizedValue($platform->getUnquotedIdentifierFolding());
-            $actual = $this->em->getConnection()->fetchAssociative(self::PARTIAL, [$schema, $actualName]);
-            if ($actual === false || $actual['method'] !== 'btree' || ! $actual['valid']) {
-                throw new RuntimeException($context . ' has an unsupported partial index definition. Use an explicit migration.');
-            }
-            $this->requireEquivalent($index->getPredicate() ?? '', $actual['predicate'], $actual, $context);
-            $options = $index->getOptions();
-            $options['where'] = $current->getOption('where');
-            $target->dropIndex($index->getName());
-            $columns = array_map(static fn ($column): string => $column->getColumnName()->toSQL($platform), $index->getIndexedColumns());
-            if ($index->isUnique()) {
-                $target->addUniqueIndex($columns, $index->getName(), $options);
-            } else {
-                $target->addIndex($columns, $index->getName(), $index->getFlags(), $options);
             }
         }
     }

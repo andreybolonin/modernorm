@@ -2,6 +2,8 @@
 
 **Status:** Proposed · **Target:** PostgreSQL · **Audience:** Codex · **Scope:** ORM metadata, schema generation/introspection/diff, migrations, runtime handling of generated columns.
 
+> The proposed `Column(generated: <SQL expression>)` and `Index(where: ..., unique: ...)` attributes were removed. See [current mapping support](docs/mapping-scope.md#postgresql-exclusion-constraints-and-migration-managed-assets).
+
 ## 1. Goal
 
 Add three declarative PostgreSQL features to ModernORM without introducing a parallel schema engine:

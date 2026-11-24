@@ -21,8 +21,6 @@ final class Index implements MappingAttribute
         public readonly array|null $fields = null,
         public readonly array|null $flags = null,
         public readonly array|null $options = null,
-        public readonly ?string $where = null,
-        public readonly bool $unique = false,
     ) {
     }
 }

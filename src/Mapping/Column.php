@@ -15,7 +15,7 @@ final class Column implements MappingAttribute
      * @param int|null                      $scale     The scale for a decimal (exact numeric) column (Applies only for decimal column).
      * @param class-string<BackedEnum>|null $enumType
      * @param array<string,mixed>           $options
-     * @param string|null $generated Database fetch mode or PostgreSQL STORED expression
+     * @phpstan-param 'NEVER'|'INSERT'|'ALWAYS'|null $generated
      */
     public function __construct(
         public readonly string|null $name = null,
