@@ -99,7 +99,7 @@ Generated migrations embed the source and its SHA-256. The `modernorm_trigger_fu
 
 Use SQL migrations to manage STORED generated columns and partial unique indexes. The existing `Index(options: ['where' => ...])` option remains available for partial indexes. The `Column(generated: ...)` setting accepts the database fetch modes `NEVER`, `INSERT` and `ALWAYS`. To read a database-computed field through the ORM, map it with `insertable: false, updatable: false` and omit it from bulk write payloads.
 
-Schema diff uses read-only PostgreSQL catalog queries and preserves unmanaged partial indexes, exclusion constraints and generated columns. If a mapped column overlaps a generated column, manage that table's schema with an explicit migration. Exclusion constraint migrations record fingerprints of the declaration and stored definition. Keep the DDL and fingerprint statement together. Changes to the exclusion definition require an explicit migration.
+Schema diff uses read-only PostgreSQL catalog queries and preserves unmanaged partial indexes, exclusion constraints and generated columns. Dropping a column used by a partial index requires an explicit migration, including when the column appears only in the predicate or an index expression. If a mapped column overlaps a generated column, manage that table's schema with an explicit migration. Exclusion constraint migrations record fingerprints of the declaration and stored definition. Keep the DDL and fingerprint statement together. Changes to the exclusion definition require an explicit migration.
 
 ## Cache formats and migration
 

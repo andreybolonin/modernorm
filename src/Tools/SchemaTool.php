@@ -1267,6 +1267,22 @@ class SchemaTool
                     SQL, [$oid, $name])) {
                     throw new RuntimeException('Dropping column ' . $table . '.' . $name . ' would remove a CHECK or EXCLUDE constraint. Use an explicit migration.');
                 }
+                $index = $connection->fetchOne(<<<'SQL'
+                    SELECT i.relname
+                    FROM pg_catalog.pg_attribute a
+                    JOIN pg_catalog.pg_depend d ON d.refobjid = a.attrelid AND d.refobjsubid = a.attnum
+                    JOIN pg_catalog.pg_index ix ON ix.indexrelid = d.objid AND ix.indrelid = a.attrelid
+                    JOIN pg_catalog.pg_class i ON i.oid = ix.indexrelid
+                    WHERE a.attrelid = ? AND a.attname = ? AND ix.indpred IS NOT NULL
+                      AND d.classid = 'pg_catalog.pg_class'::pg_catalog.regclass
+                      AND d.refclassid = 'pg_catalog.pg_class'::pg_catalog.regclass
+                    ORDER BY i.relname
+                    LIMIT 1
+                    SQL, [$oid, $name]);
+                if ($index !== false) {
+                    throw new RuntimeException('Dropping column ' . $table . '.' . $name . ' would remove partial index '
+                        . $this->platform->quoteSingleIdentifier($index) . '. Use an explicit migration.');
+                }
             }
         }
     }

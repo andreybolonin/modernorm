@@ -135,6 +135,50 @@ final class AdvancedSchemaTest extends TestCase
         $tool->getSchemaMigrationSql([$metadata]);
     }
 
+    public static function partialIndexDependencies(): iterable
+    {
+        foreach (self::schemaApis() as $api => [$editor]) {
+            yield $api . ' predicate' => [$editor, '(code) WHERE "External Flag"'];
+            yield $api . ' key' => [$editor, '("External Flag", code) WHERE active'];
+            yield $api . ' expression' => [$editor, '((NOT "External Flag"), code) WHERE active'];
+        }
+    }
+
+    #[DataProvider('partialIndexDependencies')]
+    public function testDroppingColumnReferencedByPartialIndexRequiresExplicitMigration(bool $editor, string $definition): void
+    {
+        $this->em->getConfiguration()->setUseDbalEditorApi($editor);
+        $metadata = $this->metadata();
+        $metadata->exclusions = [];
+        $tool = new SchemaTool($this->em);
+        $tool->createSchema([$metadata]);
+        $db = $this->em->getConnection();
+        $table = $this->schema . '.bookings';
+        $db->executeStatement("ALTER TABLE $table ADD COLUMN \"External Flag\" boolean NOT NULL DEFAULT true");
+        $db->executeStatement("CREATE UNIQUE INDEX \"Protected Codes\" ON $table $definition");
+        $db->executeStatement("INSERT INTO $table (id, code, active, resource, starts, ends, rate) VALUES (1, 'occupied', true, 1, 10, 20, 1)");
+
+        $db->beginTransaction();
+        try {
+            $db->executeStatement('SET TRANSACTION READ ONLY');
+            foreach (['getUpdateSchemaSql', 'getSchemaMigrationSql'] as $method) {
+                try {
+                    $tool->$method([$metadata]);
+                    self::fail($method . ' allowed dropping a column referenced by a partial index.');
+                } catch (RuntimeException $error) {
+                    self::assertStringContainsString('External Flag would remove partial index "Protected Codes". Use an explicit migration.', $error->getMessage());
+                }
+            }
+        } finally {
+            $db->rollBack();
+        }
+        $this->assertSqlState('23505', "INSERT INTO $table (id, code, active, resource, starts, ends, rate) VALUES (2, 'occupied', true, 1, 20, 30, 1)");
+
+        $db->executeStatement('DROP INDEX ' . $this->schema . '."Protected Codes"');
+        $this->apply($tool->getSchemaMigrationSql([$metadata])['up']);
+        self::assertSame([], $tool->getUpdateSchemaSql([$metadata]));
+    }
+
     public function testGeneratedColumnCannotBeReplacedByMappedColumn(): void
     {
         $metadata = $this->metadata();
