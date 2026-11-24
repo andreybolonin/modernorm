@@ -353,14 +353,14 @@ class ObjectHydrator extends AbstractHydrator
                 // Check the type of the relation (many or single-valued)
                 if (! $relation->isToOne()) {
                     // PATH A: Collection-valued association
-                    $reflFieldValue = $reflField->getValue($parentObject);
-
                     if (isset($nonemptyComponents[$resultAlias])) {
                         $collKey = $oid . $relationField;
                         if (isset($this->initializedCollections[$collKey])) {
                             $reflFieldValue = $this->initializedCollections[$collKey];
                         } elseif (! isset($this->existingCollections[$collKey])) {
                             $reflFieldValue = $this->initRelatedCollection($parentObject, $parentClass, $relationField, $parentAlias);
+                        } else {
+                            $reflFieldValue = $reflField->getValue($parentObject);
                         }
 
                         $indexExists  = isset($this->identifierMap[$path][$id[$parentAlias]][$id[$resultAlias]]);
@@ -402,7 +402,7 @@ class ObjectHydrator extends AbstractHydrator
                             // Update result pointer
                             $resultPointers[$resultAlias] = $reflFieldValue[$index];
                         }
-                    } elseif (! $reflFieldValue) {
+                    } elseif (! ($reflFieldValue = $reflField->getValue($parentObject))) {
                         $this->initRelatedCollection($parentObject, $parentClass, $relationField, $parentAlias);
                     } elseif ($reflFieldValue instanceof PersistentCollection && $reflFieldValue->isInitialized() === false && ! isset($this->uninitializedCollections[$oid . $relationField])) {
                         $this->uninitializedCollections[$oid . $relationField] = $reflFieldValue;
