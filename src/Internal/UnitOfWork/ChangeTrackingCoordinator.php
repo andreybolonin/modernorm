@@ -17,6 +17,7 @@ namespace ModernORM\Internal\UnitOfWork;
 use Closure;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use ModernORM\EntityManager;
 use ModernORM\EntityManagerInterface;
 use ModernORM\Event\ListenersInvoker;
 use ModernORM\Event\PreFlushEventArgs;
@@ -26,6 +27,8 @@ use ModernORM\Exception\ORMException;
 use ModernORM\Exception\UnexpectedAssociationValue;
 use ModernORM\Mapping\AssociationMapping;
 use ModernORM\Mapping\ClassMetadata;
+use ModernORM\Mapping\PropertyAccessors\RawValuePropertyAccessor;
+use ModernORM\Mapping\PropertyAccessors\TypedNoDefaultPropertyAccessor;
 use ModernORM\PersistentCollection;
 use ModernORM\UnitOfWork;
 use RuntimeException;
@@ -222,7 +225,8 @@ final class ChangeTrackingCoordinator
             $this->listenersInvoker->invoke($class, Events::preFlush, $entity, new PreFlushEventArgs($this->em), $invoke);
         }
 
-        if (($this->entityStateManager->states[$oid] ?? null) === UnitOfWork::STATE_MANAGED
+        if ($class->associationMappings === []
+            && ($this->entityStateManager->states[$oid] ?? null) === UnitOfWork::STATE_MANAGED
             && isset($this->entityStateManager->snapshots[$oid])
             && ! $this->flushQueues->hasInsertion($oid)
             && ! $this->lazyReferenceTracker->contains($entity)
@@ -534,20 +538,148 @@ final class ChangeTrackingCoordinator
                 default => [],
             };
 
-            foreach ($entitiesToProcess as $entity) {
-                // Ignore uninitialized proxy objects
-                if ($this->unitOfWork->isUninitializedObject($entity)) {
+            $plan = $this->unchangedGroupPlan($class, $entitiesToProcess);
+            $groups = $plan === null ? [$entitiesToProcess] : array_chunk($entitiesToProcess, 256);
+            foreach ($groups as $group) {
+                if ($plan !== null && $this->isUnchangedGroup($class, $group, $plan[0], $plan[1], $plan[2])) {
                     continue;
                 }
 
-                // Only MANAGED entities that are NOT SCHEDULED FOR INSERTION OR DELETION are processed here.
-                $oid = spl_object_id($entity);
+                // After the first uncertain entity, normal traversal can run
+                // callbacks or discover new entities affecting later groups.
+                $plan = null;
+                foreach ($group as $entity) {
+                    // Ignore uninitialized proxy objects
+                    if ($this->unitOfWork->isUninitializedObject($entity)) {
+                        continue;
+                    }
 
-                if (! $this->flushQueues->hasInsertion($oid) && ! $this->flushQueues->hasDeletion($oid) && isset($this->entityStateManager->states[$oid])) {
-                    $this->unitOfWork->computeChangeSet($class, $entity);
+                    // Only MANAGED entities that are NOT SCHEDULED FOR INSERTION OR DELETION are processed here.
+                    $oid = spl_object_id($entity);
+
+                    if (! $this->flushQueues->hasInsertion($oid) && ! $this->flushQueues->hasDeletion($oid) && isset($this->entityStateManager->states[$oid])) {
+                        $this->unitOfWork->computeChangeSet($class, $entity);
+                    }
                 }
             }
         }
+    }
+
+    /**
+     * Determine whether the class can be scanned without invoking accessors.
+     *
+     * @param array<array-key, object> $entities
+     * @return array{list<string>, array<string, ClassMetadata>, array<string, ClassMetadata|null>}|null
+     */
+    private function unchangedGroupPlan(ClassMetadata $class, array $entities): ?array
+    {
+        if (count($entities) < 64 || $this->unitOfWork::class !== UnitOfWork::class
+            || $this->em::class !== EntityManager::class
+            || ! $class->isChangeTrackingDeferredImplicit() || ! $class->isIdentifierNatural()
+            || $class->isReadOnly || $class->versionField !== null || $class->embeddedClasses !== []
+            || ! $class->isInheritanceTypeNone() || $class->reflClass?->getParentClass() !== false
+            || $this->flushQueues->insertions() !== [] || $this->flushQueues->deletions() !== []
+            || ! $this->lazyReferenceTracker->isEmpty()
+            || ($this->listenersInvoker->getSubscribedSystems($class, Events::preFlush) & ~ListenersInvoker::INVOKE_MANAGER) !== 0
+        ) {
+            return null;
+        }
+
+        $toOne = $collections = [];
+        $metadataFactory = $this->em->getMetadataFactory();
+        foreach ($class->associationMappings as $field => $mapping) {
+            if ($mapping->isToOne()) {
+                $toOne[$field] = $mapping->isManyToOne() && $metadataFactory->hasMetadataFor($mapping->targetEntity)
+                    ? $this->em->getClassMetadata($mapping->targetEntity)
+                    : null;
+                continue;
+            }
+            if (! $mapping->isToMany() || ! $metadataFactory->hasMetadataFor($mapping->targetEntity)) {
+                return null;
+            }
+            $collections[$field] = $this->em->getClassMetadata($mapping->targetEntity);
+        }
+
+        foreach ($class->propertyAccessors as $field => $accessor) {
+            if ($accessor::class !== RawValuePropertyAccessor::class
+                && ($accessor::class !== TypedNoDefaultPropertyAccessor::class || ! $accessor->usesRawPropertyAccess())
+            ) {
+                return null;
+            }
+            $property = $accessor->getUnderlyingReflector();
+            if (! $property->isPublic() || $property->getName() !== $field || $property->hasHooks()
+                || (! isset($class->associationMappings[$field])
+                    && (! isset($class->fieldMappings[$field]) || $class->fieldMappings[$field]->enumType !== null))
+            ) {
+                return null;
+            }
+        }
+
+        return [array_keys($class->fieldMappings), $collections, $toOne];
+    }
+
+    /**
+     * @param array<array-key, object> $entities
+     * @param list<string> $fields
+     * @param array<string, ClassMetadata> $collections
+     * @param array<string, ClassMetadata|null> $toOne
+     */
+    private function isUnchangedGroup(ClassMetadata $class, array $entities, array $fields, array $collections, array $toOne): bool
+    {
+        foreach ($entities as $entity) {
+            $snapshot = $this->entityStateManager->snapshots[spl_object_id($entity)] ?? null;
+            if ($entity::class !== $class->name || $snapshot === null || $class->reflClass->isUninitializedLazyObject($entity)) {
+                return false;
+            }
+
+            $data = (array) $entity;
+            foreach ($fields as $field) {
+                if (! isset($data[$field], $snapshot[$field]) || $data[$field] !== $snapshot[$field]) {
+                    return false;
+                }
+            }
+
+            foreach ($toOne as $association => $targetClass) {
+                if (! array_key_exists($association, $data) || ! array_key_exists($association, $snapshot)
+                    || $data[$association] !== $snapshot[$association]) {
+                    return false;
+                }
+
+                $target = $data[$association];
+                if ($target !== null
+                    && ($targetClass === null || ! $this->isManagedAssociationTarget($target, $targetClass))
+                ) {
+                    return false;
+                }
+            }
+
+            foreach ($collections as $association => $targetClass) {
+                $collection = $data[$association] ?? null;
+                if (! $collection instanceof PersistentCollection || ($snapshot[$association] ?? null) !== $collection
+                    || $collection->getOwner() !== $entity || $collection->isDirty()
+                ) {
+                    return false;
+                }
+                $storage = $collection->unwrap();
+                if ($storage::class !== ArrayCollection::class) {
+                    return false;
+                }
+                foreach ($storage->toArray() as $target) {
+                    if (! $this->isManagedAssociationTarget($target, $targetClass)) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
+
+    private function isManagedAssociationTarget(mixed $target, ClassMetadata $class): bool
+    {
+        return is_object($target) && $target::class === $class->name
+            && ($this->entityStateManager->states[spl_object_id($target)] ?? null) === UnitOfWork::STATE_MANAGED
+            && $class->reflClass !== null && ! $class->reflClass->isUninitializedLazyObject($target);
     }
 
     /**

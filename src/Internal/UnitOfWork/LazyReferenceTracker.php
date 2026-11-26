@@ -41,6 +41,11 @@ final class LazyReferenceTracker
         unset($this->references[$entity]);
     }
 
+    public function isEmpty(): bool
+    {
+        return $this->references->count() === 0;
+    }
+
     public function clear(): void
     {
         $this->references = new WeakMap();
