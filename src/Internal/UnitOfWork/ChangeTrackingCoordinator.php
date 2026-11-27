@@ -539,15 +539,20 @@ final class ChangeTrackingCoordinator
             };
 
             $plan = $this->unchangedGroupPlan($class, $entitiesToProcess);
+            $scalarPlan = $plan !== null && $class->associationMappings === [] && $this->readOnlyObjects === []
+                ? ScalarChangeTrackingPlan::forMetadata($class)
+                : null;
             $groups = $plan === null ? [$entitiesToProcess] : array_chunk($entitiesToProcess, 256);
             foreach ($groups as $group) {
-                if ($plan !== null && $this->isUnchangedGroup($class, $group, $plan[0], $plan[1], $plan[2])) {
+                if ($scalarPlan !== null ? $this->computeScalarGroup($class, $group, $scalarPlan)
+                    : ($plan !== null && $this->isUnchangedGroup($class, $group, $plan[0], $plan[1], $plan[2]))
+                ) {
                     continue;
                 }
 
                 // After the first uncertain entity, normal traversal can run
                 // callbacks or discover new entities affecting later groups.
-                $plan = null;
+                $plan = $scalarPlan = null;
                 foreach ($group as $entity) {
                     // Ignore uninitialized proxy objects
                     if ($this->unitOfWork->isUninitializedObject($entity)) {
@@ -563,6 +568,36 @@ final class ChangeTrackingCoordinator
                 }
             }
         }
+    }
+
+    /** @param list<object> $group */
+    private function computeScalarGroup(ClassMetadata $class, array $group, ScalarChangeTrackingPlan $plan): bool
+    {
+        // Leave the whole group untouched if an entity needs ordinary traversal.
+        $updates = [];
+        foreach ($group as $entity) {
+            $oid = spl_object_id($entity);
+            $original = $this->entityStateManager->snapshots[$oid] ?? null;
+            if ($original === null || ($this->entityStateManager->states[$oid] ?? null) !== UnitOfWork::STATE_MANAGED) {
+                return false;
+            }
+
+            $result = $plan->compare($class, $entity, $original);
+            if ($result === null) {
+                return false;
+            }
+            if ($result !== []) {
+                $updates[$oid] = [$entity, $result];
+            }
+        }
+
+        foreach ($updates as $oid => [$entity, [$changeSet, $actualData]]) {
+            $this->entityChangeSets[$oid] = $changeSet;
+            $this->entityStateManager->snapshots[$oid] = $actualData;
+            $this->flushQueues->addUpdate($entity);
+        }
+
+        return true;
     }
 
     /**

@@ -104,23 +104,30 @@ final readonly class ScalarChangeTrackingPlan
         // The admitted accessors read these same raw keys. Cast once per entity,
         // without invoking hooks or binding snapshot values to property references.
         $values = (array) $entity;
-        $actual = [];
         $changes = [];
         foreach ($this->fields as $field => $key) {
             $value = $values[$key] ?? null;
-            $actual[$field] = $value;
-            if (! array_key_exists($field, $original) || isset($metadata->fieldMappings[$field]->notUpdatable)) {
+            $old = $original[$field] ?? null;
+            if ($old === $value || isset($metadata->fieldMappings[$field]->notUpdatable)
+                || ($old === null && ! array_key_exists($field, $original))
+            ) {
                 continue;
             }
-            $old = $original[$field];
             // Non-scalar baselines retain enum/custom comparison semantics in the compatibility path.
             if ($old !== null && ! is_scalar($old)) {
                 return null;
             }
-            if ($old !== $value) {
-                $changes[$field] = [$old, $value];
-            }
+            $changes[$field] = [$old, $value];
         }
-        return $changes === [] ? [] : [$changes, $actual];
+        if ($changes === []) {
+            return [];
+        }
+
+        $actual = [];
+        foreach ($this->fields as $field => $key) {
+            $actual[$field] = $values[$key] ?? null;
+        }
+
+        return [$changes, $actual];
     }
 }
