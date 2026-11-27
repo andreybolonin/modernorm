@@ -11,12 +11,17 @@ use Doctrine\DBAL\LockMode;
 use Doctrine\DBAL\ParameterType;
 use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Result;
+use Doctrine\DBAL\Statement;
+use Doctrine\DBAL\Types\BooleanType;
+use Doctrine\DBAL\Types\IntegerType;
+use Doctrine\DBAL\Types\StringType;
 use Doctrine\DBAL\Types\Types;
 use ModernORM\EntityManagerInterface;
 use ModernORM\Id\IdentityGenerator;
 use ModernORM\Id\BigIntegerIdentityGenerator;
 use ModernORM\Mapping\AssociationMapping;
 use ModernORM\Mapping\ClassMetadata;
+use ModernORM\Mapping\DefaultQuoteStrategy;
 use ModernORM\Mapping\JoinColumnMapping;
 use ModernORM\Mapping\ManyToManyAssociationMapping;
 use ModernORM\Exception\MappingException;
@@ -330,6 +335,22 @@ class BasicEntityPersister implements EntityPersister
 
     public function update(object $entity): void
     {
+        $statement = null;
+        $this->updateEntity($entity, false, $statement);
+    }
+
+    /**
+     * @internal The caller owns this one-shape cache for the current flush.
+     * @param array{list<string>, Statement, list<string>}|null $statement
+     */
+    public function updateWithStatementReuse(object $entity, ?array &$statement): void
+    {
+        $this->updateEntity($entity, true, $statement);
+    }
+
+    /** @param array{list<string>, Statement, list<string>}|null $statement */
+    private function updateEntity(object $entity, bool $reuse, ?array &$statement): void
+    {
         $tableName  = $this->class->getTableName();
         $updateData = $this->prepareUpdateData($entity);
 
@@ -343,6 +364,10 @@ class BasicEntityPersister implements EntityPersister
             return;
         }
 
+        if ($reuse && $this->tryPreparedUpdate($entity, $data, $statement)) {
+            return;
+        }
+
         $isVersioned     = $this->class->isVersioned;
         $quotedTableName = $this->quoteStrategy->getTableName($this->class, $this->platform);
 
@@ -353,6 +378,58 @@ class BasicEntityPersister implements EntityPersister
 
             $this->assignDefaultVersionAndUpsertableValues($entity, $id);
         }
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     * @param array{list<string>, Statement, list<string>}|null $plan
+     */
+    private function tryPreparedUpdate(object $entity, array $data, ?array &$plan): bool
+    {
+        $columns = array_keys($data);
+        if ($plan === null || $plan[0] !== $columns) {
+            $plan = null;
+            if ($this->class->isVersioned || $this->class->requiresFetchAfterChange
+                || $this->conn::class !== Connection::class || $this->quoteStrategy::class !== DefaultQuoteStrategy::class
+            ) {
+                return false;
+            }
+
+            $idField = $this->class->identifier[0];
+            $provider = $this->conn->getConfiguration()->getTypeProvider();
+            $types = $set = [];
+            foreach ($columns as $column) {
+                $field = $this->class->fieldNames[$column] ?? null;
+                $type = $this->columnTypes[$column];
+                if ($field === null || ! is_string($type)) {
+                    return false;
+                }
+                $types[] = $type;
+                $set[] = $this->quoteStrategy->getColumnName($field, $this->class, $this->platform) . ' = ?';
+            }
+            $types[] = $this->class->fieldMappings[$idField]->type;
+            foreach ($types as $type) {
+                if (! in_array($provider->get($type)::class, [IntegerType::class, StringType::class, BooleanType::class], true)) {
+                    return false;
+                }
+            }
+
+            $table = $this->quoteStrategy->getTableName($this->class, $this->platform);
+            $idColumn = $this->quoteStrategy->getColumnName($idField, $this->class, $this->platform);
+            $plan = [$columns, $this->conn->prepare('UPDATE ' . $table . ' SET ' . implode(', ', $set) . ' WHERE ' . $idColumn . ' = ?'), $types];
+        }
+
+        [, $statement, $types] = $plan;
+        $index = 0;
+        foreach ($data as $value) {
+            $statement->bindValue($index + 1, $value, $types[$index]);
+            ++$index;
+        }
+        $identifier = $this->em->getUnitOfWork()->getEntityIdentifier($entity);
+        $statement->bindValue($index + 1, $identifier[$this->class->identifier[0]], $types[$index]);
+        $statement->executeStatement();
+
+        return true;
     }
 
     /**

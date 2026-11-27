@@ -23,6 +23,7 @@ use ModernORM\Event\PostPersistEventArgs;
 use ModernORM\Event\PostRemoveEventArgs;
 use ModernORM\Event\PostUpdateEventArgs;
 use ModernORM\Event\PreUpdateEventArgs;
+use ModernORM\Persisters\Entity\BasicEntityPersister;
 use ModernORM\Persisters\Entity\EntityPersister;
 use ModernORM\Persisters\Collection\CollectionPersister;
 use ModernORM\PersistentCollection;
@@ -165,27 +166,37 @@ final class FlushExecutor
      */
     private function executePendingUpdates(): void
     {
-        self::executeUpdates($this->updateOperations());
+        $previous = $statement = null;
+        foreach ($this->updateOperations() as [$entity, $persister, $canReuse]) {
+            if ($persister !== $previous || ! $canReuse) {
+                $statement = null;
+            }
+            $previous = $persister;
+            if ($canReuse && $persister::class === BasicEntityPersister::class) {
+                $persister->updateWithStatementReuse($entity, $statement);
+            } else {
+                $persister->update($entity);
+            }
+        }
     }
 
     /**
      * Resume queue cleanup and postUpdate only after the yielded SQL write succeeds.
-     * @return \Generator<int, array{object, EntityPersister}>
+     * @return \Generator<int, array{object, EntityPersister, bool}>
      */
     private function updateOperations(): \Generator
     {
         $entities = $this->computeUpdateExecutionOrder();
 
-        foreach ($entities as $oid => $entity) {
+        foreach ($entities as $entity) {
             $oid = spl_object_id($entity);
-
-            if ($this->em->getClassMetadata($entity::class)->isReadOnly) {
+            $class = $this->em->getClassMetadata($entity::class);
+            if ($class->isReadOnly) {
                 $this->flushQueues->removeUpdate($oid);
                 $this->changeTrackingCoordinator->replaceChangeSet($oid, null);
                 continue;
             }
 
-            $class            = $this->em->getClassMetadata($entity::class);
             $persister        = $this->unitOfWork->getEntityPersister($class->name);
             $preUpdateInvoke  = $this->listenersInvoker->getSubscribedSystems($class, Events::preUpdate);
             $postUpdateInvoke = $this->listenersInvoker->getSubscribedSystems($class, Events::postUpdate);
@@ -197,7 +208,7 @@ final class FlushExecutor
             }
 
             if ($this->unitOfWork->getEntityChangeSet($entity) !== []) {
-                yield [$entity, $persister];
+                yield [$entity, $persister, $preUpdateInvoke === ListenersInvoker::INVOKE_NONE && $postUpdateInvoke === ListenersInvoker::INVOKE_NONE];
             }
 
             $this->flushQueues->removeUpdate($oid);
