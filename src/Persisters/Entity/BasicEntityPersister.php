@@ -254,6 +254,7 @@ class BasicEntityPersister implements EntityPersister
                 $stmt->executeStatement();
             }
 
+            $id = null;
             if ($isPostInsertId) {
                 if (! $returnsIdentity) {
                     $generatedId = $idGenerator->generateId($this->em, $entity);
@@ -261,12 +262,10 @@ class BasicEntityPersister implements EntityPersister
                 $id          = [$this->class->identifier[0] => $generatedId];
 
                 $uow->assignPostInsertId($entity, $generatedId);
-            } else {
-                $id = $this->class->getIdentifierValues($entity);
             }
 
             if ($this->class->requiresFetchAfterChange) {
-                $this->assignDefaultVersionAndUpsertableValues($entity, $id);
+                $this->assignDefaultVersionAndUpsertableValues($entity, $id ?? $this->class->getIdentifierValues($entity));
             }
 
             // Unset this queued insert, so that the prepareUpdateData() method (called via prepareInsertData() method)
