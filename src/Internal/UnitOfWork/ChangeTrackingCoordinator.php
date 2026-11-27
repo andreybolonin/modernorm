@@ -245,6 +245,8 @@ final class ChangeTrackingCoordinator
         }
 
         $actualData = [];
+        $inlineInsert = ! isset($this->entityStateManager->snapshots[$oid]) && $this->flushQueues->hasInsertion($oid);
+        $changeSet = [];
 
         foreach ($class->propertyAccessors as $name => $refProp) {
             $value = $refProp->getValue($entity);
@@ -285,6 +287,9 @@ final class ChangeTrackingCoordinator
 
             if ((! $class->isIdentifier($name) || ! $class->isIdGeneratorIdentity()) && ($name !== $class->versionField)) {
                 $actualData[$name] = $value;
+                if ($inlineInsert && (! isset($class->associationMappings[$name]) || $class->associationMappings[$name]->isToOneOwningSide())) {
+                    $changeSet[$name] = [null, $value];
+                }
             }
         }
 
@@ -292,19 +297,19 @@ final class ChangeTrackingCoordinator
             // Entity is either NEW or MANAGED but not yet fully persisted (only has an id).
             // These result in an INSERT.
             $this->entityStateManager->snapshots[$oid] = $actualData;
-            $changeSet                      = [];
+            if (! $inlineInsert) {
+                foreach ($actualData as $propName => $actualValue) {
+                    if (! isset($class->associationMappings[$propName])) {
+                        $changeSet[$propName] = [null, $actualValue];
 
-            foreach ($actualData as $propName => $actualValue) {
-                if (! isset($class->associationMappings[$propName])) {
-                    $changeSet[$propName] = [null, $actualValue];
+                        continue;
+                    }
 
-                    continue;
-                }
+                    $assoc = $class->associationMappings[$propName];
 
-                $assoc = $class->associationMappings[$propName];
-
-                if ($assoc->isToOneOwningSide()) {
-                    $changeSet[$propName] = [null, $actualValue];
+                    if ($assoc->isToOneOwningSide()) {
+                        $changeSet[$propName] = [null, $actualValue];
+                    }
                 }
             }
 
