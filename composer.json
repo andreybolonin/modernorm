@@ -5,7 +5,6 @@
     "license": "MIT",
     "require": {
         "php": "^8.4",
-        "ext-pdo": "*",
         "ext-pdo_pgsql": "*",
         "doctrine/dbal": "^4.6",
         "doctrine/collections": "^3.1",

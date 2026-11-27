@@ -9,6 +9,7 @@ use Doctrine\DBAL\DriverManager;
 use ModernORM\EntityManager;
 use ModernORM\Mapping as ORM;
 use ModernORM\ORMSetup;
+use ModernORM\PersistentCollection;
 use ModernORM\Query;
 use ModernORM\Query\ResultSetMapping;
 use ModernORM\UnitOfWork;
@@ -200,8 +201,10 @@ final class CriticalHydrationRegressionTest extends TestCase
 
         self::assertCount(2, $hydrated->items);
         self::assertSame($replacement, $emptyOwner);
-        self::assertTrue($emptyOwner->items->isInitialized());
-        self::assertTrue($emptyOwner->items->isEmpty());
+        $emptyItems = $emptyOwner->items;
+        self::assertInstanceOf(PersistentCollection::class, $emptyItems);
+        self::assertTrue($emptyItems->isInitialized());
+        self::assertTrue($emptyItems->isEmpty());
         self::assertSame($managed, $managedResult);
         self::assertSame($replacement, $managed->owner);
         self::assertSame($baseline, $this->em->getUnitOfWork()->getOriginalEntityData($managed));
