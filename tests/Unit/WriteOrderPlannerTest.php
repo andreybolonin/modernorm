@@ -41,6 +41,22 @@ final class WriteOrderPlannerTest extends TestCase
         self::assertSame([], $planner->orderUpdates([], $hash));
     }
 
+    public function testStoredIdentifiersPreserveClassOrderLexicalOrderAndStableTies(): void
+    {
+        $two = new UpdateOrderA();
+        $hundred = new UpdateOrderA();
+        $first = new UpdateOrderA();
+        $tie = new UpdateOrderA();
+        $other = new UpdateOrderB();
+        $input = [9 => $two, 8 => $other, 4 => $hundred, 2 => $first, 7 => $tie];
+        $identifiers = [9 => ['id' => 2], 8 => ['id' => 0], 4 => ['id' => '100'], 2 => ['id' => 1], 7 => ['id' => '1']];
+        $planner = new WriteOrderPlanner();
+
+        self::assertSame([$first, $tie, $hundred, $two, $other], $planner->orderUpdatesUsingStoredIdentifiers($input, $identifiers));
+        $identifiers[8]['id'] = null;
+        self::assertNull($planner->orderUpdatesUsingStoredIdentifiers($input, $identifiers));
+    }
+
     public function testHashObservationAndFailureOrderMatchExistingComparator(): void
     {
         $first = new stdClass();

@@ -48,6 +48,38 @@ final class WriteOrderPlanner
     }
 
     /**
+     * Use the same lexical order and stable ties for ordinary single-field identifiers.
+     * An unsupported identifier leaves validation and ordering to orderUpdates().
+     *
+     * @param array<int, object> $entities
+     * @param array<int, array<string, mixed>> $identifiers
+     * @return list<object>|null
+     */
+    public function orderUpdatesUsingStoredIdentifiers(array $entities, array $identifiers): ?array
+    {
+        $hashes = [];
+        foreach ($entities as $oid => $entity) {
+            $identifier = $identifiers[$oid] ?? [];
+            $value = count($identifier) === 1 ? reset($identifier) : null;
+            if (! is_int($value) && ! is_string($value)) {
+                return null;
+            }
+            $hashes[$entity::class][$oid] = $value;
+        }
+
+        ksort($hashes, SORT_STRING);
+        $ordered = [];
+        foreach ($hashes as $group) {
+            asort($group, SORT_STRING);
+            foreach ($group as $oid => $_) {
+                $ordered[] = $entities[$oid];
+            }
+        }
+
+        return $ordered;
+    }
+
+    /**
      * @param array<int, object> $entities
      * @param iterable<InsertDependency> $dependencies
      * @return list<object>

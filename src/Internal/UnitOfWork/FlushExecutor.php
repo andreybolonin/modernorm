@@ -15,6 +15,7 @@ declare(strict_types=1);
 namespace ModernORM\Internal\UnitOfWork;
 
 use Closure;
+use ModernORM\EntityManager;
 use ModernORM\EntityManagerInterface;
 use ModernORM\UnitOfWork;
 use ModernORM\Events;
@@ -224,7 +225,18 @@ final class FlushExecutor
      */
     private function executePendingDeletions(): void
     {
-        self::executeDeletions($this->deletionOperations());
+        $previous = $plan = null;
+        foreach ($this->deletionOperations() as [$entity, $persister]) {
+            if ($persister !== $previous) {
+                $plan = $persister::class === BasicEntityPersister::class ? $persister->prepareDeleteStatement() : null;
+                $previous = $persister;
+            }
+            if ($plan !== null && $persister::class === BasicEntityPersister::class) {
+                $persister->deleteWithPreparedStatement($entity, $plan[0], $plan[1]);
+            } else {
+                $persister->delete($entity);
+            }
+        }
     }
 
     /**
@@ -249,18 +261,13 @@ final class FlushExecutor
 
             $this->flushQueues->removeDeletion($oid);
             $this->entityStateManager->forgetAfterDeletion($oid);
-            $identifierProperty = $class->propertyAccessors[$class->identifier[0]]->getUnderlyingReflector();
-            $identifierType = $identifierProperty->getType();
-            // PHP forbids unsetting backed hooked properties. Keep non-nullable
-            // hooked IDs after deletion, just as we retain readonly IDs.
-            $cannotResetHookedId = $identifierProperty->hasHooks()
-                && $identifierType !== null && ! $identifierType->allowsNull();
-            if (
-                ! $class->isIdentifierNatural() &&
-                ! $identifierProperty->isReadOnly() &&
-                ! $cannotResetHookedId
-            ) {
-                $class->propertyAccessors[$class->identifier[0]]->setValue($entity, null);
+            if (! $class->isIdentifierNatural()) {
+                $accessor = $class->propertyAccessors[$class->identifier[0]];
+                $property = $accessor->getUnderlyingReflector();
+                // PHP forbids unsetting backed hooked properties.
+                if (! $property->isReadOnly() && (! $property->hasHooks() || $property->getType()?->allowsNull() !== false)) {
+                    $accessor->setValue($entity, null);
+                }
             }
 
             if ($invoke !== ListenersInvoker::INVOKE_NONE) {
@@ -284,6 +291,10 @@ final class FlushExecutor
     private function computeInsertExecutionOrder(): array
     {
         $entities = $this->flushQueues->insertions();
+        if ($this->hasNoOwningToOneDependencies($entities)) {
+            return array_values($entities);
+        }
+
         return $this->writeOrderPlanner->orderInserts($entities, $this->observeInsertDependencies($entities));
     }
 
@@ -319,18 +330,54 @@ final class FlushExecutor
     /** @return list<object> */
     private function computeUpdateExecutionOrder(): array
     {
-        return $this->writeOrderPlanner->orderUpdates($this->flushQueues->updates(), $this->unitOfWork->getIdHashByEntity(...));
+        $entities = $this->flushQueues->updates();
+        if ($this->unitOfWork::class === UnitOfWork::class && count($entities) >= 64) {
+            $ordered = $this->writeOrderPlanner->orderUpdatesUsingStoredIdentifiers($entities, $this->entityStateManager->identifiers);
+            if ($ordered !== null) {
+                return $ordered;
+            }
+        }
+
+        return $this->writeOrderPlanner->orderUpdates($entities, $this->unitOfWork->getIdHashByEntity(...));
     }
 
     /** @return list<object> */
     private function computeDeleteExecutionOrder(): array
     {
         $entities = $this->flushQueues->deletions();
+        if ($this->hasNoOwningToOneDependencies($entities)) {
+            return array_values($entities);
+        }
+
         return $this->writeOrderPlanner->orderDeletes(
             $entities,
             $this->observeCascadeDeleteDependencies($entities),
             $this->observeEntityDeleteDependencies($entities),
         );
+    }
+
+    /** @param array<int, object> $entities */
+    private function hasNoOwningToOneDependencies(array $entities): bool
+    {
+        if ($this->em::class !== EntityManager::class || $this->unitOfWork::class !== UnitOfWork::class || count($entities) < 64) {
+            return false;
+        }
+
+        $checked = [];
+        foreach ($entities as $entity) {
+            $name = $entity::class;
+            if (isset($checked[$name])) {
+                continue;
+            }
+            foreach ($this->em->getClassMetadata($name)->associationMappings as $association) {
+                if ($association->isToOneOwningSide()) {
+                    return false;
+                }
+            }
+            $checked[$name] = true;
+        }
+
+        return true;
     }
 
     /**

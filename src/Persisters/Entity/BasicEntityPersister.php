@@ -13,7 +13,9 @@ use Doctrine\DBAL\Platforms\AbstractPlatform;
 use Doctrine\DBAL\Result;
 use Doctrine\DBAL\Statement;
 use Doctrine\DBAL\Types\BooleanType;
+use Doctrine\DBAL\Types\DateTimeImmutableType;
 use Doctrine\DBAL\Types\IntegerType;
+use Doctrine\DBAL\Types\JsonType;
 use Doctrine\DBAL\Types\StringType;
 use Doctrine\DBAL\Types\Types;
 use ModernORM\EntityManagerInterface;
@@ -217,14 +219,20 @@ class BasicEntityPersister implements EntityPersister
 
         $stmt      = $this->conn->prepare($insertSql);
         $tableName = $this->class->getTableName();
+        $insertTypes = count($this->queuedInserts) > 1 ? $this->insertParameterTypes() : [];
+        $insertFields = array_keys($insertTypes);
 
         foreach ($this->queuedInserts as $key => $entity) {
-            $insertData = $this->prepareInsertData($entity);
+            $changes = $insertFields === [] ? [] : $uow->getEntityChangeSet($entity);
+            $paramIndex = 1;
+            if ($insertFields !== [] && array_keys($changes) === $insertFields) {
+                foreach ($insertTypes as $field => $type) {
+                    $stmt->bindValue($paramIndex++, $changes[$field][1], $type);
+                }
+            } else {
+                $insertData = $this->prepareInsertData($entity);
 
-            if (isset($insertData[$tableName])) {
-                $paramIndex = 1;
-
-                foreach ($insertData[$tableName] as $column => $value) {
+                foreach ($insertData[$tableName] ?? [] as $column => $value) {
                     $stmt->bindValue($paramIndex++, $value, $this->columnTypes[$column]);
                 }
             }
@@ -591,6 +599,45 @@ class BasicEntityPersister implements EntityPersister
     }
 
     /**
+     * @internal
+     * @return array{Statement, string}|null
+     */
+    public function prepareDeleteStatement(): ?array
+    {
+        if ($this->conn::class !== Connection::class || $this->quoteStrategy::class !== DefaultQuoteStrategy::class
+            || ! $this->class->isIdentifierNatural() || count($this->class->identifier) !== 1
+        ) {
+            return null;
+        }
+        foreach ($this->class->associationMappings as $mapping) {
+            if ($mapping->isManyToMany() && ! $mapping->isOnDeleteCascade) {
+                return null;
+            }
+        }
+        $field = $this->class->identifier[0];
+        $mapping = $this->class->fieldMappings[$field] ?? null;
+        if ($mapping === null || ! in_array(
+            $this->conn->getConfiguration()->getTypeProvider()->get($mapping->type)::class,
+            [IntegerType::class, StringType::class],
+            true,
+        )) {
+            return null;
+        }
+
+        $table = $this->quoteStrategy->getTableName($this->class, $this->platform);
+        $column = $this->quoteStrategy->getColumnName($field, $this->class, $this->platform);
+        return [$this->conn->prepare('DELETE FROM ' . $table . ' WHERE ' . $column . ' = ?'), $mapping->type];
+    }
+
+    /** @internal */
+    public function deleteWithPreparedStatement(object $entity, Statement $statement, string $type): void
+    {
+        $identifier = $this->em->getUnitOfWork()->getEntityIdentifier($entity);
+        $statement->bindValue(1, $identifier[$this->class->identifier[0]], $type);
+        $statement->executeStatement();
+    }
+
+    /**
      * Prepares the changeset of an entity for database insertion (UPDATE).
      *
      * The changeset is obtained from the currently running UnitOfWork.
@@ -735,6 +782,38 @@ class BasicEntityPersister implements EntityPersister
     protected function prepareInsertData(object $entity): array
     {
         return $this->prepareUpdateData($entity, true);
+    }
+
+    /** @return array<string, string> In the order used by the INSERT placeholders. */
+    private function insertParameterTypes(): array
+    {
+        if ($this::class !== self::class || ! $this->class->isIdentifierNatural() || $this->class->isVersioned
+            || $this->class->embeddedClasses !== [] || $this->class->requiresFetchAfterChange
+            || $this->quoteStrategy::class !== DefaultQuoteStrategy::class
+        ) {
+            return [];
+        }
+
+        $provider = $this->conn->getConfiguration()->getTypeProvider();
+        $types = $columns = [];
+        foreach ($this->class->propertyAccessors as $field => $accessor) {
+            $association = $this->class->associationMappings[$field] ?? null;
+            if ($association !== null && ! $association->isToOneOwningSide()) {
+                continue;
+            }
+            $mapping = $this->class->fieldMappings[$field] ?? null;
+            if ($mapping === null || isset($mapping->notInsertable) || isset($columns[$mapping->columnName])
+                || ! in_array($provider->get($mapping->type)::class, [
+                    IntegerType::class, StringType::class, BooleanType::class, JsonType::class, DateTimeImmutableType::class,
+                ], true)
+            ) {
+                return [];
+            }
+            $types[$field] = $mapping->type;
+            $columns[$mapping->columnName] = true;
+        }
+
+        return $types;
     }
 
     public function getOwningTable(string $fieldName): string
