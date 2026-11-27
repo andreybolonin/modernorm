@@ -9,6 +9,8 @@ use Doctrine\Common\Collections\ArrayCollection;
 use ModernORM\Mapping\AssociationMapping;
 use ModernORM\Mapping\ClassMetadata;
 use ModernORM\Mapping\PropertyAccessors\PropertyAccessor;
+use ModernORM\Mapping\PropertyAccessors\RawValuePropertyAccessor;
+use ModernORM\Mapping\PropertyAccessors\TypedNoDefaultPropertyAccessor;
 use ModernORM\PersistentCollection;
 use ModernORM\Query;
 use ModernORM\UnitOfWork;
@@ -57,6 +59,9 @@ class ObjectHydrator extends AbstractHydrator
 
     /** @var array<string, array{ClassMetadata, string, AssociationMapping, PropertyAccessor, string}> */
     private array $joinPaths = [];
+
+    /** @var array<string, string> One-to-many alias to its writable owning field. */
+    private array $freshInverse = [];
 
     private bool $customGatherRowData = false;
 
@@ -118,6 +123,25 @@ class ObjectHydrator extends AbstractHydrator
                 $this->siblingCollectionLeaves[$resultAlias] = [$parent, $assoc->fieldName, $parent . '.' . $resultAlias];
             }
 
+            if ($cacheJoinPaths && $assoc->isOneToMany() && $rsm->indexByMap === [] && ! $rsm->isMixed
+                && ! isset($this->hints[Query::HINT_REFRESH]) && ! isset($this->hints[Query::HINT_REFRESH_ENTITY])
+            ) {
+                $child = $this->getClassMetadata($className);
+                $accessor = $child->propertyAccessors[$assoc->mappedBy] ?? null;
+                if ($child->isInheritanceTypeNone() && count($child->associationMappings) === 1
+                    && ($accessor instanceof RawValuePropertyAccessor
+                        || ($accessor instanceof TypedNoDefaultPropertyAccessor && $accessor->usesRawPropertyAccess()))
+                ) {
+                    $property = $accessor->getUnderlyingReflector();
+                    if (! $property->hasHooks() && ! $property->isReadOnly() && ! $property->isVirtual()
+                        && (! $property->hasDefaultValue() || $property->getDefaultValue() === null)
+                        && $this->hasRawJoinedFields($child)
+                    ) {
+                        $this->freshInverse[$resultAlias] = $assoc->mappedBy;
+                    }
+                }
+            }
+
             $this->hints['fetched'][$parent][$assoc->fieldName] = true;
 
             if ($assoc->isManyToMany()) {
@@ -155,6 +179,23 @@ class ObjectHydrator extends AbstractHydrator
         }
     }
 
+    private function hasRawJoinedFields(ClassMetadata $child): bool
+    {
+        foreach ($child->fieldMappings as $field => $mapping) {
+            $accessor = $child->propertyAccessors[$field] ?? null;
+            if (! ($accessor instanceof RawValuePropertyAccessor)
+                && ! ($accessor instanceof TypedNoDefaultPropertyAccessor && $accessor->usesRawPropertyAccess())
+            ) {
+                return false;
+            }
+            if ($accessor->getUnderlyingReflector()->hasHooks()) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     protected function cleanup(): void
     {
         $eagerLoad = isset($this->hints[UnitOfWork::HINT_DEFEREAGERLOAD]) && $this->hints[UnitOfWork::HINT_DEFEREAGERLOAD] === true;
@@ -168,7 +209,7 @@ class ObjectHydrator extends AbstractHydrator
         $this->existingCollections           = [];
 
         $this->rootAliases = $this->idTemplate = [];
-        $this->siblingCollectionLeaves = $this->joinPaths = [];
+        $this->siblingCollectionLeaves = $this->joinPaths = $this->freshInverse = [];
         $this->resultCounter = 0;
 
         if ($eagerLoad) {
@@ -435,7 +476,22 @@ class ObjectHydrator extends AbstractHydrator
                                     unset($resultPointers[$resultAlias]);
                                 }
                             } else {
-                                $element = $this->getEntity($data ?? $this->gatherEntityRowData($row, $resultAlias), $resultAlias);
+                                $linked = false;
+                                if (isset($this->freshInverse[$resultAlias]) && $data === null
+                                    && $reflFieldValue->unwrap()::class === ArrayCollection::class
+                                ) {
+                                    $this->hints['fetchAlias'] = $resultAlias;
+                                    $element = $this->uow->createEntityWithMetadata(
+                                        $this->metadataCache[$entityName],
+                                        $this->gatherEntityRowData($row, $resultAlias),
+                                        $this->hints,
+                                        $parentObject,
+                                        $this->freshInverse[$resultAlias],
+                                        $linked,
+                                    );
+                                } else {
+                                    $element = $this->getEntity($data ?? $this->gatherEntityRowData($row, $resultAlias), $resultAlias);
+                                }
 
                                 if (isset($rsm->indexByMap[$resultAlias])) {
                                     $indexValue = $row[$rsm->indexByMap[$resultAlias]];
@@ -445,7 +501,11 @@ class ObjectHydrator extends AbstractHydrator
                                 } else {
                                     $elementId = spl_object_id($element);
                                     if (! isset($this->initializedCollectionElements[$collKey][$elementId])) {
-                                        $reflFieldValue->hydrateAdd($element);
+                                        if ($linked) {
+                                            $reflFieldValue->unwrap()->add($element);
+                                        } else {
+                                            $reflFieldValue->hydrateAdd($element);
+                                        }
                                         $reflFieldValue->last();
                                         $this->initializedCollectionElements[$collKey][$elementId] = $reflFieldValue->key();
                                     }

@@ -56,6 +56,7 @@ use function array_key_exists;
 use function array_values;
 use function assert;
 use function count;
+use function current;
 use function get_debug_type;
 use function implode;
 use function in_array;
@@ -1201,10 +1202,17 @@ class UnitOfWork implements PropertyChangedListener
      * @param array<string, mixed> $data
      * @param array<string, mixed> $hints
      */
-    final public function createEntityWithMetadata(ClassMetadata $class, array $data, array &$hints): object
-    {
-        $id     = $this->identifierFlattener->flattenIdentifier($class, $data);
-        $idHash = self::getIdHashByIdentifier($id);
+    final public function createEntityWithMetadata(
+        ClassMetadata $class,
+        array $data,
+        array &$hints,
+        ?object $owner = null,
+        ?string $inverse = null,
+        ?bool &$linked = null,
+    ): object {
+        $id = $this->identifierFlattener->flattenIdentifier($class, $data);
+        // The flattener returns a single normalized scalar identifier.
+        $idHash = (string) current($id);
 
         $managedEntity = $this->identityMap->get($class->name, $idHash);
         if ($managedEntity !== null) {
@@ -1254,6 +1262,12 @@ class UnitOfWork implements PropertyChangedListener
         }
 
         $this->entityHydrator->hydrate($class, $entity, $data, $hints, $managedEntity, $idHash);
+
+        if ($managedEntity === null && $entity::class === $class->name && $owner !== null && $inverse !== null && ! array_key_exists($inverse, $data)) {
+            $class->propertyAccessors[$inverse]->setValue($entity, $owner);
+            $this->entityStateManager->snapshots[spl_object_id($entity)][$inverse] = $owner;
+            $linked = true;
+        }
 
         // defer invoking of postLoad event to hydration complete step
         $this->hydrationCompleteHandler->deferPostLoadInvoking($class, $entity);

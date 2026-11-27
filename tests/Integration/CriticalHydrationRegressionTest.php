@@ -10,6 +10,7 @@ use ModernORM\EntityManager;
 use ModernORM\Mapping as ORM;
 use ModernORM\ORMSetup;
 use ModernORM\Query;
+use ModernORM\Query\ResultSetMapping;
 use ModernORM\UnitOfWork;
 use ModernORM\Tools\SchemaTool;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -159,6 +160,48 @@ final class CriticalHydrationRegressionTest extends TestCase
         $newId = $new?->id;
         $this->em->clear();
         self::assertSame($newId, $this->em->find(CriticalItem::class, $id)->owner?->id);
+    }
+
+    public function testCollectionFetchJoinLinksFreshChildAndKeepsManagedChildChange(): void
+    {
+        $owner = new CriticalOwner();
+        $replacement = new CriticalOwner();
+        $first = new CriticalItem();
+        $first->owner = $owner;
+        $second = new CriticalItem();
+        $second->owner = $owner;
+        $this->em->persist($first);
+        $this->em->persist($second);
+        $this->em->persist($replacement);
+        $this->em->flush();
+        [$ownerId, $replacementId, $firstId, $secondId] = [$owner->id, $replacement->id, $first->id, $second->id];
+        $this->em->clear();
+
+        $managed = $this->em->find(CriticalItem::class, $firstId);
+        self::assertInstanceOf(CriticalItem::class, $managed);
+        $baseline = $this->em->getUnitOfWork()->getOriginalEntityData($managed);
+        $replacement = $this->em->getReference(CriticalOwner::class, $replacementId);
+        $managed->owner = $replacement;
+
+        $mapping = new ResultSetMapping();
+        $mapping->addEntityResult(CriticalOwner::class, 'o');
+        $mapping->addFieldResult('o', 'joined_owner_id', 'id');
+        $mapping->addJoinedEntityResult(CriticalItem::class, 'i', 'o', 'items');
+        $mapping->addFieldResult('i', 'joined_item_id', 'id');
+        $mapping->addMetaResult('i', 'owner_id', 'owner_id', false, 'integer');
+        $sql = 'SELECT o.id AS joined_owner_id, i.id AS joined_item_id, i.owner_id FROM '
+            . $this->schema . '.owners o JOIN ' . $this->schema . '.items i ON i.owner_id = o.id WHERE o.id = ? ORDER BY i.id';
+        $query = $this->em->createNativeQuery($sql, $mapping);
+        $query->setParameter(1, $ownerId);
+        [$hydrated] = $query->getResult();
+        [$managedResult, $freshResult] = $hydrated->items->toArray();
+
+        self::assertSame($managed, $managedResult);
+        self::assertSame($replacement, $managed->owner);
+        self::assertSame($baseline, $this->em->getUnitOfWork()->getOriginalEntityData($managed));
+        self::assertSame($secondId, $freshResult->id);
+        self::assertSame($hydrated, $freshResult->owner);
+        self::assertSame($hydrated, $this->em->getUnitOfWork()->getOriginalEntityData($freshResult)['owner']);
     }
 
     public function testExplicitRefreshStillRestoresTheDatabaseRelation(): void
