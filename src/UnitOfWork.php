@@ -845,11 +845,9 @@ class UnitOfWork implements PropertyChangedListener
     }
 
     /** Apply the persist transition to one node before cascade traversal continues. */
-    private function persistEntity(object $entity): void
+    private function persistEntity(object $entity, ClassMetadata $class): void
     {
         $oid = spl_object_id($entity);
-
-        $class = $this->em->getClassMetadata($entity::class);
 
         // We assume NEW, so DETACHED entities result in an exception on flush (constraint violation).
         // If we would detect DETACHED here we would throw an exception anyway with the same
@@ -916,11 +914,10 @@ class UnitOfWork implements PropertyChangedListener
     }
 
     /** Soft deletion stops remove cascades at this entity. */
-    private function trySoftDelete(object $entity): bool
+    private function trySoftDelete(object $entity, ClassMetadata $class): bool
     {
         $oid = spl_object_id($entity);
 
-        $class = $this->em->getClassMetadata($entity::class);
         if ($class->softDeleteField !== null && ! $this->hardDelete) {
             $state = $this->getEntityState($entity);
             if ($state === self::STATE_DETACHED) {
@@ -941,9 +938,8 @@ class UnitOfWork implements PropertyChangedListener
         return false;
     }
 
-    private function removeEntity(object $entity): void
+    private function removeEntity(object $entity, ClassMetadata $class): void
     {
-        $class       = $this->em->getClassMetadata($entity::class);
         $entityState = $this->getEntityState($entity);
 
         switch ($entityState) {

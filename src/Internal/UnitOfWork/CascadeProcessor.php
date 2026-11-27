@@ -19,6 +19,7 @@ use Doctrine\Common\Collections\Collection;
 use ModernORM\EntityManagerInterface;
 use ModernORM\Exception\ORMInvalidArgumentException;
 use ModernORM\Mapping\AssociationMapping;
+use ModernORM\Mapping\ClassMetadata;
 use ModernORM\PersistentCollection;
 use ModernORM\UnitOfWork;
 
@@ -31,7 +32,7 @@ final class CascadeProcessor
     ) {
     }
 
-    /** @param Closure(object): void $persist */
+    /** @param Closure(object, ClassMetadata): void $persist */
     public function persist(object $entity, Closure $persist): void
     {
         $visited = [];
@@ -40,7 +41,7 @@ final class CascadeProcessor
 
     /**
      * @param array<int, object> $visited
-     * @param Closure(object): void $persist
+     * @param Closure(object, ClassMetadata): void $persist
      */
     private function visitPersist(object $entity, array &$visited, Closure $persist): void
     {
@@ -49,16 +50,17 @@ final class CascadeProcessor
             return;
         }
         $visited[$oid] = $entity;
-        $persist($entity);
-        $this->cascadePersist($entity, $visited, $persist);
+        $class = $this->em->getClassMetadata($entity::class);
+        $persist($entity, $class);
+        $this->cascadePersist($entity, $class, $visited, $persist);
     }
 
     /**
      * A handled soft delete stops traversal at that node. Physical deletion visits children first,
      * before removal can evict the owner from the Identity Map.
      *
-     * @param Closure(object): bool $trySoftDelete
-     * @param Closure(object): void $remove
+     * @param Closure(object, ClassMetadata): bool $trySoftDelete
+     * @param Closure(object, ClassMetadata): void $remove
      */
     public function remove(object $entity, Closure $trySoftDelete, Closure $remove): void
     {
@@ -68,8 +70,8 @@ final class CascadeProcessor
 
     /**
      * @param array<int, object> $visited
-     * @param Closure(object): bool $trySoftDelete
-     * @param Closure(object): void $remove
+     * @param Closure(object, ClassMetadata): bool $trySoftDelete
+     * @param Closure(object, ClassMetadata): void $remove
      */
     private function visitRemove(object $entity, array &$visited, Closure $trySoftDelete, Closure $remove): void
     {
@@ -78,24 +80,23 @@ final class CascadeProcessor
             return;
         }
         $visited[$oid] = $entity;
-        if ($trySoftDelete($entity)) {
+        $class = $this->em->getClassMetadata($entity::class);
+        if ($trySoftDelete($entity, $class)) {
             return;
         }
-        $this->cascadeRemove($entity, $visited, $trySoftDelete, $remove);
-        $remove($entity);
+        $this->cascadeRemove($entity, $class, $visited, $trySoftDelete, $remove);
+        $remove($entity, $class);
     }
 
     /** @param array<int, object> $visited
-     *  @param Closure(object): void $persist
+     *  @param Closure(object, ClassMetadata): void $persist
      */
-    private function cascadePersist(object $entity, array &$visited, Closure $persist): void
+    private function cascadePersist(object $entity, ClassMetadata $class, array &$visited, Closure $persist): void
     {
         if ($this->unitOfWork->isUninitializedObject($entity)) {
             // nothing to do - proxy is not initialized, therefore we don't do anything with it
             return;
         }
-
-        $class = $this->em->getClassMetadata($entity::class);
 
         $associationMappings = array_filter(
             $class->associationMappings,
@@ -147,21 +148,21 @@ final class CascadeProcessor
     }
 
     /** @param array<int, object> $visited
-     *  @param Closure(object): bool $trySoftDelete
-     *  @param Closure(object): void $remove
+     *  @param Closure(object, ClassMetadata): bool $trySoftDelete
+     *  @param Closure(object, ClassMetadata): void $remove
      */
-    private function cascadeRemove(object $entity, array &$visited, Closure $trySoftDelete, Closure $remove): void
+    private function cascadeRemove(object $entity, ClassMetadata $class, array &$visited, Closure $trySoftDelete, Closure $remove): void
     {
-        $class = $this->em->getClassMetadata($entity::class);
-
         $associationMappings = array_filter(
             $class->associationMappings,
             static fn (AssociationMapping $assoc): bool => $assoc->isCascadeRemove(),
         );
 
-        if ($associationMappings) {
-            $this->unitOfWork->initializeObject($entity);
+        if ($associationMappings === []) {
+            return;
         }
+
+        $this->unitOfWork->initializeObject($entity);
 
         $entitiesToCascade = [];
 
