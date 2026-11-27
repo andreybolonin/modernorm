@@ -50,12 +50,21 @@ class ObjectHydrator extends AbstractHydrator
     /** @var array<string, array<int, int|string>> Object id => actual collection key. */
     private array $initializedCollectionElements = [];
 
+    /** @var array<string, array{string, string, string}> Leaf alias to parent alias, relation field and identifier path. */
+    private array $siblingCollectionLeaves = [];
+
     private bool $customGatherRowData = false;
 
     protected function prepare(): void
     {
         $this->prepareEntityMapping();
         $this->customGatherRowData = (new ReflectionMethod($this, 'gatherRowData'))->getDeclaringClass()->name !== AbstractHydrator::class;
+        $rsm = $this->resultSetMapping();
+        $leafParents = $this::class === self::class && $this->uow::class === UnitOfWork::class
+            && ! $rsm->isMixed && $rsm->indexByMap === [] && $rsm->nestedEntities === []
+            && empty($this->hints[Query::HINT_INTERNAL_ITERATION]) && count($rsm->parentAliasMap) > 1
+            ? array_fill_keys($rsm->parentAliasMap, true)
+            : [];
 
         if (! isset($this->hints[UnitOfWork::HINT_DEFEREAGERLOAD])) {
             $this->hints[UnitOfWork::HINT_DEFEREAGERLOAD] = true;
@@ -85,6 +94,12 @@ class ObjectHydrator extends AbstractHydrator
             $sourceClass     = $this->getClassMetadata($sourceClassName);
             $assoc           = $sourceClass->associationMappings[$this->resultSetMapping()->relationMap[$resultAlias]];
 
+            if (isset($leafParents[$parent]) && ! isset($leafParents[$resultAlias])
+                && ! isset($rsm->parentAliasMap[$parent]) && $assoc->isToMany()
+            ) {
+                $this->siblingCollectionLeaves[$resultAlias] = [$parent, $assoc->fieldName, $parent . '.' . $resultAlias];
+            }
+
             $this->hints['fetched'][$parent][$assoc->fieldName] = true;
 
             if ($assoc->isManyToMany()) {
@@ -110,6 +125,16 @@ class ObjectHydrator extends AbstractHydrator
                 $this->hints['fetched'][$resultAlias][$inverseAssoc->fieldName] = true;
             }
         }
+
+        $leavesPerParent = [];
+        foreach ($this->siblingCollectionLeaves as [$parent]) {
+            $leavesPerParent[$parent] = ($leavesPerParent[$parent] ?? 0) + 1;
+        }
+        foreach ($this->siblingCollectionLeaves as $alias => [$parent]) {
+            if ($leavesPerParent[$parent] < 2) {
+                unset($this->siblingCollectionLeaves[$alias]);
+            }
+        }
     }
 
     protected function cleanup(): void
@@ -125,6 +150,7 @@ class ObjectHydrator extends AbstractHydrator
         $this->existingCollections           = [];
 
         $this->rootAliases = $this->idTemplate = [];
+        $this->siblingCollectionLeaves = [];
         $this->resultCounter = 0;
 
         if ($eagerLoad) {
@@ -304,6 +330,18 @@ class ObjectHydrator extends AbstractHydrator
 
         // Hydrate the data chunks
         foreach ($rowData['data'] as $resultAlias => $data) {
+            if (isset($this->siblingCollectionLeaves[$resultAlias], $nonemptyComponents[$resultAlias])) {
+                [$parentAlias, $field, $path] = $this->siblingCollectionLeaves[$resultAlias];
+                $index = $this->identifierMap[$path][$id[$parentAlias]][$id[$resultAlias]] ?? null;
+                if ($index !== null && isset($nonemptyComponents[$parentAlias], $resultPointers[$parentAlias])) {
+                    $collection = $this->initializedCollections[spl_object_id($resultPointers[$parentAlias]) . $field] ?? null;
+                    // No later alias reads this leaf pointer. Custom collection reads use the normal path.
+                    if ($collection !== null && $collection->unwrap()::class === ArrayCollection::class && isset($collection[$index])) {
+                        continue;
+                    }
+                }
+            }
+
             $entityName = $rsm->aliasMap[$resultAlias];
 
             if (isset($rsm->parentAliasMap[$resultAlias])) {
