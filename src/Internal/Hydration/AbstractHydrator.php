@@ -20,6 +20,9 @@ use LogicException;
 use ReflectionClass;
 use ReflectionEnum;
 
+use function array_diff_key;
+use function array_fill_keys;
+use function array_flip;
 use function array_key_exists;
 use function array_keys;
 use function array_map;
@@ -460,6 +463,29 @@ abstract class AbstractHydrator
         }
 
         return $rowData;
+    }
+
+    /**
+     * @param mixed[] $row
+     * @return array{array<string, array-key>, array<string, null>}|null
+     */
+    final protected function preparePlainEntityRows(array $row): ?array
+    {
+        $mapping = $this->rowMapping ??= $this->buildRowMapping($row);
+        if ($mapping['identifierFallbacks'] !== [] || $mapping['scalars'] !== [] || $mapping['newObjects'] !== []) {
+            return null;
+        }
+
+        $columns = array_flip($mapping['identifiers']);
+        if (count($columns) !== count($mapping['identifiers'])
+            || count($columns) !== count($this->rsm->aliasMap)
+            || array_diff_key($this->rsm->aliasMap, $columns) !== []
+            || array_diff_key($this->rsm->aliasMap, $mapping['entities']) !== []
+        ) {
+            return null;
+        }
+
+        return [$columns, array_fill_keys(array_keys($mapping['entities']), null)];
     }
 
     /**

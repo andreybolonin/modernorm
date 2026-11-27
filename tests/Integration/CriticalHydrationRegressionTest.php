@@ -190,12 +190,18 @@ final class CriticalHydrationRegressionTest extends TestCase
         $mapping->addFieldResult('i', 'joined_item_id', 'id');
         $mapping->addMetaResult('i', 'owner_id', 'owner_id', false, 'integer');
         $sql = 'SELECT o.id AS joined_owner_id, i.id AS joined_item_id, i.owner_id FROM '
-            . $this->schema . '.owners o JOIN ' . $this->schema . '.items i ON i.owner_id = o.id WHERE o.id = ? ORDER BY i.id';
+            . $this->schema . '.owners o LEFT JOIN ' . $this->schema . '.items i ON i.owner_id = o.id'
+            . ' CROSS JOIN (VALUES (1), (2)) AS copies(n) WHERE o.id IN (?, ?) ORDER BY o.id, i.id';
         $query = $this->em->createNativeQuery($sql, $mapping);
         $query->setParameter(1, $ownerId);
-        [$hydrated] = $query->getResult();
+        $query->setParameter(2, $replacementId);
+        [$hydrated, $emptyOwner] = $query->getResult();
         [$managedResult, $freshResult] = $hydrated->items->toArray();
 
+        self::assertCount(2, $hydrated->items);
+        self::assertSame($replacement, $emptyOwner);
+        self::assertTrue($emptyOwner->items->isInitialized());
+        self::assertTrue($emptyOwner->items->isEmpty());
         self::assertSame($managed, $managedResult);
         self::assertSame($replacement, $managed->owner);
         self::assertSame($baseline, $this->em->getUnitOfWork()->getOriginalEntityData($managed));

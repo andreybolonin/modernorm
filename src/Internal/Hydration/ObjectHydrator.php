@@ -63,6 +63,9 @@ class ObjectHydrator extends AbstractHydrator
     /** @var array<string, string> One-to-many alias to its writable owning field. */
     private array $freshInverse = [];
 
+    /** @var array{array<string, array-key>, array<string, null>}|null */
+    private ?array $plainRows = null;
+
     private bool $customGatherRowData = false;
 
     protected function prepare(): void
@@ -209,6 +212,7 @@ class ObjectHydrator extends AbstractHydrator
         $this->existingCollections           = [];
 
         $this->rootAliases = $this->idTemplate = [];
+        $this->plainRows = null;
         $this->siblingCollectionLeaves = $this->joinPaths = $this->freshInverse = [];
         $this->resultCounter = 0;
 
@@ -234,9 +238,41 @@ class ObjectHydrator extends AbstractHydrator
     protected function hydrateAllData(): array
     {
         $result = [];
+        $rsm = $this->resultSetMapping();
+        $planPending = $this::class === self::class && $this->uow::class === UnitOfWork::class
+            && count($rsm->aliasMap) <= 2 && count($rsm->relationMap) <= 1 && ! $rsm->isMixed
+            && $rsm->indexByMap === [] && $rsm->scalarMappings === [] && $rsm->newObjectMappings === []
+            && $rsm->newObject === [] && $rsm->nestedEntities === [] && $rsm->nestedNewObjectArguments === []
+            && ! isset($this->hints['collection']) && ! isset($this->hints[Query::HINT_REFRESH])
+            && ! isset($this->hints[Query::HINT_REFRESH_ENTITY]) && empty($this->hints[Query::HINT_INTERNAL_ITERATION]);
+        $flatAlias = null;
+        $flatColumn = null;
 
         while ($row = $this->statement()->fetchAssociative()) {
             $this->hydrationRows();
+            if ($planPending) {
+                $planPending = false;
+                $this->assertCompleteEntityRow($row);
+                $this->plainRows = $this->preparePlainEntityRows($row);
+                if ($this->plainRows !== null && count($rsm->aliasMap) === 1 && $rsm->relationMap === []) {
+                    $flatAlias = array_key_first($this->plainRows[0]);
+                    $flatColumn = $this->plainRows[0][$flatAlias];
+                    $this->rootAliases[$flatAlias] = true;
+                }
+            }
+            if ($flatAlias !== null) {
+                $id = $row[$flatColumn];
+                if ($id === null) {
+                    $result[] = null;
+                } else {
+                    $key = '|' . $id;
+                    if (! isset($this->identifierMap[$flatAlias][$key])) {
+                        $result[] = $this->getEntity($this->gatherEntityRowData($row, $flatAlias), $flatAlias);
+                        $this->identifierMap[$flatAlias][$key] = true;
+                    }
+                }
+                continue;
+            }
             $this->hydrateRowData($row, $result);
         }
 
@@ -380,9 +416,19 @@ class ObjectHydrator extends AbstractHydrator
         $id                 = $this->idTemplate; // initialize the id-memory
         $nonemptyComponents = [];
         // Split the row data into chunks of class data.
-        $rowData = $this->customGatherRowData
-            ? $this->gatherRowData($row, $id, $nonemptyComponents)
-            : $this->gatherMappedRow($row, $id, $nonemptyComponents, true);
+        if ($this->plainRows !== null) {
+            foreach ($this->plainRows[0] as $alias => $column) {
+                if ($row[$column] !== null) {
+                    $id[$alias] = '|' . $row[$column];
+                    $nonemptyComponents[$alias] = true;
+                }
+            }
+            $rowData = ['data' => $this->plainRows[1], 'newObjects' => []];
+        } else {
+            $rowData = $this->customGatherRowData
+                ? $this->gatherRowData($row, $id, $nonemptyComponents)
+                : $this->gatherMappedRow($row, $id, $nonemptyComponents, true);
+        }
 
         // reset result pointers for each data row
         $resultPointers = [];
