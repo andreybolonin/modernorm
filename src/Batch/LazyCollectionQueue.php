@@ -32,10 +32,10 @@ final class LazyCollectionQueue
     {
     }
 
-    public function add(PersistentCollection $collection): void
+    public function add(PersistentCollection $collection, ?int $batchSize = null): void
     {
         $mapping = $collection->getMapping();
-        $size = $mapping->batchSize ?? $this->em->getConfiguration()->getLazyFetchBatchSize();
+        $size = $batchSize ?? $mapping->batchSize ?? $this->em->getConfiguration()->getLazyFetchBatchSize();
         if ($size === 1 || ! $this->eligible($collection)) {
             return;
         }

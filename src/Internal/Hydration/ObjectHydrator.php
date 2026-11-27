@@ -6,7 +6,9 @@ namespace ModernORM\Internal\Hydration;
 
 use ModernORM\Exception\HydrationException;
 use Doctrine\Common\Collections\ArrayCollection;
+use ModernORM\Mapping\AssociationMapping;
 use ModernORM\Mapping\ClassMetadata;
+use ModernORM\Mapping\PropertyAccessors\PropertyAccessor;
 use ModernORM\PersistentCollection;
 use ModernORM\Query;
 use ModernORM\UnitOfWork;
@@ -53,6 +55,9 @@ class ObjectHydrator extends AbstractHydrator
     /** @var array<string, array{string, string, string}> Leaf alias to parent alias, relation field and identifier path. */
     private array $siblingCollectionLeaves = [];
 
+    /** @var array<string, array{ClassMetadata, string, AssociationMapping, PropertyAccessor, string}> */
+    private array $joinPaths = [];
+
     private bool $customGatherRowData = false;
 
     protected function prepare(): void
@@ -60,6 +65,8 @@ class ObjectHydrator extends AbstractHydrator
         $this->prepareEntityMapping();
         $this->customGatherRowData = (new ReflectionMethod($this, 'gatherRowData'))->getDeclaringClass()->name !== AbstractHydrator::class;
         $rsm = $this->resultSetMapping();
+        $cacheJoinPaths = $this::class === self::class && $this->uow::class === UnitOfWork::class
+            && empty($this->hints[Query::HINT_INTERNAL_ITERATION]);
         $leafParents = $this::class === self::class && $this->uow::class === UnitOfWork::class
             && ! $rsm->isMixed && $rsm->indexByMap === [] && $rsm->nestedEntities === []
             && empty($this->hints[Query::HINT_INTERNAL_ITERATION]) && count($rsm->parentAliasMap) > 1
@@ -92,7 +99,18 @@ class ObjectHydrator extends AbstractHydrator
 
             $sourceClassName = $this->resultSetMapping()->aliasMap[$parent];
             $sourceClass     = $this->getClassMetadata($sourceClassName);
-            $assoc           = $sourceClass->associationMappings[$this->resultSetMapping()->relationMap[$resultAlias]];
+            $relationField   = $rsm->relationMap[$resultAlias];
+            $assoc           = $sourceClass->associationMappings[$relationField];
+
+            if ($cacheJoinPaths && isset($sourceClass->propertyAccessors[$relationField])) {
+                $this->joinPaths[$resultAlias] = [
+                    $sourceClass,
+                    $relationField,
+                    $assoc,
+                    $sourceClass->propertyAccessors[$relationField],
+                    $parent . '.' . $resultAlias,
+                ];
+            }
 
             if (isset($leafParents[$parent]) && ! isset($leafParents[$resultAlias])
                 && ! isset($rsm->parentAliasMap[$parent]) && $assoc->isToMany()
@@ -150,7 +168,7 @@ class ObjectHydrator extends AbstractHydrator
         $this->existingCollections           = [];
 
         $this->rootAliases = $this->idTemplate = [];
-        $this->siblingCollectionLeaves = [];
+        $this->siblingCollectionLeaves = $this->joinPaths = [];
         $this->resultCounter = 0;
 
         if ($eagerLoad) {
@@ -348,9 +366,6 @@ class ObjectHydrator extends AbstractHydrator
                 // It's a joined result
 
                 $parentAlias = $rsm->parentAliasMap[$resultAlias];
-                // we need the $path to save into the identifier map which entities were already
-                // seen for this parent-child relationship
-                $path = $parentAlias . '.' . $resultAlias;
 
                 // We have a RIGHT JOIN result here. Doctrine cannot hydrate RIGHT JOIN Object-Graphs
                 if (! isset($nonemptyComponents[$parentAlias])) {
@@ -358,10 +373,15 @@ class ObjectHydrator extends AbstractHydrator
                     continue;
                 }
 
-                $parentClass   = $this->metadataCache[$rsm->aliasMap[$parentAlias]];
-                $relationField = $rsm->relationMap[$resultAlias];
-                $relation      = $parentClass->associationMappings[$relationField];
-                $reflField     = $parentClass->propertyAccessors[$relationField];
+                if (isset($this->joinPaths[$resultAlias])) {
+                    [$parentClass, $relationField, $relation, $reflField, $path] = $this->joinPaths[$resultAlias];
+                } else {
+                    $parentClass   = $this->metadataCache[$rsm->aliasMap[$parentAlias]];
+                    $relationField = $rsm->relationMap[$resultAlias];
+                    $relation      = $parentClass->associationMappings[$relationField];
+                    $reflField     = $parentClass->propertyAccessors[$relationField];
+                    $path          = $parentAlias . '.' . $resultAlias;
+                }
 
                 // Get a reference to the parent object to which the joined element belongs.
                 if ($rsm->isMixed && isset($this->rootAliases[$parentAlias])) {

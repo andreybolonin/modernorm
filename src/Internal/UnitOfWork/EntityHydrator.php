@@ -216,7 +216,10 @@ final class EntityHydrator
                     }
 
                     if ($hints['fetchMode'][$class->name][$field] !== ClassMetadata::FETCH_EAGER) {
-                        $this->unitOfWork->getLazyCollectionQueue()->add($pColl);
+                        $batchSize = $assoc->batchSize ?? $this->em->getConfiguration()->getLazyFetchBatchSize();
+                        if ($batchSize !== 1) {
+                            $this->unitOfWork->getLazyCollectionQueue()->add($pColl, $batchSize);
+                        }
                     }
 
                     $this->entityStateManager->snapshots[$oid][$field] = $pColl;
