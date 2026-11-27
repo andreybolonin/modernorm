@@ -70,6 +70,21 @@ Choose `BYPASS` to leave managed state unchanged, or `CLEAR` to detach the entir
 
 [Bulk API](docs/bulk-api.md) · [Recorded timings, memory and methodology](benchmarks/results/README.md#bulk-writes).
 
+## Performance comparison with Doctrine ORM 3.8.0
+
+Median times in milliseconds. Each group shows ModernORM / Doctrine. Lower is faster.
+
+| Workload | 1,000 rows | 10,000 rows |
+| --- | ---: | ---: |
+| Empty `flush()` | **0.45** / 2.90 | **7.82** / 36.24 |
+| Insert | 32.19 / **30.91** | 339.60 / 339.87 |
+| Update all entities | **36.07** / 38.37 | **379.04** / 408.97 |
+| Delete | **32.04** / 36.28 | **362.28** / 377.90 |
+| Flat hydration | **4.90** / 5.55 | **52.97** / 60.35 |
+| Fetch-join hydration of one collection | **4.76** / 5.33 | **49.46** / 55.40 |
+
+Measured on the source at ModernORM `a243eb1` with PHP 8.5.13, DBAL 4.6.0, PostgreSQL 18.7, and deepclone 0.8.13. The Doctrine column uses a fixed baseline measured in a separate series with the same runtime settings. Hydration timings include executing the SQL query.
+
 ## Cache reference data across requests
 
 ```php
